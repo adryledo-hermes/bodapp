@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bodapp-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bodapp
+      POSTGRES_PASSWORD: bodapp
+      POSTGRES_DB: bodapp
+    ports:
+      - "5432:5432"
+    volumes:
+      - bodapp-pgdata:/var/lib/postgresql/data
+
+volumes:
+  bodapp-pgdata:
