@@ -4,6 +4,7 @@ const links = [
   { href: "/decoracion", label: "Decoración" },
   { href: "/tareas", label: "Tareas" },
   { href: "/invitacion", label: "Invitación" },
+  { href: "/qr", label: "QR" },
 ];
 
 export default function PanelLayout({
