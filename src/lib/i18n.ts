@@ -217,6 +217,11 @@ export const messages: Record<Locale, Record<string, string>> = {
     "photo.upload": "Subir foto",
     "photo.sizeHint": "PNG, JPG, WEBP o GIF · máx. 10 MB",
     "photo.errUpload": "No se pudo subir la foto",
+    "photo.errRequired": "No se recibió ninguna foto",
+    "photo.errTooLarge": "El archivo supera el máximo de 10 MB",
+    "photo.errType": "Tipo de archivo no permitido (usa PNG, JPG, WEBP o GIF)",
+    "photo.errSave": "No se pudo guardar la foto",
+    "photo.errCreate": "No se pudo registrar la foto",
     "photo.errDelete": "No se pudo eliminar la foto",
     "photo.empty":
       "Todavía no hay fotos. Sube las primeras fotos de la pareja para mostrarlas en la galería.",
@@ -227,7 +232,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     // ---- Panel page headers ----
     "p.guests.title": "Invitados",
     "p.guests.subtitle":
-      "{count} invitado{plural} — toca una carta para ver los detalles",
+      "{count} {plural} — toca una carta para ver los detalles",
     "p.tareas.title": "Tareas",
     "p.tareas.subtitle":
       "Organiza las tareas de la boda en un tablero Kanban. Arrastra cada tarjeta entre columnas para cambiar su estado, añade tus propias tareas o carga la checklist de boda con un clic.",
@@ -495,6 +500,11 @@ export const messages: Record<Locale, Record<string, string>> = {
     "photo.upload": "Upload photo",
     "photo.sizeHint": "PNG, JPG, WEBP or GIF · max 10 MB",
     "photo.errUpload": "Could not upload the photo",
+    "photo.errRequired": "No photo was received",
+    "photo.errTooLarge": "The file exceeds the maximum of 10 MB",
+    "photo.errType": "File type not allowed (use PNG, JPG, WEBP or GIF)",
+    "photo.errSave": "Could not save the photo",
+    "photo.errCreate": "Could not save the photo record",
     "photo.errDelete": "Could not delete the photo",
     "photo.empty":
       "No photos yet. Upload the couple's first photos to show them in the gallery.",
@@ -505,7 +515,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     // ---- Panel page headers ----
     "p.guests.title": "Guests",
     "p.guests.subtitle":
-      "{count} guest{plural} — tap a card to see the details",
+      "{count} {plural} — tap a card to see the details",
     "p.tareas.title": "Tasks",
     "p.tareas.subtitle":
       "Organise the wedding tasks on a Kanban board. Drag each card between columns to change its status, add your own tasks or load the wedding checklist with one click.",
@@ -626,7 +636,7 @@ export function plural(locale: Locale, key: string, count: number): string {
 }
 
 /**
-/** Read the locale from the browser cookie (client-side only). Falls back to
+ * Read the locale from the browser cookie (client-side only). Falls back to
  * `fallback` when there's no cookie or we're not in a browser context.
  */
 export function getClientLocale(fallback: Locale = "es"): Locale {

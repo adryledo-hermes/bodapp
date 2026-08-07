@@ -64,6 +64,47 @@ describe("plural", () => {
   });
 });
 
+describe("guests subtitle pluralization (regression)", () => {
+  const subtitle = (locale: Locale, count: number) =>
+    translate(locale, "p.guests.subtitle", {
+      count,
+      plural: plural(locale, "guest.count", count),
+    });
+
+  it.each([
+    ["es", 1, "1 invitado"],
+    ["es", 3, "3 invitados"],
+    ["en", 1, "1 guest"],
+    ["en", 3, "3 guests"],
+  ] as const)("renders %s count=%s without a duplicated/dangling word", (locale, count, expectedPrefix) => {
+    const out = subtitle(locale, count);
+    expect(out).toContain(expectedPrefix);
+    // No duplicated word (e.g. "guestguest" / "invitadoinvitado").
+    expect(out).not.toMatch(/guestguest|invitadoinvitado/);
+    // No leftover template braces or unsupplied placeholder.
+    expect(out).not.toContain("{");
+    expect(out).not.toContain("}");
+  });
+});
+
+describe("photo upload errors are localized (regression)", () => {
+  it("maps the 413 file_too_large code to localized messages", () => {
+    expect(translate("es", "photo.errTooLarge")).toMatch(/10 MB/);
+    expect(translate("en", "photo.errTooLarge")).toMatch(/10 MB/);
+    // Codes themselves must never leak to the UI.
+    expect(["invalid_form", "photo_required", "file_type_not_allowed", "file_too_large", "save_failed", "create_failed"]).not.toContain(
+      translate("en", "photo.errTooLarge")
+    );
+  });
+
+  it("localizes every upload error key for both locales", () => {
+    for (const key of ["photo.errUpload", "photo.errRequired", "photo.errType", "photo.errTooLarge"]) {
+      expect(translate("es", key), `es:${key}`).not.toBe(key);
+      expect(translate("en", key), `en:${key}`).not.toBe(key);
+    }
+  });
+});
+
 describe("dictionary parity", () => {
   it("has identical key sets across es and en", () => {
     const esKeys = Object.keys(messages.es).sort();

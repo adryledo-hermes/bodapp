@@ -52,27 +52,21 @@ export async function POST(req: Request) {
   try {
     form = await req.formData();
   } catch {
-    return NextResponse.json({ error: "invalid form data" }, { status: 400 });
+    return NextResponse.json({ error: "invalid_form" }, { status: 400 });
   }
 
   const file = form.get("photo");
   if (!(file instanceof File)) {
-    return NextResponse.json({ error: "photo required" }, { status: 400 });
+    return NextResponse.json({ error: "photo_required" }, { status: 400 });
   }
 
   const ext = MIME_TO_EXT[file.type];
   if (!ext) {
-    return NextResponse.json(
-      { error: "tipo de archivo no permitido (usa PNG, JPG, WEBP o GIF)" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "file_type_not_allowed" }, { status: 400 });
   }
 
   if (file.size > MAX_SIZE) {
-    return NextResponse.json(
-      { error: "el archivo supera el máximo de 10 MB" },
-      { status: 413 }
-    );
+    return NextResponse.json({ error: "file_too_large" }, { status: 413 });
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
@@ -82,7 +76,7 @@ export async function POST(req: Request) {
   try {
     filename = await savePhoto(buffer, { id, ext });
   } catch {
-    return NextResponse.json({ error: "no se pudo guardar la foto" }, { status: 500 });
+    return NextResponse.json({ error: "save_failed" }, { status: 500 });
   }
 
   let photo: {
@@ -104,7 +98,7 @@ export async function POST(req: Request) {
   } catch {
     // Avoid leaving an orphan file behind if the DB write fails.
     await deletePhoto(filename).catch(() => {});
-    return NextResponse.json({ error: "no se pudo registrar la foto" }, { status: 500 });
+    return NextResponse.json({ error: "create_failed" }, { status: 500 });
   }
 
   return NextResponse.json({ photo: serialize(photo) }, { status: 201 });

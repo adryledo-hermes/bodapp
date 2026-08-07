@@ -32,6 +32,25 @@ export default function PhotoGallery({
 
   const t = (key: string) => translate(locale, key);
 
+  /** Map API upload error codes to localized message keys. */
+  const uploadErrorKey = (code: string): string => {
+    switch (code) {
+      case "invalid_form":
+        return "photo.errUpload";
+      case "photo_required":
+        return "photo.errRequired";
+      case "file_type_not_allowed":
+        return "photo.errType";
+      case "file_too_large":
+        return "photo.errTooLarge";
+      case "save_failed":
+      case "create_failed":
+        return "photo.errUpload";
+      default:
+        return "photo.errUpload";
+    }
+  };
+
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -43,7 +62,7 @@ export default function PhotoGallery({
       const res = await fetch("/api/photos", { method: "POST", body: fd });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data.error || t("photo.errUpload"));
+        throw new Error(t(uploadErrorKey(data.error || "")));
       }
       setPhotos((prev) => [data.photo, ...prev]);
     } catch (err) {
