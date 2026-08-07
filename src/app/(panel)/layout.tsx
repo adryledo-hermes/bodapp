@@ -3,7 +3,7 @@ const links = [
   { href: "/mesas", label: "Mesas" },
   { href: "/decoracion", label: "Decoración" },
   { href: "/tareas", label: "Tareas" },
-  { href: "/invitation", label: "Invitación" },
+  { href: "/invitacion", label: "Invitación" },
 ];
 
 export default function PanelLayout({
