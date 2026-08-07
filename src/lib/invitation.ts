@@ -86,3 +86,16 @@ export function normalizeTemplateContent(raw: unknown): TemplateContent {
 export function incrementVersion(v: number): number {
   return v + 1;
 }
+
+/**
+ * Matches a CSS hex color — #RGB, #RGBA, #RRGGBB or #RRGGBBAA — or an empty
+ * string (no color). Used to gate which stored color values are ever applied as
+ * a CSS style, so arbitrary DB content can't smuggle `background-image:url(…)`
+ * or similar into the `style=` attribute.
+ */
+export const HEX_COLOR_RE = /^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{4}|#[0-9a-fA-F]{6}|#[0-9a-fA-F]{8}|)$/;
+
+/** True when the value is a valid hex color (or empty). */
+export function isValidHexColor(value: string): boolean {
+  return HEX_COLOR_RE.test(value);
+}

@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { DEFAULT_TEMPLATE, type TemplateContent } from "@/lib/invitation";
+import {
+  DEFAULT_TEMPLATE,
+  isValidHexColor,
+  type TemplateContent,
+} from "@/lib/invitation";
 
 interface TemplateEditorProps {
   initialContent: TemplateContent;
@@ -257,6 +261,8 @@ export default function TemplateEditor({
 
         {message && (
           <div
+            role="status"
+            aria-live="polite"
             className={`mt-4 rounded-lg px-4 py-3 text-sm ${
               message.type === "success"
                 ? "bg-emerald-50 text-emerald-700"
@@ -281,11 +287,25 @@ export default function TemplateEditor({
       {/* ---- Live preview ---- */}
       <section className="rounded-xl border border-slate-200 bg-white p-5">
         <h2 className="mb-4 text-lg font-semibold text-slate-900">Vista previa</h2>
+        {/* Defense-in-depth: only apply color values that are valid hex, else
+            fall back to the safe defaults — a non-hex value can never reach the
+            `style=` attribute (see HEX_COLOR_RE in @/lib/invitation). */}
         <div
           className="overflow-hidden rounded-lg border border-slate-200 shadow-sm"
-          style={{ background: draft.accent }}
+          style={{
+            background: isValidHexColor(draft.accent)
+              ? draft.accent
+              : DEFAULT_TEMPLATE.colors.accent,
+          }}
         >
-          <div className="p-8 text-center" style={{ color: draft.primary }}>
+          <div
+            className="p-8 text-center"
+            style={{
+              color: isValidHexColor(draft.primary)
+                ? draft.primary
+                : DEFAULT_TEMPLATE.colors.primary,
+            }}
+          >
             {draft.titleA || draft.titleB ? (
               <p className="mb-1 text-3xl font-bold">
                 {draft.titleA} &amp; {draft.titleB}

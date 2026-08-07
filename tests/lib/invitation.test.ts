@@ -3,6 +3,7 @@ import {
   DEFAULT_TEMPLATE,
   DEFAULT_TEMPLATE_VERSION,
   incrementVersion,
+  isValidHexColor,
   normalizeTemplateContent,
 } from "../../src/lib/invitation";
 
@@ -85,5 +86,26 @@ describe("incrementVersion", () => {
   it("returns v+1", () => {
     expect(incrementVersion(1)).toBe(2);
     expect(incrementVersion(5)).toBe(6);
+  });
+});
+
+describe("isValidHexColor", () => {
+  it("accepts 3, 6 and 8-digit hex colors", () => {
+    expect(isValidHexColor("#ABC")).toBe(true);
+    expect(isValidHexColor("#a1b2c3")).toBe(true);
+    expect(isValidHexColor("#A1B2C3FF")).toBe(true);
+  });
+
+  it("accepts an empty string (no color)", () => {
+    expect(isValidHexColor("")).toBe(true);
+  });
+
+  it("rejects non-hex values that could inject CSS", () => {
+    expect(isValidHexColor("red")).toBe(false);
+    expect(isValidHexColor("#12345")).toBe(false);
+    expect(isValidHexColor("url(http://evil.test/x.png)")).toBe(false);
+    expect(
+      isValidHexColor("#fff; background-image: url(http://evil.test/x.png)")
+    ).toBe(false);
   });
 });

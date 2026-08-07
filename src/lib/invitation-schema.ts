@@ -1,9 +1,10 @@
 import { z } from "zod";
+import { HEX_COLOR_RE } from "@/lib/invitation";
 
-/** Colors of the invitation — primary and accent hex strings. */
+/** Colors of the invitation — primary and accent restricted to hex strings. */
 export const templateColorsSchema = z.object({
-  primary: z.string().max(20).optional(),
-  accent: z.string().max(20).optional(),
+  primary: z.string().max(20).regex(HEX_COLOR_RE).optional(),
+  accent: z.string().max(20).regex(HEX_COLOR_RE).optional(),
 });
 
 /**

@@ -38,11 +38,16 @@ export async function GET() {
   });
 }
 
-// POST /api/invitation-template — upsert the wedding's latest template: persist
-// the (normalized) content, bump the version and stamp publishedAt = now. When a
-// bank account is supplied it is saved to the Wedding row as part of the same
-// publish action. All reads are tenant-scoped; the update targets a row already
-// scoped to the session.
+// POST /api/invitation-template — upsert the wedding's latest template and save
+// the bank account atomically inside a single transaction: either both the
+// Wedding.bankAccount update and the template write commit, or neither does, so
+// a failure can never leave a half-saved publish.
+//
+// Tenant safety: the template write is re-scoped to the session's weddingId *
+// on the write itself* (updateMany where { id, weddingId }), not just on the
+// read that located the row, so a cross-tenant id can never be updated/created.
+// Version semantics: the first publish lands on DEFAULT_TEMPLATE_VERSION (1);
+// each subsequent publish bumps the stored version (see FIX note on version).
 export async function POST(req: Request) {
   const auth = await requireSession();
   if (auth.error) return auth.error;
@@ -64,40 +69,58 @@ export async function POST(req: Request) {
 
   const content = normalizeTemplateContent(parsed.data.content ?? {});
 
-  // Persist the bank account on the Wedding (tenant-scoped by session.weddingId).
-  if (parsed.data.bankAccount !== undefined) {
-    await prisma.wedding.update({
-      where: { id: auth.session.weddingId },
-      data: { bankAccount: parsed.data.bankAccount ?? null },
+  const template = await prisma.$transaction(async (tx) => {
+    // Persist the bank account on the Wedding (tenant-scoped by session.weddingId).
+    if (parsed.data.bankAccount !== undefined) {
+      await tx.wedding.update({
+        where: { id: auth.session.weddingId },
+        data: { bankAccount: parsed.data.bankAccount ?? null },
+      });
+    }
+
+    const existing = await tx.invitationTemplate.findFirst({
+      where: tenantWhere(auth.session),
+      orderBy: { version: "desc" },
     });
-  }
 
-  const existing = await prisma.invitationTemplate.findFirst({
-    where: tenantWhere(auth.session),
-    orderBy: { version: "desc" },
-  });
+    // First publish → version 1 (the default). Later publishes bump the stored
+    // version: version 1 after the first save, version 2 on the next one.
+    const version = existing
+      ? incrementVersion(existing.version)
+      : DEFAULT_TEMPLATE_VERSION;
 
-  const version = existing
-    ? incrementVersion(existing.version)
-    : incrementVersion(DEFAULT_TEMPLATE_VERSION);
-
-  const template = existing
-    ? await prisma.invitationTemplate.update({
-        where: { id: existing.id },
+    if (existing) {
+      // Tenant-check the UPDATE itself: only bump the row if it belongs to the
+      // session's wedding — guards against a cross-tenant id from the read.
+      const updated = await tx.invitationTemplate.updateMany({
+        where: { id: existing.id, weddingId: auth.session.weddingId },
         data: {
-          content: content as unknown as runtime.InputJsonValue,
-          version,
-          publishedAt: new Date(),
-        },
-      })
-    : await prisma.invitationTemplate.create({
-        data: {
-          weddingId: auth.session.weddingId,
           content: content as unknown as runtime.InputJsonValue,
           version,
           publishedAt: new Date(),
         },
       });
+      if (updated.count === 0) {
+        throw new Error("template not found for this wedding");
+      }
+      return {
+        content,
+        version,
+        publishedAt: new Date(),
+      };
+    }
+
+    const created = await tx.invitationTemplate.create({
+      data: {
+        // weddingId always comes from the session, never from the request body.
+        weddingId: auth.session.weddingId,
+        content: content as unknown as runtime.InputJsonValue,
+        version,
+        publishedAt: new Date(),
+      },
+    });
+    return created;
+  });
 
   return NextResponse.json({
     template: {
