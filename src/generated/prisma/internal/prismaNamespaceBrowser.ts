@@ -56,6 +56,7 @@ export const ModelName = {
   Guest: 'Guest',
   GuestRelation: 'GuestRelation',
   Invitation: 'Invitation',
+  OtpCode: 'OtpCode',
   Table: 'Table',
   Decoration: 'Decoration',
   Task: 'Task',
@@ -148,6 +149,20 @@ export const InvitationScalarFieldEnum = {
 } as const
 
 export type InvitationScalarFieldEnum = (typeof InvitationScalarFieldEnum)[keyof typeof InvitationScalarFieldEnum]
+
+
+export const OtpCodeScalarFieldEnum = {
+  id: 'id',
+  invitationId: 'invitationId',
+  phone: 'phone',
+  codeHash: 'codeHash',
+  attempts: 'attempts',
+  expiresAt: 'expiresAt',
+  consumedAt: 'consumedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type OtpCodeScalarFieldEnum = (typeof OtpCodeScalarFieldEnum)[keyof typeof OtpCodeScalarFieldEnum]
 
 
 export const TableScalarFieldEnum = {

@@ -131,9 +131,29 @@ model Invitation {
   acceptedPhones String[] @default([]) // MULTIPLE valid phones
   createdAt      DateTime @default(now())
 
-  wedding Wedding @relation(fields: [weddingId], references: [id])
+  wedding  Wedding   @relation(fields: [weddingId], references: [id])
+  otpCodes OtpCode[]
 
   @@index([weddingId])
+}
+
+// One-time OTP issued for a phone against an invitation allowlist. Only the
+// hashed code is stored (never plaintext); see src/lib/otp.ts.
+// @see Task 9 — public invitation portal
+model OtpCode {
+  id           String    @id @default(uuid())
+  invitationId String
+  phone        String // normalized E.164 phone that requested the code
+  codeHash     String // sha256 hex of the 6-digit code (never plaintext)
+  attempts     Int       @default(0) // failed verify attempts
+  expiresAt    DateTime
+  consumedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  invitation Invitation @relation(fields: [invitationId], references: [id])
+
+  @@index([invitationId, phone])
+  @@index([phone, expiresAt])
 }
 
 model Table {

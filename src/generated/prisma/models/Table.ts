@@ -487,14 +487,6 @@ export type TableUpdateOneWithoutGuestsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.TableUpdateToOneWithWhereWithoutGuestsInput, Prisma.TableUpdateWithoutGuestsInput>, Prisma.TableUncheckedUpdateWithoutGuestsInput>
 }
 
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
 export type FloatFieldUpdateOperationsInput = {
   set?: number
   increment?: number

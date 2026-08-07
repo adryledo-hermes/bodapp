@@ -179,6 +179,7 @@ export type InvitationWhereInput = {
   acceptedPhones?: Prisma.StringNullableListFilter<"Invitation">
   createdAt?: Prisma.DateTimeFilter<"Invitation"> | Date | string
   wedding?: Prisma.XOR<Prisma.WeddingScalarRelationFilter, Prisma.WeddingWhereInput>
+  otpCodes?: Prisma.OtpCodeListRelationFilter
 }
 
 export type InvitationOrderByWithRelationInput = {
@@ -188,6 +189,7 @@ export type InvitationOrderByWithRelationInput = {
   acceptedPhones?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   wedding?: Prisma.WeddingOrderByWithRelationInput
+  otpCodes?: Prisma.OtpCodeOrderByRelationAggregateInput
 }
 
 export type InvitationWhereUniqueInput = Prisma.AtLeast<{
@@ -200,6 +202,7 @@ export type InvitationWhereUniqueInput = Prisma.AtLeast<{
   acceptedPhones?: Prisma.StringNullableListFilter<"Invitation">
   createdAt?: Prisma.DateTimeFilter<"Invitation"> | Date | string
   wedding?: Prisma.XOR<Prisma.WeddingScalarRelationFilter, Prisma.WeddingWhereInput>
+  otpCodes?: Prisma.OtpCodeListRelationFilter
 }, "id">
 
 export type InvitationOrderByWithAggregationInput = {
@@ -230,6 +233,7 @@ export type InvitationCreateInput = {
   acceptedPhones?: Prisma.InvitationCreateacceptedPhonesInput | string[]
   createdAt?: Date | string
   wedding: Prisma.WeddingCreateNestedOneWithoutInvitationsInput
+  otpCodes?: Prisma.OtpCodeCreateNestedManyWithoutInvitationInput
 }
 
 export type InvitationUncheckedCreateInput = {
@@ -238,6 +242,7 @@ export type InvitationUncheckedCreateInput = {
   title: string
   acceptedPhones?: Prisma.InvitationCreateacceptedPhonesInput | string[]
   createdAt?: Date | string
+  otpCodes?: Prisma.OtpCodeUncheckedCreateNestedManyWithoutInvitationInput
 }
 
 export type InvitationUpdateInput = {
@@ -246,6 +251,7 @@ export type InvitationUpdateInput = {
   acceptedPhones?: Prisma.InvitationUpdateacceptedPhonesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   wedding?: Prisma.WeddingUpdateOneRequiredWithoutInvitationsNestedInput
+  otpCodes?: Prisma.OtpCodeUpdateManyWithoutInvitationNestedInput
 }
 
 export type InvitationUncheckedUpdateInput = {
@@ -254,6 +260,7 @@ export type InvitationUncheckedUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   acceptedPhones?: Prisma.InvitationUpdateacceptedPhonesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  otpCodes?: Prisma.OtpCodeUncheckedUpdateManyWithoutInvitationNestedInput
 }
 
 export type InvitationCreateManyInput = {
@@ -311,6 +318,11 @@ export type InvitationMinOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder
 }
 
+export type InvitationScalarRelationFilter = {
+  is?: Prisma.InvitationWhereInput
+  isNot?: Prisma.InvitationWhereInput
+}
+
 export type InvitationCreateNestedManyWithoutWeddingInput = {
   create?: Prisma.XOR<Prisma.InvitationCreateWithoutWeddingInput, Prisma.InvitationUncheckedCreateWithoutWeddingInput> | Prisma.InvitationCreateWithoutWeddingInput[] | Prisma.InvitationUncheckedCreateWithoutWeddingInput[]
   connectOrCreate?: Prisma.InvitationCreateOrConnectWithoutWeddingInput | Prisma.InvitationCreateOrConnectWithoutWeddingInput[]
@@ -362,11 +374,26 @@ export type InvitationUpdateacceptedPhonesInput = {
   push?: string | string[]
 }
 
+export type InvitationCreateNestedOneWithoutOtpCodesInput = {
+  create?: Prisma.XOR<Prisma.InvitationCreateWithoutOtpCodesInput, Prisma.InvitationUncheckedCreateWithoutOtpCodesInput>
+  connectOrCreate?: Prisma.InvitationCreateOrConnectWithoutOtpCodesInput
+  connect?: Prisma.InvitationWhereUniqueInput
+}
+
+export type InvitationUpdateOneRequiredWithoutOtpCodesNestedInput = {
+  create?: Prisma.XOR<Prisma.InvitationCreateWithoutOtpCodesInput, Prisma.InvitationUncheckedCreateWithoutOtpCodesInput>
+  connectOrCreate?: Prisma.InvitationCreateOrConnectWithoutOtpCodesInput
+  upsert?: Prisma.InvitationUpsertWithoutOtpCodesInput
+  connect?: Prisma.InvitationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.InvitationUpdateToOneWithWhereWithoutOtpCodesInput, Prisma.InvitationUpdateWithoutOtpCodesInput>, Prisma.InvitationUncheckedUpdateWithoutOtpCodesInput>
+}
+
 export type InvitationCreateWithoutWeddingInput = {
   id?: string
   title: string
   acceptedPhones?: Prisma.InvitationCreateacceptedPhonesInput | string[]
   createdAt?: Date | string
+  otpCodes?: Prisma.OtpCodeCreateNestedManyWithoutInvitationInput
 }
 
 export type InvitationUncheckedCreateWithoutWeddingInput = {
@@ -374,6 +401,7 @@ export type InvitationUncheckedCreateWithoutWeddingInput = {
   title: string
   acceptedPhones?: Prisma.InvitationCreateacceptedPhonesInput | string[]
   createdAt?: Date | string
+  otpCodes?: Prisma.OtpCodeUncheckedCreateNestedManyWithoutInvitationInput
 }
 
 export type InvitationCreateOrConnectWithoutWeddingInput = {
@@ -413,6 +441,54 @@ export type InvitationScalarWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Invitation"> | Date | string
 }
 
+export type InvitationCreateWithoutOtpCodesInput = {
+  id?: string
+  title: string
+  acceptedPhones?: Prisma.InvitationCreateacceptedPhonesInput | string[]
+  createdAt?: Date | string
+  wedding: Prisma.WeddingCreateNestedOneWithoutInvitationsInput
+}
+
+export type InvitationUncheckedCreateWithoutOtpCodesInput = {
+  id?: string
+  weddingId: string
+  title: string
+  acceptedPhones?: Prisma.InvitationCreateacceptedPhonesInput | string[]
+  createdAt?: Date | string
+}
+
+export type InvitationCreateOrConnectWithoutOtpCodesInput = {
+  where: Prisma.InvitationWhereUniqueInput
+  create: Prisma.XOR<Prisma.InvitationCreateWithoutOtpCodesInput, Prisma.InvitationUncheckedCreateWithoutOtpCodesInput>
+}
+
+export type InvitationUpsertWithoutOtpCodesInput = {
+  update: Prisma.XOR<Prisma.InvitationUpdateWithoutOtpCodesInput, Prisma.InvitationUncheckedUpdateWithoutOtpCodesInput>
+  create: Prisma.XOR<Prisma.InvitationCreateWithoutOtpCodesInput, Prisma.InvitationUncheckedCreateWithoutOtpCodesInput>
+  where?: Prisma.InvitationWhereInput
+}
+
+export type InvitationUpdateToOneWithWhereWithoutOtpCodesInput = {
+  where?: Prisma.InvitationWhereInput
+  data: Prisma.XOR<Prisma.InvitationUpdateWithoutOtpCodesInput, Prisma.InvitationUncheckedUpdateWithoutOtpCodesInput>
+}
+
+export type InvitationUpdateWithoutOtpCodesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  acceptedPhones?: Prisma.InvitationUpdateacceptedPhonesInput | string[]
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  wedding?: Prisma.WeddingUpdateOneRequiredWithoutInvitationsNestedInput
+}
+
+export type InvitationUncheckedUpdateWithoutOtpCodesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  weddingId?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  acceptedPhones?: Prisma.InvitationUpdateacceptedPhonesInput | string[]
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 export type InvitationCreateManyWeddingInput = {
   id?: string
   title: string
@@ -425,6 +501,7 @@ export type InvitationUpdateWithoutWeddingInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   acceptedPhones?: Prisma.InvitationUpdateacceptedPhonesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  otpCodes?: Prisma.OtpCodeUpdateManyWithoutInvitationNestedInput
 }
 
 export type InvitationUncheckedUpdateWithoutWeddingInput = {
@@ -432,6 +509,7 @@ export type InvitationUncheckedUpdateWithoutWeddingInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   acceptedPhones?: Prisma.InvitationUpdateacceptedPhonesInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  otpCodes?: Prisma.OtpCodeUncheckedUpdateManyWithoutInvitationNestedInput
 }
 
 export type InvitationUncheckedUpdateManyWithoutWeddingInput = {
@@ -442,6 +520,35 @@ export type InvitationUncheckedUpdateManyWithoutWeddingInput = {
 }
 
 
+/**
+ * Count Type InvitationCountOutputType
+ */
+
+export type InvitationCountOutputType = {
+  otpCodes: number
+}
+
+export type InvitationCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  otpCodes?: boolean | InvitationCountOutputTypeCountOtpCodesArgs
+}
+
+/**
+ * InvitationCountOutputType without action
+ */
+export type InvitationCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the InvitationCountOutputType
+   */
+  select?: Prisma.InvitationCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * InvitationCountOutputType without action
+ */
+export type InvitationCountOutputTypeCountOtpCodesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.OtpCodeWhereInput
+}
+
 
 export type InvitationSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -450,6 +557,8 @@ export type InvitationSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   acceptedPhones?: boolean
   createdAt?: boolean
   wedding?: boolean | Prisma.WeddingDefaultArgs<ExtArgs>
+  otpCodes?: boolean | Prisma.Invitation$otpCodesArgs<ExtArgs>
+  _count?: boolean | Prisma.InvitationCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["invitation"]>
 
 export type InvitationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -481,6 +590,8 @@ export type InvitationSelectScalar = {
 export type InvitationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "weddingId" | "title" | "acceptedPhones" | "createdAt", ExtArgs["result"]["invitation"]>
 export type InvitationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   wedding?: boolean | Prisma.WeddingDefaultArgs<ExtArgs>
+  otpCodes?: boolean | Prisma.Invitation$otpCodesArgs<ExtArgs>
+  _count?: boolean | Prisma.InvitationCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type InvitationIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   wedding?: boolean | Prisma.WeddingDefaultArgs<ExtArgs>
@@ -493,6 +604,7 @@ export type $InvitationPayload<ExtArgs extends runtime.Types.Extensions.Internal
   name: "Invitation"
   objects: {
     wedding: Prisma.$WeddingPayload<ExtArgs>
+    otpCodes: Prisma.$OtpCodePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -895,6 +1007,7 @@ readonly fields: InvitationFieldRefs;
 export interface Prisma__InvitationClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   wedding<T extends Prisma.WeddingDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WeddingDefaultArgs<ExtArgs>>): Prisma.Prisma__WeddingClient<runtime.Types.Result.GetResult<Prisma.$WeddingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  otpCodes<T extends Prisma.Invitation$otpCodesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Invitation$otpCodesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OtpCodePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1327,6 +1440,30 @@ export type InvitationDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * Limit how many Invitations to delete.
    */
   limit?: number
+}
+
+/**
+ * Invitation.otpCodes
+ */
+export type Invitation$otpCodesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the OtpCode
+   */
+  select?: Prisma.OtpCodeSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the OtpCode
+   */
+  omit?: Prisma.OtpCodeOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.OtpCodeInclude<ExtArgs> | null
+  where?: Prisma.OtpCodeWhereInput
+  orderBy?: Prisma.OtpCodeOrderByWithRelationInput | Prisma.OtpCodeOrderByWithRelationInput[]
+  cursor?: Prisma.OtpCodeWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.OtpCodeScalarFieldEnum | Prisma.OtpCodeScalarFieldEnum[]
 }
 
 /**

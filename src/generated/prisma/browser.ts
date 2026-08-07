@@ -43,6 +43,11 @@ export type GuestRelation = Prisma.GuestRelationModel
  */
 export type Invitation = Prisma.InvitationModel
 /**
+ * Model OtpCode
+ * 
+ */
+export type OtpCode = Prisma.OtpCodeModel
+/**
  * Model Table
  * 
  */
