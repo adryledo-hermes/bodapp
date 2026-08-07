@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import {
+  OTP_MAX_ATTEMPTS,
   OTP_RATE_LIMIT_PER_HOUR,
   createPhoneRateLimiter,
   otpTtlMs,
@@ -11,6 +12,19 @@ import { baseGen, type OtpFlowDeps } from "@/lib/otp-flow";
  * Prisma/Twilio-wired dependency provider for the OTP flow. Kept separate from
  * otp-flow.ts (which is pure) so tests import only the pure module.
  */
+
+/**
+ * Module-level SINGLETON rate limiter (FIX C1). Built once at import time and
+ * shared by every `defaultOtpDeps()` call. Constructing a fresh limiter inside
+ * `defaultOtpDeps()` — as before — reset the in-memory window on every request,
+ * which made the rate limit completely ineffective in production (unlimited
+ * OTP sends and unlimited brute-force guesses). Sharing one instance keeps the
+ * per-phone sliding-window state alive across requests.
+ */
+const sharedRateLimiter = createPhoneRateLimiter({
+  limit: OTP_RATE_LIMIT_PER_HOUR,
+  windowMs: 60 * 60 * 1000,
+});
 
 /**
  * Resolve an invitation by its token/id. Invitation.id is a globally-unique
@@ -30,6 +44,13 @@ export function defaultOtpDeps(): OtpFlowDeps {
   return {
     findInvitation: findInvitationByToken,
     createOtp: async ({ invitationId, phone, codeHash, expiresAt }) => {
+      // Bound stale rows (FIX I3): invalidate any prior unconsumed OTP for this
+      // invitation+phone so only the latest code stays usable and the OtpCode
+      // table doesn't grow unboundedly with superseded, still-valid rows.
+      await prisma.otpCode.updateMany({
+        where: { invitationId, phone, consumedAt: null },
+        data: { consumedAt: new Date() },
+      });
       const row = await prisma.otpCode.create({
         data: { invitationId, phone, codeHash, expiresAt },
       });
@@ -49,12 +70,15 @@ export function defaultOtpDeps(): OtpFlowDeps {
       return row;
     },
     incrementAttempts: async (id) => {
-      const updated = await prisma.otpCode.update({
-        where: { id },
+      // Atomic lockout (FIX I2): only increment while attempts are below the
+      // cap, so a race between concurrent verify requests can never push the
+      // counter past OTP_MAX_ATTEMPTS. Returns the number of rows updated —
+      // 0 when the OTP is already at/over the cap (i.e. locked out).
+      const updated = await prisma.otpCode.updateMany({
+        where: { id, attempts: { lt: OTP_MAX_ATTEMPTS } },
         data: { attempts: { increment: 1 } },
-        select: { attempts: true },
       });
-      return updated.attempts;
+      return updated.count;
     },
     consumeOtp: async (id) => {
       await prisma.otpCode.update({
@@ -62,10 +86,7 @@ export function defaultOtpDeps(): OtpFlowDeps {
         data: { consumedAt: new Date() },
       });
     },
-    rateLimiter: createPhoneRateLimiter({
-      limit: OTP_RATE_LIMIT_PER_HOUR,
-      windowMs: 60 * 60 * 1000,
-    }),
+    rateLimiter: sharedRateLimiter,
     sendSms: sendOtpSms,
     gen: baseGen(),
     otpTtlMs,

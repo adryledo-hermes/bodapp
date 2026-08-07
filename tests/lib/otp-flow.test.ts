@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   OTP_MAX_ATTEMPTS,
   createPhoneRateLimiter,
@@ -14,6 +14,10 @@ import {
   type OtpFlowDeps,
   type PendingOtp,
 } from "../../src/lib/otp-flow";
+
+// The FIX C1 test loads otp-flow-db (which imports the real Prisma client).
+// Stub the db module so no DATABASE_URL / real client is needed here.
+vi.mock("@/lib/db", () => ({ prisma: {}, adapter: {} }));
 
 /**
  * In-memory control-plane harness for the OTP flow. Replaces Prisma + Twilio
@@ -200,5 +204,65 @@ describe("verifyOtpRequest — code verification", () => {
       h.deps
     );
     expect(res.ok).toBe(false);
+  });
+});
+
+describe("verifyOtpRequest — security lockout (M4)", () => {
+  const PHONE = "+34612345678";
+
+  it("locks out after OTP_MAX_ATTEMPTS (3) wrong guesses — door stays closed even for the correct code", async () => {
+    const h = makeDeps();
+    h.otps.set(PHONE, {
+      id: PHONE,
+      codeHash: hashOtp("123456"),
+      attempts: 0,
+    });
+    for (let i = 0; i < OTP_MAX_ATTEMPTS; i++) {
+      const res = await verifyOtpRequest("inv-1", PHONE, "000000", h.deps);
+      expect(res.ok).toBe(false);
+    }
+    // Exactly 3 increments recorded, never more.
+    expect(h.attempts.get(PHONE)).toBe(OTP_MAX_ATTEMPTS);
+    // Even the correct code is now rejected: lockout closes the door.
+    const blocked = await verifyOtpRequest("inv-1", PHONE, "123456", h.deps);
+    expect(blocked.ok).toBe(false);
+  });
+
+  it("rejects an already-consumed OTP on reuse", async () => {
+    const h = makeDeps();
+    h.otps.set(PHONE, {
+      id: PHONE,
+      codeHash: hashOtp("123456"),
+      attempts: 0,
+    });
+    const first = await verifyOtpRequest("inv-1", PHONE, "123456", h.deps);
+    expect(first.ok).toBe(true);
+    // Consumed rows are excluded from the pending lookup → reuse rejected.
+    const reuse = await verifyOtpRequest("inv-1", PHONE, "123456", h.deps);
+    expect(reuse.ok).toBe(false);
+  });
+
+  it("rejects an expired OTP (pending lookup excludes expired rows)", async () => {
+    // The DB-backed findPendingOtp filters out expired rows (expiresAt > now),
+    // so an expired OTP is indistinguishable from "no OTP" — and rejected.
+    const h = makeDeps({
+      findPendingOtp: async () => null,
+    });
+    h.otps.set(PHONE, {
+      id: PHONE,
+      codeHash: hashOtp("123456"),
+      attempts: 0,
+    });
+    const res = await verifyOtpRequest("inv-1", PHONE, "123456", h.deps);
+    expect(res.ok).toBe(false);
+  });
+});
+
+describe("defaultOtpDeps — persistent rate limiter singleton (FIX C1)", () => {
+  it("shares ONE module-level rate limiter across every deps build", async () => {
+    // Loaded dynamically (not at module top) so the db mock above is in
+    // place first; the module itself stubs the Prisma client.
+    const { defaultOtpDeps } = await import("../../src/lib/otp-flow-db");
+    expect(defaultOtpDeps().rateLimiter).toBe(defaultOtpDeps().rateLimiter);
   });
 });

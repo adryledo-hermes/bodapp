@@ -35,12 +35,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: outcome.error }, { status: 400 });
   }
 
-  // Resolve the invitation's ids to scope the access cookie to this invitation.
+  // Resolve the invitation's ids to scope the access cookie. verifyOtpRequest
+  // only succeeds when the invitation exists, so it is safe to use its ids
+  // directly — fail closed rather than silently issuing a bogus-scoped cookie.
   const invitation = await findInvitationByToken(token);
+  if (!invitation) {
+    return NextResponse.json({ error: "invalid token" }, { status: 400 });
+  }
 
   await createInvitationAccess({
-    invitationId: invitation ? invitation.id : token,
-    weddingId: invitation ? invitation.weddingId : "",
+    invitationId: invitation.id,
+    weddingId: invitation.weddingId,
     phone,
   });
 

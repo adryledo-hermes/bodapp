@@ -11,7 +11,18 @@ const COOKIE_NAME = "invitation_access";
 const MAX_AGE = 30 * 60; // 30 minutes
 
 function getSecret(): Uint8Array {
-  const secret = process.env.SESSION_SECRET || "dev-insecure-secret-change-me";
+  const secret = process.env.SESSION_SECRET;
+  // Fail closed in production (FIX I1): this guards a public gate, so a missing
+  // SESSION_SECRET must never fall back to a predictable dev value there.
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "SESSION_SECRET is required in production (invitation access JWT).",
+      );
+    }
+    // Dev/test only: keep a stable fallback so local runs and tests work.
+    return new TextEncoder().encode("dev-insecure-secret-change-me");
+  }
   return new TextEncoder().encode(secret);
 }
 
