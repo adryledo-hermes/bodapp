@@ -121,9 +121,17 @@ export default function SeatingCanvas({
       })
     );
 
-    const res = await send(`/api/tables/${targetTableId}/guests`, "POST", {
-      guestId,
-    });
+    let res: Response;
+    try {
+      res = await send(`/api/tables/${targetTableId}/guests`, "POST", {
+        guestId,
+      });
+    } catch {
+      setTables(prevTables);
+      setUnassigned(prevUnassigned);
+      flash("err", "Error de red: no se pudo guardar");
+      return;
+    }
     if (!res.ok) {
       setTables(prevTables);
       setUnassigned(prevUnassigned);
@@ -148,9 +156,17 @@ export default function SeatingCanvas({
     );
     setUnassigned((prev) => [...prev, rel.guest]);
 
-    const res = await send(`/api/tables/${rel.fromTableId}/guests`, "DELETE", {
-      guestId,
-    });
+    let res: Response;
+    try {
+      res = await send(`/api/tables/${rel.fromTableId}/guests`, "DELETE", {
+        guestId,
+      });
+    } catch {
+      setTables(prevTables);
+      setUnassigned(prevUnassigned);
+      flash("err", "Error de red: no se pudo guardar");
+      return;
+    }
     if (!res.ok) {
       setTables(prevTables);
       setUnassigned(prevUnassigned);
@@ -165,12 +181,19 @@ export default function SeatingCanvas({
     }
     setSaving(true);
     const pos = defaultPosition(tables.length);
-    const res = await send("/api/tables", "POST", {
-      name: newName.trim(),
-      shape: newShape,
-      capacity: newCapacity,
-      ...pos,
-    });
+    let res: Response;
+    try {
+      res = await send("/api/tables", "POST", {
+        name: newName.trim(),
+        shape: newShape,
+        capacity: newCapacity,
+        ...pos,
+      });
+    } catch {
+      setSaving(false);
+      flash("err", "Error de red: no se pudo guardar");
+      return;
+    }
     if (!res.ok) {
       setSaving(false);
       flash("err", "No se pudo crear la mesa.");
@@ -205,7 +228,15 @@ export default function SeatingCanvas({
     setTables((prev) => prev.filter((t) => t.id !== tableId));
     setUnassigned((prev) => [...prev, ...table.guests]);
 
-    const res = await send(`/api/tables/${tableId}`, "DELETE");
+    let res: Response;
+    try {
+      res = await send(`/api/tables/${tableId}`, "DELETE");
+    } catch {
+      setTables(prevTables);
+      setUnassigned(prevUnassigned);
+      flash("err", "Error de red: no se pudo guardar");
+      return;
+    }
     if (!res.ok) {
       setTables(prevTables);
       setUnassigned(prevUnassigned);
@@ -215,7 +246,14 @@ export default function SeatingCanvas({
 
   async function patchTable(tableId: string, patch: Record<string, unknown>) {
     const prevTables = tables;
-    const res = await send(`/api/tables/${tableId}`, "PATCH", patch);
+    let res: Response;
+    try {
+      res = await send(`/api/tables/${tableId}`, "PATCH", patch);
+    } catch {
+      setTables(prevTables);
+      flash("err", "Error de red: no se pudo guardar");
+      return;
+    }
     if (!res.ok) {
       setTables(prevTables);
       flash("err", "No se pudo guardar el cambio de la mesa.");

@@ -88,7 +88,11 @@ export async function DELETE(req: Request, { params }: Ctx) {
 
   // Guest must belong to this wedding, and must currently be seated here.
   const guest = await prisma.guest.findFirst({
-    where: { id: parsed.data.guestId, weddingId: auth.session.weddingId },
+    where: {
+      id: parsed.data.guestId,
+      weddingId: auth.session.weddingId,
+      tableId: id,
+    },
   });
   if (!guest) {
     return NextResponse.json({ error: "guest not found" }, { status: 404 });
