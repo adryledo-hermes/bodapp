@@ -1,3 +1,5 @@
+name: bodapp
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -7,10 +9,50 @@ services:
       POSTGRES_USER: bodapp
       POSTGRES_PASSWORD: bodapp
       POSTGRES_DB: bodapp
+    # Bind only to localhost — the app reaches it over the compose network,
+    # so the DB is never exposed to the internet.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - bodapp-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bodapp -d bodapp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot migration runner: applies prisma/migrations then exits.
+  # First boot: `docker compose run --rm migrate`
+  # (runs `npx prisma migrate deploy` — idempotent, safe to run repeatedly).
+  migrate:
+    build: .
+    restart: "no"
+    env_file: .env
+    environment:
+      # Point the app/migrate at the compose `postgres` service host.
+      DATABASE_URL: postgresql://bodapp:bodapp@postgres:5432/bodapp?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["sh", "-c", "npx --no-install prisma migrate deploy"]
+
+  app:
+    build: .
+    container_name: bodapp-app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Postgres host is the compose service name, not localhost.
+      DATABASE_URL: postgresql://bodapp:bodapp@postgres:5432/bodapp?schema=public
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "3000:3000"
+    volumes:
+      # Photo storage: host dir ./storage → /app/storage (must be writable by
+      # the container's non-root user, uid 1001 — see deploy/hetzner-setup.md).
+      - ./storage:/app/storage
 
 volumes:
   bodapp-pgdata:

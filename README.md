@@ -33,4 +33,22 @@ npm run lint
 npm run typecheck
 ```
 
-Deployment instructions: `deploy/hetzner-setup.md`.
+Deployment instructions: [`deploy/hetzner-setup.md`](deploy/hetzner-setup.md).
+
+## Deploy (Docker Compose on Hetzner VPS)
+
+- **Runbook:** [`deploy/hetzner-setup.md`](deploy/hetzner-setup.md)
+- **Image:** multi-stage `Dockerfile` — `node:20-alpine`, webpack build
+  (`next build --webpack`), Next.js standalone `server.js`, runs as non-root,
+  serves HTTP on port 3000.
+- **Compose:** `docker-compose.yml` stacks `postgres` (healthchecked) +
+  `migrate` (one-shot) + `app`; photos mount `./storage:/app/storage`.
+
+```bash
+cp .env.example .env          # fill real values (see runbook Step 4)
+mkdir -p storage/photos && sudo chown -R 1001:1001 storage
+docker compose up -d --build
+docker compose run --rm migrate       # apply prisma/migrations
+docker compose run --rm app npx --no-install prisma db seed   # optional demo couple
+```
+
