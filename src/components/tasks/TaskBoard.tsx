@@ -283,10 +283,14 @@ export default function TaskBoard({
     }
     setSeeding(false);
     // Refresh from the server so the board reflects the newly seeded rows.
-    const list = await fetch("/api/tasks");
-    if (list.ok) {
-      const { tasks: fresh } = await list.json();
-      setTasks(fresh.map(toCard));
+    try {
+      const list = await fetch("/api/tasks");
+      if (list.ok) {
+        const { tasks: fresh } = await list.json();
+        setTasks(fresh.map(toCard));
+      }
+    } catch {
+      flash("ok", "Checklist añadida; recarga la página si no ves las tareas");
     }
   }
 
@@ -344,17 +348,7 @@ export default function TaskBoard({
               disabled={seeding}
               className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
             >
-              {seeding ? "Cargando…" : "📋 Cargar checklist de boda"}
-            </button>
-          )}
-          {tasks.length > 0 && (
-            <button
-              onClick={seedTasks}
-              disabled={seeding}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-              title="Re-añadir la checklist (no duplica)"
-            >
-              {seeding ? "Cargando…" : "📋 Añadir checklist"}
+              {seeding ? "Cargando…" : "📋 Añadir checklist de boda"}
             </button>
           )}
           <button
