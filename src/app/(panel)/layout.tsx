@@ -1,6 +1,7 @@
 const links = [
   { href: "/guests", label: "Invitados" },
   { href: "/mesas", label: "Mesas" },
+  { href: "/decoracion", label: "Decoración" },
   { href: "/tasks", label: "Tareas" },
   { href: "/invitation", label: "Invitación" },
 ];
