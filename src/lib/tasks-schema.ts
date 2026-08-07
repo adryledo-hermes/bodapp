@@ -28,6 +28,7 @@ export const taskUpdateSchema = z.object({
   category: categoryEnum.optional(),
   priority: priorityEnum.optional(),
   status: statusEnum.optional(),
+  assigneeId: z.string().optional().nullable(),
   dueDate: dateField,
   description: z.string().trim().max(2000).optional().nullable(),
   notes: z.string().trim().max(4000).optional().nullable(),

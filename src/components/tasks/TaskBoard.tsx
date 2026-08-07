@@ -37,6 +37,7 @@ interface FormState {
   title: string;
   category: TaskCategory;
   priority: TaskPriority;
+  status: TaskStatus;
   dueDate: string;
   description: string;
 }
@@ -45,6 +46,7 @@ const emptyForm: FormState = {
   title: "",
   category: "legal",
   priority: "medium",
+  status: "todo",
   dueDate: "",
   description: "",
 };
@@ -208,6 +210,7 @@ export default function TaskBoard({
       title: editForm.title.trim(),
       category: editForm.category,
       priority: editForm.priority,
+      status: editForm.status,
       dueDate: editForm.dueDate || null,
       description: editForm.description.trim() || null,
     };
@@ -295,6 +298,7 @@ export default function TaskBoard({
       title: task.title,
       category: task.category,
       priority: task.priority,
+      status: task.status,
       dueDate: (task.dueDate || "").slice(0, 10),
       description: task.description ?? "",
     });
@@ -464,6 +468,22 @@ export default function TaskBoard({
               {TASK_PRIORITIES.map((p) => (
                 <option key={p.value} value={p.value}>
                   {p.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-slate-500">Estado</span>
+            <select
+              value={editForm.status}
+              onChange={(e) =>
+                setEditForm({ ...editForm, status: e.target.value as TaskStatus })
+              }
+              className={inputClassName}
+            >
+              {TASK_STATUSES.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
                 </option>
               ))}
             </select>
