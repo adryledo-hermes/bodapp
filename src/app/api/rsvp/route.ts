@@ -6,11 +6,12 @@ import { allowedRsvpTransitions, normalizeRsvpInput } from "@/lib/rsvp";
 import { loadPublicInvitationView } from "@/lib/invitation-public-db";
 
 // POST /api/rsvp — PUBLIC but gated by the short-lived `invitation_access`
-// cookie (NOT the user panel session). The cookie's invitationId/weddingId are
-// the ONLY source of authorization here: the request body never carries a
-// token, so a guest can never update another invitation even by guessing URLs.
-// All guests matching the invitation's acceptedPhones (for its own wedding)
-// are updated together — a family/couple invitation RSVPs as one unit.
+// cookie (NOT the user panel session). The cookie's invitationId/weddingId/
+// phone are the ONLY source of authorization here: the request body never
+// carries a token, so a guest can never update another invitation even by
+// guessing URLs. Only the Guest row(s) whose phone matches the authenticated
+// phone are updated — a family/couple invitation does NOT clobber every
+// member's allergies/music with the first invitee's values (FIX I-1).
 export async function POST(req: Request) {
   const access = await getInvitationAccess();
   if (!access) {
@@ -41,10 +42,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
+  // Update ONLY the authenticated phone's guest row(s). `access.phone` is the
+  // normalized phone cookie was issued for — never a body value. This prevents
+  // a family/couple invitation from overwriting every member's allergies/music
+  // with the submitting guest's values (FIX I-1).
   await prisma.guest.updateMany({
     where: {
       weddingId: invitation.weddingId,
-      phone: { in: invitation.acceptedPhones },
+      phone: access.phone,
     },
     data: {
       rsvpStatus: rsvp.rsvpStatus,
@@ -53,6 +58,11 @@ export async function POST(req: Request) {
     },
   });
 
+  // Return the updated view so the client can re-render the saved status and
+  // preferences without a full reload.
   const view = await loadPublicInvitationView(invitation.id);
+  if (!view) {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
   return NextResponse.json({ ok: true, view });
 }

@@ -32,7 +32,11 @@ function textToList(text: string): string[] {
  * so arbitrary DB content can never inject CSS.
  */
 export default function InvitationPage({ view }: InvitationPageProps) {
-  const { content, wedding, invitees, greeting, bankAccount } = view;
+  // FIX I-2: keep a local copy of the view so the saved status + preferences
+  // update immediately after submit using the POST response, without a full
+  // reload. Seeded from server props; refreshed from the returned `view`.
+  const [currentView, setCurrentView] = useState<InvitationView>(view);
+  const { content, wedding, invitees, greeting, bankAccount } = currentView;
 
   const primary = isValidHexColor(content.colors.primary)
     ? content.colors.primary
@@ -88,6 +92,11 @@ export default function InvitationPage({ view }: InvitationPageProps) {
             data.error || "No se pudo guardar tu respuesta. Inténtalo de nuevo.",
         });
         return;
+      }
+      // FIX I-2: reflect the saved status + preferences immediately using the
+      // updated view returned by the API (no full reload / stale props).
+      if (data.view) {
+        setCurrentView(data.view);
       }
       setMessage({
         kind: "success",
