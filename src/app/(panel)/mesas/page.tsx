@@ -1,0 +1,69 @@
+import { redirect } from "next/navigation";
+import { prisma } from "@/lib/db";
+import { requireSession, tenantWhere } from "@/lib/auth-guard";
+import SeatingCanvas from "@/components/seating/SeatingCanvas";
+import type { SeatingGuest, SeatTable } from "@/lib/seating";
+
+export const dynamic = "force-dynamic";
+
+type GuestRow = {
+  id: string;
+  fullName: string;
+  alias: string | null;
+  from: { relationType: string; guestAId: string; guestBId: string }[];
+  to: { relationType: string; guestAId: string; guestBId: string }[];
+};
+
+// Collapse a guest's from/to relation edges into the flat array the canvas uses
+// for conflict detection.
+function toSeatingGuest(g: GuestRow): SeatingGuest {
+  return {
+    id: g.id,
+    fullName: g.fullName,
+    alias: g.alias,
+    relations: [...g.from, ...g.to],
+  };
+}
+
+export default async function MesasPage() {
+  const auth = await requireSession();
+  if (auth.error) redirect("/login");
+
+  const tables = await prisma.table.findMany({
+    where: tenantWhere(auth.session),
+    include: { guests: { include: { from: true, to: true } } },
+    orderBy: { name: "asc" },
+  });
+
+  const unassignedGuests = await prisma.guest.findMany({
+    where: tenantWhere(auth.session, { tableId: null }),
+    include: { from: true, to: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const seatTables: SeatTable[] = tables.map((t) => ({
+    id: t.id,
+    name: t.name,
+    shape: t.shape,
+    capacity: t.capacity,
+    positionX: t.positionX,
+    positionY: t.positionY,
+    guests: t.guests.map(toSeatingGuest),
+  }));
+
+  return (
+    <main className="mx-auto max-w-7xl p-6">
+      <header className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-900">Mesas</h1>
+        <p className="text-sm text-slate-500">
+          Arrastra los invitados a las mesas. Se avisa si una mesa se llena o si
+          dos personas que no se llevan bien comparten mesa.
+        </p>
+      </header>
+      <SeatingCanvas
+        tables={seatTables}
+        guests={unassignedGuests.map(toSeatingGuest)}
+      />
+    </main>
+  );
+}
