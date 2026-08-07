@@ -6,12 +6,16 @@ import {
   DEFAULT_TEMPLATE_VERSION,
   normalizeTemplateContent,
 } from "@/lib/invitation";
+import { getLocale } from "@/lib/locale-server";
+import { translate } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
 export default async function InvitacionPage() {
   const auth = await requireSession();
   if (auth.error) redirect("/login");
+
+  const locale = await getLocale();
 
   const [template, wedding] = await Promise.all([
     prisma.invitationTemplate.findFirst({
@@ -29,17 +33,18 @@ export default async function InvitacionPage() {
   return (
     <main className="mx-auto max-w-7xl p-6">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Invitación</h1>
+        <h1 className="text-2xl font-bold text-slate-900">
+          {translate(locale, "p.invitacion.title")}
+        </h1>
         <p className="text-sm text-slate-500">
-          Personaliza el texto y los colores de vuestra invitación y añade
-          vuestra cuenta bancaria para los regalos. Cada vez que publiques se
-          creará una nueva versión de la plantilla.
+          {translate(locale, "p.invitacion.subtitle")}
         </p>
       </header>
       <TemplateEditor
         initialContent={content}
         initialVersion={template?.version ?? DEFAULT_TEMPLATE_VERSION}
         initialBankAccount={wedding?.bankAccount ?? ""}
+        locale={locale}
       />
     </main>
   );

@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { translate, type Locale } from "@/lib/i18n";
 
 interface OtpChallengeProps {
   token: string;
+  locale: Locale;
 }
 
 /**
@@ -13,7 +15,7 @@ interface OtpChallengeProps {
  * server issues the httpOnly `invitation_access` cookie, so we refresh the
  * route to let the server page re-render with access granted.
  */
-export default function OtpChallenge({ token }: OtpChallengeProps) {
+export default function OtpChallenge({ token, locale }: OtpChallengeProps) {
   const router = useRouter();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -21,6 +23,8 @@ export default function OtpChallenge({ token }: OtpChallengeProps) {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const t = (key: string) => translate(locale, key);
 
   async function handleRequestCode(e: React.FormEvent) {
     e.preventDefault();
@@ -34,14 +38,12 @@ export default function OtpChallenge({ token }: OtpChallengeProps) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(
-          data.error || "No se pudo enviar el código. Inténtalo de nuevo."
-        );
+        setError(data.error || t("otp.errSend"));
         return;
       }
       setStep(2);
     } catch {
-      setError("Error de red. Inténtalo de nuevo.");
+      setError(t("otp.errNetwork"));
     } finally {
       setLoading(false);
     }
@@ -59,15 +61,13 @@ export default function OtpChallenge({ token }: OtpChallengeProps) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(
-          data.error || "Código incorrecto. Vuelve a intentarlo."
-        );
+        setError(data.error || t("otp.errCode"));
         return;
       }
       // Cookie is set → re-render the server page to show access granted.
       router.refresh();
     } catch {
-      setError("Error de red. Inténtalo de nuevo.");
+      setError(t("otp.errNetwork"));
     } finally {
       setLoading(false);
     }
@@ -81,7 +81,7 @@ export default function OtpChallenge({ token }: OtpChallengeProps) {
       {step === 1 ? (
         <form onSubmit={handleRequestCode} className="flex flex-col gap-4">
           <label className="block text-sm font-medium text-slate-700">
-            Tu teléfono
+            {t("otp.yourPhone")}
             <input
               type="tel"
               inputMode="tel"
@@ -98,16 +98,14 @@ export default function OtpChallenge({ token }: OtpChallengeProps) {
             disabled={loading}
             className="rounded-lg bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
           >
-            {loading ? "Enviando..." : "Enviar código"}
+            {loading ? t("otp.sending") : t("otp.sendCode")}
           </button>
         </form>
       ) : (
         <form onSubmit={handleVerify} className="flex flex-col gap-4">
-          <p className="text-sm text-slate-500">
-            Te hemos enviado un código de 6 dígitos por SMS.
-          </p>
+          <p className="text-sm text-slate-500">{t("otp.sentMsg")}</p>
           <label className="block text-sm font-medium text-slate-700">
-            Código
+            {t("otp.codeLabel")}
             <input
               type="text"
               inputMode="numeric"
@@ -126,14 +124,14 @@ export default function OtpChallenge({ token }: OtpChallengeProps) {
             disabled={loading}
             className="rounded-lg bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
           >
-            {loading ? "Verificando..." : "Verificar"}
+            {loading ? t("otp.verifying") : t("otp.verify")}
           </button>
           <button
             type="button"
             onClick={() => setStep(1)}
             className="text-sm text-slate-500 underline hover:text-slate-700"
           >
-            Cambiar teléfono
+            {t("otp.changePhone")}
           </button>
         </form>
       )}

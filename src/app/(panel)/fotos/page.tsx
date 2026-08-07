@@ -2,12 +2,16 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireSession, tenantWhere } from "@/lib/auth-guard";
 import PhotoGallery, { type PhotoItem } from "@/components/photos/PhotoGallery";
+import { getLocale } from "@/lib/locale-server";
+import { translate } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
 export default async function FotosPage() {
   const auth = await requireSession();
   if (auth.error) redirect("/login");
+
+  const locale = await getLocale();
 
   const photos = await prisma.photo.findMany({
     where: tenantWhere(auth.session),
@@ -24,13 +28,14 @@ export default async function FotosPage() {
   return (
     <main className="mx-auto max-w-6xl p-6">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Fotos</h1>
+        <h1 className="text-2xl font-bold text-slate-900">
+          {translate(locale, "p.fotos.title")}
+        </h1>
         <p className="text-sm text-slate-500">
-          Sube las fotos de la pareja (compromiso, boda…) para mostrarlas en la
-          galería.
+          {translate(locale, "p.fotos.subtitle")}
         </p>
       </header>
-      <PhotoGallery photos={rows} />
+      <PhotoGallery photos={rows} locale={locale} />
     </main>
   );
 }

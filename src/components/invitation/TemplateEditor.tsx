@@ -6,11 +6,13 @@ import {
   isValidHexColor,
   type TemplateContent,
 } from "@/lib/invitation";
+import { translate, type Locale } from "@/lib/i18n";
 
 interface TemplateEditorProps {
   initialContent: TemplateContent;
   initialVersion: number;
   initialBankAccount: string;
+  locale: Locale;
 }
 
 interface DraftState {
@@ -49,6 +51,7 @@ export default function TemplateEditor({
   initialContent,
   initialVersion,
   initialBankAccount,
+  locale,
 }: TemplateEditorProps) {
   const [draft, setDraft] = useState<DraftState>(() =>
     toDraft(initialContent, initialBankAccount)
@@ -59,6 +62,9 @@ export default function TemplateEditor({
     type: "success" | "error";
     text: string;
   } | null>(null);
+
+  const t = (key: string, vars?: Record<string, string | number>) =>
+    translate(locale, key, vars);
 
   const set = (key: keyof DraftState, value: string) =>
     setDraft((d) => ({ ...d, [key]: value }));
@@ -88,20 +94,20 @@ export default function TemplateEditor({
         const data = await res.json().catch(() => null);
         const detail =
           data?.error === "invalid input"
-            ? "Revisa los campos del formulario."
-            : "No se ha podido guardar. Vuelve a intentarlo.";
+            ? t("tpl.errFields")
+            : t("tpl.errSave");
         throw new Error(detail);
       }
       const data = await res.json();
       setVersion(data.template?.version ?? version);
       setMessage({
         type: "success",
-        text: `Invitación guardada y publicada (versión ${data.template?.version}).`,
+        text: t("tpl.okSaved", { n: data.template?.version }),
       });
     } catch (err) {
       setMessage({
         type: "error",
-        text: err instanceof Error ? err.message : "Error al guardar.",
+        text: err instanceof Error ? err.message : t("tpl.errGeneric"),
       });
     } finally {
       setSaving(false);
@@ -114,10 +120,10 @@ export default function TemplateEditor({
       <section className="rounded-xl border border-slate-200 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-900">
-            Edita la invitación
+            {t("tpl.editTitle")}
           </h2>
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-            Versión {version}
+            {t("tpl.version", { n: version })}
           </span>
         </div>
 
@@ -125,7 +131,7 @@ export default function TemplateEditor({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelCls} htmlFor="titleA">
-                Nombre del contrayente A
+                {t("tpl.titleA")}
               </label>
               <input
                 id="titleA"
@@ -137,7 +143,7 @@ export default function TemplateEditor({
             </div>
             <div>
               <label className={labelCls} htmlFor="titleB">
-                Nombre del contrayente B
+                {t("tpl.titleB")}
               </label>
               <input
                 id="titleB"
@@ -151,7 +157,7 @@ export default function TemplateEditor({
 
           <div>
             <label className={labelCls} htmlFor="message">
-              Mensaje
+              {t("tpl.messageLabel")}
             </label>
             <textarea
               id="message"
@@ -165,7 +171,7 @@ export default function TemplateEditor({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelCls} htmlFor="date">
-                Fecha
+                {t("tpl.dateLabel")}
               </label>
               <input
                 id="date"
@@ -177,7 +183,7 @@ export default function TemplateEditor({
             </div>
             <div>
               <label className={labelCls} htmlFor="time">
-                Hora
+                {t("tpl.timeLabel")}
               </label>
               <input
                 id="time"
@@ -191,7 +197,7 @@ export default function TemplateEditor({
 
           <div>
             <label className={labelCls} htmlFor="venue">
-              Lugar / Venue
+              {t("tpl.venueLabel")}
             </label>
             <input
               id="venue"
@@ -204,7 +210,7 @@ export default function TemplateEditor({
 
           <div>
             <label className={labelCls} htmlFor="dressCode">
-              Código de vestimenta
+              {t("tpl.dressCodeLabel")}
             </label>
             <input
               id="dressCode"
@@ -217,11 +223,11 @@ export default function TemplateEditor({
 
           <div>
             <span className="mb-1 block text-sm font-medium text-slate-700">
-              Colores
+              {t("tpl.colorsLabel")}
             </span>
             <div className="flex items-center gap-4">
               <label className="flex items-center gap-2 text-sm text-slate-600">
-                Primario
+                {t("tpl.primaryLabel")}
                 <input
                   type="color"
                   value={draft.primary}
@@ -230,7 +236,7 @@ export default function TemplateEditor({
                 />
               </label>
               <label className="flex items-center gap-2 text-sm text-slate-600">
-                Acento
+                {t("tpl.accentLabel")}
                 <input
                   type="color"
                   value={draft.accent}
@@ -243,7 +249,7 @@ export default function TemplateEditor({
 
           <div>
             <label className={labelCls} htmlFor="bankAccount">
-              Cuenta bancaria (IBAN) para regalos
+              {t("tpl.bankLabel")}
             </label>
             <input
               id="bankAccount"
@@ -252,10 +258,7 @@ export default function TemplateEditor({
               onChange={(e) => set("bankAccount", e.target.value)}
               placeholder="ES00 0000 0000 0000 0000 0000"
             />
-            <p className="mt-1 text-xs text-slate-500">
-              Aparecerá en el apartado &quot;Transferencia bancaria&quot; de la
-              invitación pública.
-            </p>
+            <p className="mt-1 text-xs text-slate-500">{t("tpl.bankHelp")}</p>
           </div>
         </div>
 
@@ -279,14 +282,14 @@ export default function TemplateEditor({
             disabled={saving}
             className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {saving ? "Guardando…" : "Guardar y publicar"}
+            {saving ? t("common.saving") : t("tpl.savePublish")}
           </button>
         </div>
       </section>
 
       {/* ---- Live preview ---- */}
       <section className="rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="mb-4 text-lg font-semibold text-slate-900">Vista previa</h2>
+        <h2 className="mb-4 text-lg font-semibold text-slate-900">{t("tpl.preview")}</h2>
         {/* Defense-in-depth: only apply color values that are valid hex, else
             fall back to the safe defaults — a non-hex value can never reach the
             `style=` attribute (see HEX_COLOR_RE in @/lib/invitation). */}
@@ -312,11 +315,11 @@ export default function TemplateEditor({
               </p>
             ) : (
               <p className="mb-1 text-3xl font-bold text-slate-400">
-                Vuestros nombres
+                {t("tpl.namesFallback")}
               </p>
             )}
             <p className="mb-4 text-sm uppercase tracking-widest text-slate-600">
-              Nuestra boda
+              {t("tpl.ourWedding")}
             </p>
 
             <p className="mx-auto mb-4 max-w-md text-sm leading-relaxed">
@@ -338,7 +341,7 @@ export default function TemplateEditor({
             {draft.bankAccount && (
               <div className="mx-auto mt-5 max-w-sm rounded-lg bg-white/70 p-3 text-left">
                 <p className="text-xs font-semibold uppercase tracking-wide">
-                  🎁 Transferencia bancaria
+                  {t("tpl.bankTransfer")}
                 </p>
                 <p className="mt-1 font-mono text-sm tracking-wide">
                   {draft.bankAccount}

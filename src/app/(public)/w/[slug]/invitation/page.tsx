@@ -4,6 +4,8 @@ import { findInvitationByToken } from "@/lib/otp-flow-db";
 import { getInvitationAccess } from "@/lib/otp-session";
 import { loadPublicInvitationView } from "@/lib/invitation-public-db";
 import InvitationPage from "@/components/invite/InvitationPage";
+import { getLocale } from "@/lib/locale-server";
+import { normalizeLocale } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -32,13 +34,16 @@ export default async function InvitationRoute({
 
   const wedding = await prisma.wedding.findUnique({
     where: { slug },
-    select: { id: true },
+    select: { id: true, locale: true },
   });
   const invitation = token ? await findInvitationByToken(token) : null;
 
   if (!wedding || !invitation || invitation.weddingId !== wedding.id) {
     notFound();
   }
+
+  // Public pages default to the wedding's configured locale.
+  const locale = await getLocale(normalizeLocale(wedding.locale, "es"));
 
   // The OTP cookie must be scoped to THIS invitation + wedding; otherwise send
   // the guest back to the OTP entry to authenticate (or re-authenticate).
@@ -55,5 +60,5 @@ export default async function InvitationRoute({
   const view = await loadPublicInvitationView(invitation.id);
   if (!view) notFound();
 
-  return <InvitationPage view={view} />;
+  return <InvitationPage view={view} locale={locale} />;
 }

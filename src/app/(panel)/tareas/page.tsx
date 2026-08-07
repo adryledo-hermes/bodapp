@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { requireSession, tenantWhere } from "@/lib/auth-guard";
 import TaskBoard from "@/components/tasks/TaskBoard";
 import type { TaskCardData, TaskCategory, TaskPriority, TaskStatus } from "@/lib/tasks";
+import { getLocale } from "@/lib/locale-server";
+import { translate } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +38,8 @@ export default async function TareasPage() {
   const auth = await requireSession();
   if (auth.error) redirect("/login");
 
+  const locale = await getLocale();
+
   const tasks = await prisma.task.findMany({
     where: tenantWhere(auth.session),
     orderBy: { createdAt: "desc" },
@@ -44,14 +48,14 @@ export default async function TareasPage() {
   return (
     <main className="mx-auto max-w-7xl p-6">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Tareas</h1>
+        <h1 className="text-2xl font-bold text-slate-900">
+          {translate(locale, "p.tareas.title")}
+        </h1>
         <p className="text-sm text-slate-500">
-          Organiza las tareas de la boda en un tablero Kanban. Arrastra cada
-          tarjeta entre columnas para cambiar su estado, añade tus propias
-          tareas o carga la checklist de boda con un clic.
+          {translate(locale, "p.tareas.subtitle")}
         </p>
       </header>
-      <TaskBoard initialTasks={tasks.map(toCard)} />
+      <TaskBoard initialTasks={tasks.map(toCard)} locale={locale} />
     </main>
   );
 }

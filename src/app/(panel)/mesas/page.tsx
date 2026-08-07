@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { requireSession, tenantWhere } from "@/lib/auth-guard";
 import SeatingCanvas from "@/components/seating/SeatingCanvas";
 import type { SeatingGuest, SeatTable } from "@/lib/seating";
+import { getLocale } from "@/lib/locale-server";
+import { translate } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +31,8 @@ export default async function MesasPage() {
   const auth = await requireSession();
   if (auth.error) redirect("/login");
 
+  const locale = await getLocale();
+
   const tables = await prisma.table.findMany({
     where: tenantWhere(auth.session),
     include: { guests: { include: { from: true, to: true } } },
@@ -54,15 +58,17 @@ export default async function MesasPage() {
   return (
     <main className="mx-auto max-w-7xl p-6">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Mesas</h1>
+        <h1 className="text-2xl font-bold text-slate-900">
+          {translate(locale, "p.mesas.title")}
+        </h1>
         <p className="text-sm text-slate-500">
-          Arrastra los invitados a las mesas. Se avisa si una mesa se llena o si
-          dos personas que no se llevan bien comparten mesa.
+          {translate(locale, "p.mesas.subtitle")}
         </p>
       </header>
       <SeatingCanvas
         tables={seatTables}
         guests={unassignedGuests.map(toSeatingGuest)}
+        locale={locale}
       />
     </main>
   );

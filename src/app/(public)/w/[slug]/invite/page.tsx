@@ -4,6 +4,9 @@ import { prisma } from "@/lib/db";
 import { findInvitationByToken } from "@/lib/otp-flow-db";
 import { getInvitationAccess } from "@/lib/otp-session";
 import OtpChallenge from "@/components/invite/OtpChallenge";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
+import { getLocale } from "@/lib/locale-server";
+import { normalizeLocale, translate } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +33,7 @@ export default async function InvitePage({
   // treat both as "not found" so we never reveal invitation existence.
   const wedding = await prisma.wedding.findUnique({
     where: { slug },
-    select: { id: true, coupleNameA: true, coupleNameB: true },
+    select: { id: true, coupleNameA: true, coupleNameB: true, locale: true },
   });
   const invitation = token ? await findInvitationByToken(token) : null;
 
@@ -41,6 +44,11 @@ export default async function InvitePage({
   ) {
     notFound();
   }
+
+  // Public pages default to the wedding's configured locale (a guest cookie
+  // takes precedence if the guest has already switched language).
+  const locale = await getLocale(normalizeLocale(wedding.locale, "es"));
+  const t = (key: string) => translate(locale, key);
 
   const access = await getInvitationAccess();
   const hasAccess =
@@ -55,34 +63,32 @@ export default async function InvitePage({
   return (
     <main className="flex min-h-[80vh] flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-rose-50 p-6">
       <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+        <div className="mb-6 flex justify-end">
+          <LocaleSwitcher locale={locale} />
+        </div>
         <h1 className="text-3xl font-semibold text-slate-900">
-          {coupleNames || "Nuestra boda"}
+          {coupleNames || t("inv.ours")}
         </h1>
-        <p className="mt-2 text-slate-500">Bodapp · Invitación</p>
+        <p className="mt-2 text-slate-500">{t("inv.bodappTag")}</p>
 
         {hasAccess ? (
           <div className="mt-8 flex flex-col items-center gap-3">
             <span className="text-4xl">✔</span>
             <p className="text-lg font-medium text-slate-900">
-              Tienes acceso a tu invitación
+              {t("inv.youHaveAccess")}
             </p>
-            <p className="text-sm text-slate-500">
-              En breve podrás ver los detalles y confirmar tu asistencia.
-            </p>
+            <p className="text-sm text-slate-500">{t("inv.accessSoon")}</p>
             <Link
               href={`/w/${slug}/invitation?g=${encodeURIComponent(invitation.id)}`}
               className="mt-2 rounded-lg bg-slate-900 px-6 py-2 text-sm font-medium text-white hover:bg-slate-700"
             >
-              Ver mi invitación
+              {t("inv.viewInvitation")}
             </Link>
           </div>
         ) : (
           <div className="mt-8">
-            <p className="mb-6 text-sm text-slate-500">
-              Para ver tu invitación, confirma tu número de teléfono para
-              recibir un código por SMS.
-            </p>
-            <OtpChallenge token={invitation.id} />
+            <p className="mb-6 text-sm text-slate-500">{t("inv.otpIntro")}</p>
+            <OtpChallenge token={invitation.id} locale={locale} />
           </div>
         )}
       </div>

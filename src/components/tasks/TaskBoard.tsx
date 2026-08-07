@@ -14,6 +14,7 @@ import {
   type TaskPriority,
   type TaskCategory,
 } from "@/lib/tasks";
+import { translate, type Locale } from "@/lib/i18n";
 
 type Feedback = { kind: "ok" | "err"; text: string } | null;
 type ViewMode = "tablero" | "calendario";
@@ -51,12 +52,32 @@ const emptyForm: FormState = {
   description: "",
 };
 
+const STATUS_KEY: Record<TaskStatus, string> = {
+  todo: "task.status.todo",
+  in_progress: "task.status.in_progress",
+  done: "task.status.done",
+  blocked: "task.status.blocked",
+};
+
+const PRIORITY_KEY: Record<TaskPriority, string> = {
+  low: "task.priority.low",
+  medium: "task.priority.medium",
+  high: "task.priority.high",
+};
+
+const CATEGORY_KEY: Record<TaskCategory, string> = {
+  legal: "task.category.legal",
+  vendors: "task.category.vendors",
+  timing: "task.category.timing",
+  gifts: "task.category.gifts",
+};
+
 /** Localised short date (e.g. "12 mar 2026") or "—". */
-function formatDate(iso: string | null): string {
+function formatDate(iso: string | null, locale: Locale): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("es-ES", {
+  return d.toLocaleDateString(locale === "en" ? "en-US" : "es-ES", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -67,11 +88,14 @@ function TaskCard({
   task,
   onDelete,
   onEdit,
+  locale,
 }: {
   task: TaskCardData;
   onDelete: (id: string) => void;
   onEdit: (task: TaskCardData) => void;
+  locale: Locale;
 }) {
+  const t = (key: string) => translate(locale, key);
   const prio = priorityMeta(task.priority);
   const cat = categoryMeta(task.category);
   return (
@@ -87,13 +111,13 @@ function TaskCard({
         <span
           className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${prio.color}`}
         >
-          {prio.label}
+          {t(PRIORITY_KEY[task.priority])}
         </span>
         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
-          {cat.emoji} {cat.label}
+          {cat.emoji} {t(CATEGORY_KEY[task.category])}
         </span>
         <span className="ml-auto text-[11px] text-slate-400">
-          📅 {formatDate(task.dueDate)}
+          📅 {formatDate(task.dueDate, locale)}
         </span>
       </div>
       <p className="text-sm font-medium text-slate-800">{task.title}</p>
@@ -105,13 +129,13 @@ function TaskCard({
           onClick={() => onEdit(task)}
           className="rounded border border-slate-200 px-2 py-0.5 text-[11px] text-slate-600 hover:bg-slate-50"
         >
-          ✏️ Editar
+          {t("task.editBtn")}
         </button>
         <button
           onClick={() => onDelete(task.id)}
           className="rounded border border-slate-200 px-2 py-0.5 text-[11px] text-red-600 hover:bg-red-50"
         >
-          🗑️ Eliminar
+          {t("task.deleteBtn")}
         </button>
       </div>
     </div>
@@ -120,8 +144,10 @@ function TaskCard({
 
 export default function TaskBoard({
   initialTasks,
+  locale,
 }: {
   initialTasks: TaskCardData[];
+  locale: Locale;
 }) {
   const [tasks, setTasks] = useState<TaskCardData[]>(initialTasks);
   const [view, setView] = useState<ViewMode>("tablero");
@@ -137,6 +163,9 @@ export default function TaskBoard({
   const [editForm, setEditForm] = useState<FormState>(emptyForm);
 
   const [seeding, setSeeding] = useState(false);
+
+  const t = (key: string, vars?: Record<string, string | number>) =>
+    translate(locale, key, vars);
 
   function flash(kind: "ok" | "err", text: string) {
     setFeedback({ kind, text });
@@ -155,19 +184,19 @@ export default function TaskBoard({
       res = await send(`/api/tasks/${id}`, "PATCH", { status });
     } catch {
       setTasks(prev);
-      flash("err", "Error de red: no se pudo mover la tarea");
+      flash("err", t("common.networkError"));
       return;
     }
     if (!res.ok) {
       setTasks(prev);
-      flash("err", "No se pudo cambiar el estado. Reintenta.");
+      flash("err", t("task.errMove"));
     }
   }
 
   /** Create a task and append it server-confirmed. */
   async function createTask() {
     if (!form.title.trim()) {
-      flash("err", "Ponle un título a la tarea.");
+      flash("err", t("task.errTitle"));
       return;
     }
     setSaving(true);
@@ -182,12 +211,12 @@ export default function TaskBoard({
       });
     } catch {
       setSaving(false);
-      flash("err", "Error de red: no se pudo guardar");
+      flash("err", t("common.networkError"));
       return;
     }
     if (!res.ok) {
       setSaving(false);
-      flash("err", "No se pudo crear la tarea.");
+      flash("err", t("task.errCreate"));
       return;
     }
     const { task } = await res.json();
@@ -195,14 +224,14 @@ export default function TaskBoard({
     setForm(emptyForm);
     setShowForm(false);
     setSaving(false);
-    flash("ok", "Tarea creada.");
+    flash("ok", t("task.okCreated"));
   }
 
   /** Save inline edits via PATCH with rollback. */
   async function saveEdit() {
     if (!editing) return;
     if (!editForm.title.trim()) {
-      flash("err", "El título no puede estar vacío.");
+      flash("err", t("task.errEmptyTitle"));
       return;
     }
     const prev = tasks;
@@ -221,23 +250,23 @@ export default function TaskBoard({
       res = await send(`/api/tasks/${editing.id}`, "PATCH", patched);
     } catch {
       setTasks(prev);
-      flash("err", "Error de red: no se pudo guardar");
+      flash("err", t("common.networkError"));
       setEditing(null);
       return;
     }
     if (!res.ok) {
       setTasks(prev);
-      flash("err", "No se pudo guardar la tarea.");
+      flash("err", t("task.errSave"));
       setEditing(null);
       return;
     }
     setEditing(null);
-    flash("ok", "Tarea actualizada.");
+    flash("ok", t("task.okUpdated"));
   }
 
   /** Delete a task (optimistic) with rollback on failure. */
   async function deleteTask(id: string) {
-    if (!window.confirm("¿Eliminar esta tarea?")) return;
+    if (!window.confirm(t("task.confirmDelete"))) return;
     const prev = tasks;
     setTasks((prevList) => prevList.filter((t) => t.id !== id));
     let res: Response;
@@ -245,19 +274,19 @@ export default function TaskBoard({
       res = await send(`/api/tasks/${id}`, "DELETE");
     } catch {
       setTasks(prev);
-      flash("err", "Error de red: no se pudo eliminar");
+      flash("err", t("common.networkError"));
       return;
     }
     if (!res.ok) {
       setTasks(prev);
-      flash("err", "No se pudo eliminar la tarea.");
+      flash("err", t("task.errDelete"));
     }
   }
 
   /** Seed the canonical checklist (idempotent server-side). */
   async function seedTasks() {
     if (tasks.length > 0) {
-      if (!window.confirm("Ya hay tareas. ¿Añadir la checklist de todas formas?")) {
+      if (!window.confirm(t("task.confirmSeed"))) {
         return;
       }
     }
@@ -267,19 +296,19 @@ export default function TaskBoard({
       res = await send("/api/wedding/seed-tasks", "POST");
     } catch {
       setSeeding(false);
-      flash("err", "Error de red: no se pudo cargar la checklist");
+      flash("err", t("common.networkError"));
       return;
     }
     if (!res.ok) {
       setSeeding(false);
-      flash("err", "No se pudo cargar la checklist.");
+      flash("err", t("task.errSeed"));
       return;
     }
     const { inserted } = await res.json();
     if (inserted === 0) {
-      flash("ok", "Ya tenías tareas: no se duplicó nada.");
+      flash("ok", t("task.okSeedEmpty"));
     } else {
-      flash("ok", `Checklist cargada (${inserted} tareas).`);
+      flash("ok", t("task.okSeedLoaded", { count: inserted }));
     }
     setSeeding(false);
     // Refresh from the server so the board reflects the newly seeded rows.
@@ -290,7 +319,7 @@ export default function TaskBoard({
         setTasks(fresh.map(toCard));
       }
     } catch {
-      flash("ok", "Checklist añadida; recarga la página si no ves las tareas");
+      flash("ok", t("task.okSeedRefresh"));
     }
   }
 
@@ -338,8 +367,8 @@ export default function TaskBoard({
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="inline-flex gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1">
-          {tab("tablero", "🗂️ Tablero")}
-          {tab("calendario", "📅 Calendario")}
+          {tab("tablero", t("task.viewBoard"))}
+          {tab("calendario", t("task.viewCalendar"))}
         </div>
         <div className="flex items-center gap-2">
           {tasks.length === 0 && (
@@ -348,14 +377,14 @@ export default function TaskBoard({
               disabled={seeding}
               className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
             >
-              {seeding ? "Cargando…" : "📋 Añadir checklist de boda"}
+              {seeding ? t("task.loadingChecklist") : t("task.addChecklist")}
             </button>
           )}
           <button
             onClick={() => setShowForm((v) => !v)}
             className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
           >
-            {showForm ? "Cancelar" : "+ Añadir tarea"}
+            {showForm ? t("common.cancel") : t("task.addTask")}
           </button>
         </div>
       </div>
@@ -364,17 +393,17 @@ export default function TaskBoard({
       {showForm && (
         <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm sm:col-span-2">
-            <span className="text-slate-500">Título *</span>
+            <span className="text-slate-500">{t("task.titleLabel")}</span>
             <input
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               className={inputClassName}
-              placeholder="Contratar florista…"
+              placeholder={t("task.titlePlaceholder")}
               autoFocus
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-500">Categoría</span>
+            <span className="text-slate-500">{t("task.categoryLabel")}</span>
             <select
               value={form.category}
               onChange={(e) =>
@@ -384,13 +413,13 @@ export default function TaskBoard({
             >
               {TASK_CATEGORIES.map((c) => (
                 <option key={c.value} value={c.value}>
-                  {c.emoji} {c.label}
+                  {c.emoji} {t(CATEGORY_KEY[c.value])}
                 </option>
               ))}
             </select>
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-500">Prioridad</span>
+            <span className="text-slate-500">{t("task.priorityLabel")}</span>
             <select
               value={form.priority}
               onChange={(e) =>
@@ -400,13 +429,13 @@ export default function TaskBoard({
             >
               {TASK_PRIORITIES.map((p) => (
                 <option key={p.value} value={p.value}>
-                  {p.label}
+                  {t(PRIORITY_KEY[p.value])}
                 </option>
               ))}
             </select>
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-500">Fecha límite</span>
+            <span className="text-slate-500">{t("task.dueDateLabel")}</span>
             <input
               type="date"
               value={form.dueDate}
@@ -415,7 +444,7 @@ export default function TaskBoard({
             />
           </label>
           <label className="flex flex-col gap-1 text-sm sm:col-span-2">
-            <span className="text-slate-500">Descripción</span>
+            <span className="text-slate-500">{t("task.descriptionLabel")}</span>
             <textarea
               value={form.description}
               onChange={(e) =>
@@ -430,7 +459,7 @@ export default function TaskBoard({
             disabled={saving}
             className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
           >
-            {saving ? "Guardando…" : "Crear tarea"}
+            {saving ? t("common.saving") : t("task.createTask")}
           </button>
         </div>
       )}
@@ -439,7 +468,7 @@ export default function TaskBoard({
       {editing && (
         <div className="grid gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-4 sm:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm sm:col-span-2">
-            <span className="text-slate-500">Título *</span>
+            <span className="text-slate-500">{t("task.titleLabel")}</span>
             <input
               value={editForm.title}
               onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
@@ -448,7 +477,7 @@ export default function TaskBoard({
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-500">Prioridad</span>
+            <span className="text-slate-500">{t("task.priorityLabel")}</span>
             <select
               value={editForm.priority}
               onChange={(e) =>
@@ -461,13 +490,13 @@ export default function TaskBoard({
             >
               {TASK_PRIORITIES.map((p) => (
                 <option key={p.value} value={p.value}>
-                  {p.label}
+                  {t(PRIORITY_KEY[p.value])}
                 </option>
               ))}
             </select>
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-500">Estado</span>
+            <span className="text-slate-500">{t("task.statusLabel")}</span>
             <select
               value={editForm.status}
               onChange={(e) =>
@@ -477,13 +506,13 @@ export default function TaskBoard({
             >
               {TASK_STATUSES.map((s) => (
                 <option key={s.value} value={s.value}>
-                  {s.label}
+                  {t(STATUS_KEY[s.value])}
                 </option>
               ))}
             </select>
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-500">Fecha límite</span>
+            <span className="text-slate-500">{t("task.dueDateLabel")}</span>
             <input
               type="date"
               value={editForm.dueDate}
@@ -494,7 +523,7 @@ export default function TaskBoard({
             />
           </label>
           <label className="flex flex-col gap-1 text-sm sm:col-span-2">
-            <span className="text-slate-500">Categoría</span>
+            <span className="text-slate-500">{t("task.categoryLabel")}</span>
             <select
               value={editForm.category}
               onChange={(e) =>
@@ -507,13 +536,13 @@ export default function TaskBoard({
             >
               {TASK_CATEGORIES.map((c) => (
                 <option key={c.value} value={c.value}>
-                  {c.emoji} {c.label}
+                  {c.emoji} {t(CATEGORY_KEY[c.value])}
                 </option>
               ))}
             </select>
           </label>
           <label className="flex flex-col gap-1 text-sm sm:col-span-2">
-            <span className="text-slate-500">Descripción</span>
+            <span className="text-slate-500">{t("task.descriptionLabel")}</span>
             <textarea
               value={editForm.description}
               onChange={(e) =>
@@ -528,13 +557,13 @@ export default function TaskBoard({
               onClick={saveEdit}
               className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
             >
-              Guardar
+              {t("common.save")}
             </button>
             <button
               onClick={() => setEditing(null)}
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
             >
-              Cancelar
+              {t("common.cancel")}
             </button>
           </div>
         </div>
@@ -543,17 +572,14 @@ export default function TaskBoard({
       {/* Empty state */}
       {tasks.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 p-12 text-center text-sm text-slate-500">
-          <p className="mb-3 text-lg">🗂️ Sin tareas todavía</p>
-          <p className="mx-auto mb-4 max-w-md">
-            Carga la checklist de boda con un clic o añade tu primera tarea para
-            empezar a organizarlo todo.
-          </p>
+          <p className="mb-3 text-lg">{t("task.emptyTitle")}</p>
+          <p className="mx-auto mb-4 max-w-md">{t("task.emptyBody")}</p>
           <button
             onClick={seedTasks}
             disabled={seeding}
             className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
           >
-            {seeding ? "Cargando…" : "📋 Cargar checklist de boda"}
+            {seeding ? t("task.loadingChecklist") : t("task.loadChecklist")}
           </button>
         </div>
       ) : (
@@ -562,7 +588,7 @@ export default function TaskBoard({
           {view === "tablero" && (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
               {TASK_STATUSES.map((col) => {
-                const colTasks = sorted.filter((t) => t.status === col.value);
+                const colTasks = sorted.filter((task) => task.status === col.value);
                 return (
                   <div
                     key={col.value}
@@ -579,7 +605,7 @@ export default function TaskBoard({
                   >
                     <div className="mb-3 flex items-center justify-between px-1">
                       <span className="text-sm font-semibold text-slate-700">
-                        {col.label}
+                        {t(STATUS_KEY[col.value])}
                       </span>
                       <span className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-500">
                         {colTasks.length}
@@ -588,7 +614,7 @@ export default function TaskBoard({
                     <div className="flex min-h-[80px] flex-col gap-2">
                       {colTasks.length === 0 ? (
                         <p className="px-1 text-xs text-slate-400">
-                          Suelta aquí una tarea
+                          {t("task.dropHere")}
                         </p>
                       ) : (
                         colTasks.map((task) => (
@@ -597,6 +623,7 @@ export default function TaskBoard({
                             task={task}
                             onDelete={(id) => void deleteTask(id)}
                             onEdit={openEdit}
+                            locale={locale}
                           />
                         ))
                       )}
@@ -620,18 +647,18 @@ export default function TaskBoard({
                     className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3"
                   >
                     <span className="w-28 shrink-0 text-xs font-medium text-slate-500">
-                      {task.dueDate ? formatDate(task.dueDate) : "Sin fecha"}
+                      {task.dueDate ? formatDate(task.dueDate, locale) : t("task.noDate")}
                     </span>
                     <span
                       className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${prio.color}`}
                     >
-                      {prio.label}
+                      {t(PRIORITY_KEY[task.priority])}
                     </span>
                     <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
-                      {cat.emoji} {cat.label}
+                      {cat.emoji} {t(CATEGORY_KEY[task.category])}
                     </span>
                     <span className={`rounded-full px-2 py-0.5 text-[11px] ${st.color}`}>
-                      {st.label}
+                      {t(STATUS_KEY[task.status])}
                     </span>
                     <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800">
                       {task.title}

@@ -6,6 +6,7 @@ import DecorationLayer, {
   type DecorationItem,
 } from "@/components/decorations/DecorationLayer";
 import type { SeatingGuest, SeatTable } from "@/lib/seating";
+import { translate, type Locale } from "@/lib/i18n";
 
 type ViewMode = "mesas" | "decoracion";
 
@@ -18,12 +19,16 @@ export default function DecorationsPlanner({
   tables,
   guests,
   decorations,
+  locale,
 }: {
   tables: SeatTable[];
   guests: SeatingGuest[];
   decorations: DecorationItem[];
+  locale: Locale;
 }) {
   const [mode, setMode] = useState<ViewMode>("mesas");
+
+  const t = (key: string) => translate(locale, key);
 
   const tab = (value: ViewMode, label: string) => (
     <button
@@ -41,14 +46,14 @@ export default function DecorationsPlanner({
   return (
     <div className="space-y-5">
       <div className="inline-flex gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1">
-        {tab("mesas", "🍽️ Mesas")}
-        {tab("decoracion", "🎀 Decoración")}
+        {tab("mesas", t("decor.tabMesas"))}
+        {tab("decoracion", t("decor.tabDecoracion"))}
       </div>
 
       {mode === "mesas" ? (
-        <SeatingCanvas tables={tables} guests={guests} />
+        <SeatingCanvas tables={tables} guests={guests} locale={locale} />
       ) : (
-        <DecorationLayer tables={tables} decorations={decorations} />
+        <DecorationLayer tables={tables} decorations={decorations} locale={locale} />
       )}
     </div>
   );

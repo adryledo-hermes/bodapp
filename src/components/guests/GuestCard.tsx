@@ -2,33 +2,42 @@
 
 import { useState } from "react";
 import type { GuestCardData } from "@/lib/guest-view";
+import { translate, type Locale } from "@/lib/i18n";
 
-const rsvpStyles: Record<string, { label: string; className: string }> = {
-  pending: { label: "Pendiente", className: "bg-slate-200 text-slate-700" },
-  confirmed: { label: "Confirmado", className: "bg-green-100 text-green-800" },
-  declined: { label: "Declinó", className: "bg-red-100 text-red-800" },
-  maybe: { label: "Quizás", className: "bg-amber-100 text-amber-800" },
+const rsvpStyles: Record<string, { key: string; className: string }> = {
+  pending: { key: "guest.status.pending", className: "bg-slate-200 text-slate-700" },
+  confirmed: { key: "guest.status.confirmed", className: "bg-green-100 text-green-800" },
+  declined: { key: "guest.status.declined", className: "bg-red-100 text-red-800" },
+  maybe: { key: "guest.status.maybe", className: "bg-amber-100 text-amber-800" },
 };
 
-function rsvpChip(status: string) {
+function rsvpChip(status: string, locale: Locale) {
   const cfg = rsvpStyles[status] ?? rsvpStyles.pending;
   return (
     <span
       className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${cfg.className}`}
     >
-      {cfg.label}
+      {translate(locale, cfg.key)}
     </span>
   );
 }
 
-export default function GuestCard({ guest }: { guest: GuestCardData }) {
+export default function GuestCard({
+  guest,
+  locale,
+}: {
+  guest: GuestCardData;
+  locale: Locale;
+}) {
   const [flipped, setFlipped] = useState(false);
+
+  const t = (key: string) => translate(locale, key);
 
   return (
     <button
       type="button"
       onClick={() => setFlipped((f) => !f)}
-      aria-label={`${guest.fullName}${flipped ? " — volver" : " — ver más"}`}
+      aria-label={`${guest.fullName}${flipped ? t("guest.tapBack") : t("guest.tapMore")}`}
       className="group block w-full text-left [perspective:1200px] focus:outline-none"
     >
       <div
@@ -50,7 +59,7 @@ export default function GuestCard({ guest }: { guest: GuestCardData }) {
             </p>
           )}
 
-          <div className="mt-3">{rsvpChip(guest.rsvpStatus)}</div>
+          <div className="mt-3">{rsvpChip(guest.rsvpStatus, locale)}</div>
 
           {guest.allergies.length > 0 && (
             <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
@@ -77,7 +86,7 @@ export default function GuestCard({ guest }: { guest: GuestCardData }) {
           )}
 
           <p className="absolute bottom-3 text-[11px] text-slate-400">
-            tap para ver más ↗
+            {t("guest.flipHint")}
           </p>
         </div>
 
@@ -94,10 +103,10 @@ export default function GuestCard({ guest }: { guest: GuestCardData }) {
             <p>📞 {guest.phone}</p>
             {guest.plusOneAllowed ? (
               <p className="text-green-700">
-                ➕ Acompañante: {guest.plusOneName || "sí"}
+                ➕ {t("guest.plusOne")} {guest.plusOneName || t("guest.plusOneYes")}
               </p>
             ) : (
-              <p className="text-slate-500">Sin acompañante</p>
+              <p className="text-slate-500">{t("guest.noPlusOne")}</p>
             )}
             {guest.notes && (
               <p className="line-clamp-3 italic text-slate-500">
@@ -109,7 +118,7 @@ export default function GuestCard({ guest }: { guest: GuestCardData }) {
           </div>
 
           <p className="mt-auto text-center text-[11px] text-indigo-400">
-            volver ↺
+            {t("guest.back")}
           </p>
         </div>
       </div>

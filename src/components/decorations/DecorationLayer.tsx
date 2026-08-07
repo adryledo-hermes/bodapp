@@ -9,6 +9,7 @@ import {
   type DecorationKind,
 } from "@/lib/decorations";
 import { parseTableShape, type SeatTable } from "@/lib/seating";
+import { plural, translate, type Locale } from "@/lib/i18n";
 
 /**
  * A decoration row as the client needs it (matches the Prisma scalar output).
@@ -51,6 +52,14 @@ function positionFromEvent(
   };
 }
 
+const KIND_KEY: Record<DecorationKind, string> = {
+  centerpiece: "decor.kind.centerpiece",
+  giftTable: "decor.kind.giftTable",
+  photoWall: "decor.kind.photoWall",
+  danceFloor: "decor.kind.danceFloor",
+  other: "decor.kind.other",
+};
+
 /**
  * The decoration & gift placement layer: shows tables as static background
  * shapes and lets the couple place/move decoration zones on top of them.
@@ -58,9 +67,11 @@ function positionFromEvent(
 export default function DecorationLayer({
   tables,
   decorations: initialDecorations,
+  locale,
 }: {
   tables: SeatTable[];
   decorations: DecorationItem[];
+  locale: Locale;
 }) {
   const [decorations, setDecorations] = useState<DecorationItem[]>(
     initialDecorations.map((d) => {
@@ -75,6 +86,10 @@ export default function DecorationLayer({
   const [newKind, setNewKind] = useState<DecorationKind>("centerpiece");
   const [newLabel, setNewLabel] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const t = (key: string, vars?: Record<string, string | number>) =>
+    translate(locale, key, vars);
+  const pl = (key: string, n: number) => plural(locale, key, n);
 
   function flash(kind: "ok" | "err", text: string) {
     setFeedback({ kind, text });
@@ -92,12 +107,12 @@ export default function DecorationLayer({
       });
     } catch {
       setSaving(false);
-      flash("err", "Error de red: no se pudo guardar");
+      flash("err", t("common.networkError"));
       return;
     }
     if (!res.ok) {
       setSaving(false);
-      flash("err", "No se pudo añadir el elemento.");
+      flash("err", t("decor.errAdd"));
       return;
     }
     const { decoration } = await res.json();
@@ -110,7 +125,7 @@ export default function DecorationLayer({
     setNewLabel("");
     setShowForm(false);
     setSaving(false);
-    flash("ok", "Elemento añadido.");
+    flash("ok", t("decor.okAdded"));
   }
 
   async function removeDecoration(id: string) {
@@ -121,12 +136,12 @@ export default function DecorationLayer({
       res = await send(`/api/decorations/${id}`, "DELETE");
     } catch {
       setDecorations(prev);
-      flash("err", "Error de red: no se pudo guardar");
+      flash("err", t("common.networkError"));
       return;
     }
     if (!res.ok) {
       setDecorations(prev);
-      flash("err", "No se pudo eliminar el elemento.");
+      flash("err", t("decor.errDelete"));
     }
   }
 
@@ -140,12 +155,12 @@ export default function DecorationLayer({
       res = await send(`/api/decorations/${id}`, "PATCH", { positionX, positionY });
     } catch {
       setDecorations(prev);
-      flash("err", "Error de red: no se pudo guardar");
+      flash("err", t("common.networkError"));
       return;
     }
     if (!res.ok) {
       setDecorations(prev);
-      flash("err", "No se pudo guardar la posición.");
+      flash("err", t("decor.errPos"));
     }
   }
 
@@ -186,18 +201,18 @@ export default function DecorationLayer({
           onClick={() => setShowForm((v) => !v)}
           className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
         >
-          {showForm ? "Cancelar" : "+ Añadir decoración"}
+          {showForm ? t("common.cancel") : t("decor.addDecoracion")}
         </button>
         <span className="text-sm text-slate-500">
-          {decorations.length} elemento{decorations.length === 1 ? "" : "s"}{" "}
-          · arrastra para recolocar
+          {decorations.length} {pl("decor.elements", decorations.length)}{" "}
+          {t("decor.dragHint")}
         </span>
       </div>
 
       {showForm && (
         <div className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4">
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-500">Tipo</span>
+            <span className="text-slate-500">{t("decor.typeLabel")}</span>
             <select
               value={newKind}
               onChange={(e) => setNewKind(e.target.value as DecorationKind)}
@@ -205,18 +220,18 @@ export default function DecorationLayer({
             >
               {DECORATION_KIND_ORDER.map((k) => (
                 <option key={k} value={k}>
-                  {DECORATION_KINDS[k].emoji} {DECORATION_KINDS[k].label}
+                  {DECORATION_KINDS[k].emoji} {t(KIND_KEY[k])}
                 </option>
               ))}
             </select>
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-500">Etiqueta (opcional)</span>
+            <span className="text-slate-500">{t("decor.labelOptional")}</span>
             <input
               value={newLabel}
               onChange={(e) => setNewLabel(e.target.value)}
               className={`${inputClassName} w-56`}
-              placeholder="Junto al bar"
+              placeholder={t("decor.labelPlaceholder")}
             />
           </label>
           <button
@@ -224,7 +239,7 @@ export default function DecorationLayer({
             disabled={saving}
             className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
           >
-            {saving ? "Guardando…" : "Añadir"}
+            {saving ? t("common.saving") : t("common.add")}
           </button>
         </div>
       )}
@@ -260,8 +275,7 @@ export default function DecorationLayer({
 
         {decorations.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-400">
-            Aún no hay decoración. Añade centros de mesa, mesa de regalos,
-            photocall o pista de baile con el botón superior.
+            {t("decor.empty")}
           </div>
         ) : (
           decorations.map((d) => {
@@ -273,7 +287,7 @@ export default function DecorationLayer({
                 onDragStart={(e) => onDragStart(e, d.id)}
                 className="group absolute flex -translate-x-1/2 -translate-y-1/2 cursor-grab flex-col items-center rounded-xl border border-fuchsia-300 bg-white/95 px-3 py-2 shadow-md transition-colors hover:border-fuchsia-400 active:cursor-grabbing"
                 style={{ left: `${d.positionX}%`, top: `${d.positionY}%` }}
-                title="Arrastra para mover"
+                title={t("decor.dragTitle")}
               >
                 <span className="text-2xl leading-none">{meta.emoji}</span>
                 <span className="mt-1 max-w-[140px] truncate text-center text-[11px] font-medium text-slate-700">
@@ -282,7 +296,7 @@ export default function DecorationLayer({
                 <button
                   onClick={() => void removeDecoration(d.id)}
                   className="absolute -right-1.5 -top-1.5 hidden h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white hover:bg-red-500 group-hover:flex"
-                  aria-label={`Eliminar ${d.label}`}
+                  aria-label={t("decor.deleteAria", { label: d.label ?? "" })}
                 >
                   ×
                 </button>

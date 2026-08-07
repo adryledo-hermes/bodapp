@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { requireSession, tenantWhere } from "@/lib/auth-guard";
 import DecorationsPlanner from "@/components/decorations/DecorationsPlanner";
 import type { SeatingGuest, SeatTable } from "@/lib/seating";
+import { getLocale } from "@/lib/locale-server";
+import { translate } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +28,8 @@ function toSeatingGuest(g: GuestRow): SeatingGuest {
 export default async function DecoracionPage() {
   const auth = await requireSession();
   if (auth.error) redirect("/login");
+
+  const locale = await getLocale();
 
   const tables = await prisma.table.findMany({
     where: tenantWhere(auth.session),
@@ -57,11 +61,11 @@ export default async function DecoracionPage() {
   return (
     <main className="mx-auto max-w-7xl p-6">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Decoración</h1>
+        <h1 className="text-2xl font-bold text-slate-900">
+          {translate(locale, "p.decoracion.title")}
+        </h1>
         <p className="text-sm text-slate-500">
-          Coloca los espacios de decoración y regalos sobre el plano del
-          comedor: centros de mesa, mesa de regalos, photocall o pista de
-          baile. Cambia a &quot;Mesas&quot; para organizar los invitados.
+          {translate(locale, "p.decoracion.subtitle")}
         </p>
       </header>
       <DecorationsPlanner
@@ -74,6 +78,7 @@ export default async function DecoracionPage() {
           positionX: d.positionX,
           positionY: d.positionY,
         }))}
+        locale={locale}
       />
     </main>
   );

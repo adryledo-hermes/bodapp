@@ -1,5 +1,7 @@
 "use client";
 
+import { translate, type Locale } from "@/lib/i18n";
+
 /** A single invitation as surfaced to the QR panel (title + id). */
 export interface QrInvitation {
   id: string;
@@ -11,12 +13,20 @@ export interface QrInvitation {
  * The QR endpoint is the panel-authorized route /api/invitation/[id]/qr; an
  * <img> renders the preview and an <a download> lets the couple save the PNG.
  */
-export default function QrPanel({ invitations }: { invitations: QrInvitation[] }) {
+export default function QrPanel({
+  invitations,
+  locale,
+}: {
+  invitations: QrInvitation[];
+  locale: Locale;
+}) {
+  const t = (key: string, vars?: Record<string, string | number>) =>
+    translate(locale, key, vars);
+
   if (invitations.length === 0) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
-        Todavía no hay invitaciones. Crea una invitación para poder generar sus
-        códigos QR.
+        {t("qr.empty")}
       </div>
     );
   }
@@ -36,17 +46,17 @@ export default function QrPanel({ invitations }: { invitations: QrInvitation[] }
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={qrUrl}
-              alt={`Código QR de ${inv.title}`}
+              alt={t("qr.alt", { title: inv.title })}
               width={200}
               height={200}
               className="h-48 w-48 rounded-lg border border-slate-100 bg-white object-contain"
             />
             <a
               href={qrUrl}
-              download={`invitacion-qr-${inv.id}.png`}
+              download={t("qr.fileName", { id: inv.id })}
               className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
             >
-              Descargar QR
+              {t("qr.download")}
             </a>
           </li>
         );

@@ -8,6 +8,7 @@ import {
   type SeatingGuest,
   type SeatTable,
 } from "@/lib/seating";
+import { plural, translate, type Locale } from "@/lib/i18n";
 
 type Feedback = { kind: "ok" | "err"; text: string } | null;
 
@@ -49,13 +50,19 @@ function defaultPosition(index: number): { positionX: number; positionY: number 
 export default function SeatingCanvas({
   tables: initialTables,
   guests: initialGuests,
+  locale,
 }: {
   tables: SeatTable[];
   guests: SeatingGuest[];
+  locale: Locale;
 }) {
   const [tables, setTables] = useState<SeatTable[]>(initialTables);
   const [unassigned, setUnassigned] = useState<SeatingGuest[]>(initialGuests);
   const [feedback, setFeedback] = useState<Feedback>(null);
+
+  const t = (key: string, vars?: Record<string, string | number>) =>
+    translate(locale, key, vars);
+  const pl = (key: string, n: number) => plural(locale, key, n);
 
   // Add-table form
   const [showForm, setShowForm] = useState(false);
@@ -129,13 +136,13 @@ export default function SeatingCanvas({
     } catch {
       setTables(prevTables);
       setUnassigned(prevUnassigned);
-      flash("err", "Error de red: no se pudo guardar");
+      flash("err", t("common.networkError"));
       return;
     }
     if (!res.ok) {
       setTables(prevTables);
       setUnassigned(prevUnassigned);
-      flash("err", "No se pudo asignar el invitado. Reintenta.");
+      flash("err", t("seating.errAssign"));
     }
   }
 
@@ -164,19 +171,19 @@ export default function SeatingCanvas({
     } catch {
       setTables(prevTables);
       setUnassigned(prevUnassigned);
-      flash("err", "Error de red: no se pudo guardar");
+      flash("err", t("common.networkError"));
       return;
     }
     if (!res.ok) {
       setTables(prevTables);
       setUnassigned(prevUnassigned);
-      flash("err", "No se pudo liberar al invitado. Reintenta.");
+      flash("err", t("seating.errRelease"));
     }
   }
 
   async function addTable() {
     if (!newName.trim()) {
-      flash("err", "Ponle un nombre a la mesa.");
+      flash("err", t("seating.errName"));
       return;
     }
     setSaving(true);
@@ -191,12 +198,12 @@ export default function SeatingCanvas({
       });
     } catch {
       setSaving(false);
-      flash("err", "Error de red: no se pudo guardar");
+      flash("err", t("common.networkError"));
       return;
     }
     if (!res.ok) {
       setSaving(false);
-      flash("err", "No se pudo crear la mesa.");
+      flash("err", t("seating.errCreate"));
       return;
     }
     const { table } = await res.json();
@@ -216,7 +223,7 @@ export default function SeatingCanvas({
     setNewCapacity(8);
     setShowForm(false);
     setSaving(false);
-    flash("ok", "Mesa creada.");
+    flash("ok", t("seating.okCreated"));
   }
 
   async function removeTable(tableId: string) {
@@ -234,13 +241,13 @@ export default function SeatingCanvas({
     } catch {
       setTables(prevTables);
       setUnassigned(prevUnassigned);
-      flash("err", "Error de red: no se pudo guardar");
+      flash("err", t("common.networkError"));
       return;
     }
     if (!res.ok) {
       setTables(prevTables);
       setUnassigned(prevUnassigned);
-      flash("err", "No se pudo eliminar la mesa.");
+      flash("err", t("seating.errDelete"));
     }
   }
 
@@ -251,12 +258,12 @@ export default function SeatingCanvas({
       res = await send(`/api/tables/${tableId}`, "PATCH", patch);
     } catch {
       setTables(prevTables);
-      flash("err", "Error de red: no se pudo guardar");
+      flash("err", t("common.networkError"));
       return;
     }
     if (!res.ok) {
       setTables(prevTables);
-      flash("err", "No se pudo guardar el cambio de la mesa.");
+      flash("err", t("seating.errPatch"));
       return;
     }
     const { table } = await res.json();
@@ -325,18 +332,18 @@ export default function SeatingCanvas({
           onClick={() => setShowForm((v) => !v)}
           className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
         >
-          {showForm ? "Cancelar" : "+ Añadir mesa"}
+          {showForm ? t("common.cancel") : t("seating.addTable")}
         </button>
         <span className="text-sm text-slate-500">
-          {tables.length} mesa{tables.length === 1 ? "" : "s"} · {totalPlanned}{" "}
-          invitado{totalPlanned === 1 ? "" : "s"} sentado
+          {tables.length} {pl("seating.table", tables.length)} · {totalPlanned}{" "}
+          {pl("seating.seated", totalPlanned)}
         </span>
       </div>
 
       {showForm && (
         <div className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4">
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-500">Nombre</span>
+            <span className="text-slate-500">{t("seating.nameLabel")}</span>
             <input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
@@ -346,7 +353,7 @@ export default function SeatingCanvas({
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-500">Capacidad</span>
+            <span className="text-slate-500">{t("seating.capacityLabel")}</span>
             <input
               type="number"
               min={1}
@@ -358,7 +365,7 @@ export default function SeatingCanvas({
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-500">Forma</span>
+            <span className="text-slate-500">{t("seating.shapeLabel")}</span>
             <select
               value={newShape}
               onChange={(e) =>
@@ -366,8 +373,8 @@ export default function SeatingCanvas({
               }
               className={inputClassName}
             >
-              <option value="round">Redonda</option>
-              <option value="rectangle">Rectangular</option>
+              <option value="round">{t("seating.shapeRound")}</option>
+              <option value="rectangle">{t("seating.shapeRectangle")}</option>
             </select>
           </label>
           <button
@@ -375,15 +382,14 @@ export default function SeatingCanvas({
             disabled={saving}
             className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
           >
-            {saving ? "Guardando…" : "Crear mesa"}
+            {saving ? t("common.saving") : t("seating.createTable")}
           </button>
         </div>
       )}
 
       {tables.length === 0 && unassigned.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500">
-          Aún no hay mesas ni invitados. Crea una mesa para empezar a organizar
-          el comedor.
+          {t("seating.emptyAll")}
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
@@ -391,7 +397,7 @@ export default function SeatingCanvas({
           <div className="relative min-h-[560px] rounded-2xl border border-slate-200 bg-slate-50 p-6">
             {tables.length === 0 ? (
               <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-400">
-                Sin mesas todavía. Crea la primera mesa con el botón superior.
+                {t("seating.emptyCanvas")}
               </div>
             ) : (
               tables.map((table) => {
@@ -429,11 +435,11 @@ export default function SeatingCanvas({
                             }
                           }}
                           className="w-24 truncate rounded bg-transparent text-center text-sm font-semibold text-slate-800 focus:bg-white"
-                          aria-label="Nombre de la mesa"
+                          aria-label={t("seating.tableNameAria")}
                         />
                         <button
                           onClick={() => toggleShape(table.id, table.shape)}
-                          title="Cambiar forma"
+                          title={t("seating.toggleShapeTitle")}
                           className="rounded border border-slate-200 px-1.5 text-xs text-slate-500 hover:bg-slate-100"
                         >
                           {shape === "round" ? "●" : "▭"}
@@ -443,7 +449,7 @@ export default function SeatingCanvas({
                         <button
                           onClick={() => changeCapacity(table.id, -1)}
                           className="h-5 w-5 rounded border border-slate-200 hover:bg-slate-100"
-                          aria-label="Reducir capacidad"
+                          aria-label={t("seating.decreaseCapacityAria")}
                         >
                           −
                         </button>
@@ -453,7 +459,7 @@ export default function SeatingCanvas({
                         <button
                           onClick={() => changeCapacity(table.id, 1)}
                           className="h-5 w-5 rounded border border-slate-200 hover:bg-slate-100"
-                          aria-label="Aumentar capacidad"
+                          aria-label={t("seating.increaseCapacityAria")}
                         >
                           +
                         </button>
@@ -468,7 +474,7 @@ export default function SeatingCanvas({
 
                     {conflicts.length > 0 && (
                       <div className="w-full rounded-md bg-amber-100 px-2 py-1 text-center text-[11px] font-medium text-amber-800">
-                        ⚠ No se llevan bien:{" "}
+                        ⚠ {t("seating.conflictLabel")}{" "}
                         {conflicts
                           .map(
                             (c) =>
@@ -482,7 +488,7 @@ export default function SeatingCanvas({
 
                     {table.guests.length === 0 ? (
                       <span className="text-center text-[11px] text-slate-400">
-                        Suelta aquí un invitado
+                        {t("seating.dropGuest")}
                       </span>
                     ) : (
                       <div className="flex max-h-24 w-full flex-wrap content-start justify-center gap-1 overflow-y-auto">
@@ -497,7 +503,9 @@ export default function SeatingCanvas({
                             {guestLabel(g)}
                             <button
                               onClick={() => void clearGuest(g.id)}
-                              aria-label={`Quitar a ${guestLabel(g)} de la mesa`}
+                              aria-label={t("seating.removeGuestAria", {
+                                name: guestLabel(g),
+                              })}
                               className="text-indigo-400 hover:text-red-600"
                             >
                               ×
@@ -510,8 +518,8 @@ export default function SeatingCanvas({
                     <button
                       onClick={() => void removeTable(table.id)}
                       className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-slate-200 text-xs text-slate-500 hover:bg-red-500 hover:text-white"
-                      aria-label="Eliminar mesa"
-                      title="Eliminar mesa"
+                      aria-label={t("seating.deleteTableAria")}
+                      title={t("seating.deleteTableAria")}
                     >
                       ✕
                     </button>
@@ -524,11 +532,11 @@ export default function SeatingCanvas({
           {/* ---- Unassigned pool ---- */}
           <aside className="rounded-2xl border border-slate-200 bg-white p-4">
             <h2 className="mb-2 text-sm font-semibold text-slate-800">
-              Invitados sin asignar ({unassigned.length})
+              {t("seating.unassigned", { count: unassigned.length })}
             </h2>
             {unassigned.length === 0 ? (
               <p className="text-xs text-slate-400">
-                Todos los invitados tienen mesa.
+                {t("seating.allAssigned")}
               </p>
             ) : (
               <div className="flex flex-col gap-2">

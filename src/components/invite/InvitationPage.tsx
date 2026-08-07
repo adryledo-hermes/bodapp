@@ -2,15 +2,25 @@
 
 import { useState } from "react";
 import { isValidHexColor } from "@/lib/invitation";
-import { RSVP_STATUSES, type RsvpStatus } from "@/lib/rsvp";
+import { type RsvpStatus } from "@/lib/rsvp";
 import type { InvitationView } from "@/lib/invitation-public";
+import { translate, type Locale } from "@/lib/i18n";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
 
 interface InvitationPageProps {
   view: InvitationView;
+  locale: Locale;
 }
 
 const FALLBACK_PRIMARY = "#B76E79";
 const FALLBACK_ACCENT = "#F7E7CE";
+
+const STATUS_KEY: Record<RsvpStatus, string> = {
+  confirmed: "guest.status.confirmed",
+  declined: "guest.status.declined",
+  maybe: "guest.status.maybe",
+  pending: "guest.status.pending",
+};
 
 function listToText(values: string[]): string {
   return values.join(", ");
@@ -31,12 +41,15 @@ function textToList(text: string): string[] {
  * they pass isValidHexColor; otherwise the wedding's fallback palette is used
  * so arbitrary DB content can never inject CSS.
  */
-export default function InvitationPage({ view }: InvitationPageProps) {
+export default function InvitationPage({ view, locale }: InvitationPageProps) {
   // FIX I-2: keep a local copy of the view so the saved status + preferences
   // update immediately after submit using the POST response, without a full
   // reload. Seeded from server props; refreshed from the returned `view`.
   const [currentView, setCurrentView] = useState<InvitationView>(view);
   const { content, wedding, invitees, greeting, bankAccount } = currentView;
+
+  const t = (key: string, vars?: Record<string, string | number>) =>
+    translate(locale, key, vars);
 
   const primary = isValidHexColor(content.colors.primary)
     ? content.colors.primary
@@ -66,7 +79,7 @@ export default function InvitationPage({ view }: InvitationPageProps) {
   const coupleTitle =
     [content.titleA, content.titleB].filter(Boolean).join(" & ") ||
     [wedding.coupleNameA, wedding.coupleNameB].filter(Boolean).join(" & ") ||
-    "Nuestra boda";
+    t("inv.ours");
 
   const hasPlusOne = firstInvitee?.plusOneAllowed;
 
@@ -88,8 +101,7 @@ export default function InvitationPage({ view }: InvitationPageProps) {
       if (!res.ok) {
         setMessage({
           kind: "error",
-          text:
-            data.error || "No se pudo guardar tu respuesta. Inténtalo de nuevo.",
+          text: data.error || t("inv.errSave"),
         });
         return;
       }
@@ -100,12 +112,12 @@ export default function InvitationPage({ view }: InvitationPageProps) {
       }
       setMessage({
         kind: "success",
-        text: "¡Gracias! Hemos guardado tu respuesta.",
+        text: t("inv.okSaved"),
       });
     } catch {
       setMessage({
         kind: "error",
-        text: "Error de red. No se pudo guardar tu respuesta.",
+        text: t("inv.errNetwork"),
       });
     } finally {
       setSubmitting(false);
@@ -120,8 +132,6 @@ export default function InvitationPage({ view }: InvitationPageProps) {
       </p>
     ) : null;
 
-  const statusLabel = RSVP_STATUSES.find((s) => s.value === firstInvitee?.rsvpStatus)?.label;
-
   return (
     <main
       className="min-h-screen px-4 py-10 sm:px-6"
@@ -130,6 +140,9 @@ export default function InvitationPage({ view }: InvitationPageProps) {
       }}
     >
       <div className="mx-auto w-full max-w-2xl">
+        <div className="mb-4 flex justify-end">
+          <LocaleSwitcher locale={locale} />
+        </div>
         <div
           className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm"
           style={{ borderColor: `${primary}55` }}
@@ -139,7 +152,7 @@ export default function InvitationPage({ view }: InvitationPageProps) {
             style={{ backgroundColor: primary }}
           >
             <p className="text-xs uppercase tracking-[0.3em] text-white/80">
-              Invitación
+              {t("inv.invitation")}
             </p>
             <h1 className="mt-3 text-3xl font-semibold sm:text-4xl">
               {coupleTitle}
@@ -157,24 +170,21 @@ export default function InvitationPage({ view }: InvitationPageProps) {
             ) : null}
 
             <div className="grid gap-3 rounded-2xl bg-slate-50 p-5 text-center sm:grid-cols-2">
-              {detail("Fecha", content.date)}
-              {detail("Hora", content.time)}
-              {detail("Lugar", content.venue)}
-              {detail("Código de vestimenta", content.dressCode)}
+              {detail(t("inv.dateLabel"), content.date)}
+              {detail(t("inv.timeLabel"), content.time)}
+              {detail(t("inv.venueLabel"), content.venue)}
+              {detail(t("inv.dressCodeLabel"), content.dressCode)}
             </div>
 
             {bankAccount ? (
               <div className="rounded-2xl border border-slate-200 p-5">
                 <p className="text-sm font-semibold text-slate-900">
-                  🎁 Transferencia bancaria
+                  {t("inv.bankTransfer")}
                 </p>
                 <p className="mt-2 font-mono text-sm tracking-wide text-slate-700">
                   {bankAccount}
                 </p>
-                <p className="mt-2 text-xs text-slate-500">
-                  Si prefieres hacernos un regalo en metálico, puedes
-                  transferirlo a esta cuenta. ¡Gracias!
-                </p>
+                <p className="mt-2 text-xs text-slate-500">{t("inv.bankHelp")}</p>
               </div>
             ) : null}
 
@@ -193,7 +203,8 @@ export default function InvitationPage({ view }: InvitationPageProps) {
 
             {hasPlusOne && firstInvitee?.plusOneName ? (
               <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
-                Tu acompañante: <span className="font-medium">{firstInvitee.plusOneName}</span>
+                {t("inv.yourPlusOne")}{" "}
+                <span className="font-medium">{firstInvitee.plusOneName}</span>
               </div>
             ) : null}
 
@@ -202,20 +213,20 @@ export default function InvitationPage({ view }: InvitationPageProps) {
               className="rounded-2xl border border-slate-200 p-5"
             >
               <h2 className="text-lg font-semibold text-slate-900">
-                Confirma tu asistencia
+                {t("inv.confirmTitle")}
               </h2>
               {firstInvitee && firstInvitee.rsvpStatus !== "pending" && (
                 <p className="mt-1 text-sm text-slate-500">
-                  Respuesta actual:{" "}
-                  <span className="font-medium">{statusLabel}</span>
+                  {t("inv.currentResponse")}{" "}
+                  <span className="font-medium">{t(STATUS_KEY[firstInvitee.rsvpStatus])}</span>
                 </p>
               )}
 
               <div className="mt-4 grid gap-2 sm:grid-cols-3">
                 {[
-                  { value: "confirmed", label: "✅ Confirmo asistencia" },
-                  { value: "declined", label: "❌ No podré asistir" },
-                  { value: "maybe", label: "🤔 Quizás" },
+                  { value: "confirmed", label: t("inv.optConfirmed") },
+                  { value: "declined", label: t("inv.optDeclined") },
+                  { value: "maybe", label: t("inv.optMaybe") },
                 ].map((opt) => (
                   <button
                     key={opt.value}
@@ -239,22 +250,22 @@ export default function InvitationPage({ view }: InvitationPageProps) {
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 <label className="block text-sm font-medium text-slate-700">
-                  Alergias o intolerancias
+                  {t("inv.allergiesLabel")}
                   <input
                     type="text"
                     value={allergiesText}
                     onChange={(e) => setAllergiesText(e.target.value)}
-                    placeholder="p. ej. gluten, frutos secos (separadas por comas)"
+                    placeholder={t("inv.allergiesPlaceholder")}
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
                   />
                 </label>
                 <label className="block text-sm font-medium text-slate-700">
-                  Cómo nos acompañarías en la pista
+                  {t("inv.musicLabel")}
                   <input
                     type="text"
                     value={musicText}
                     onChange={(e) => setMusicText(e.target.value)}
-                    placeholder="p. ej. rock, funky (separados por comas)"
+                    placeholder={t("inv.musicPlaceholder")}
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
                   />
                 </label>
@@ -278,11 +289,11 @@ export default function InvitationPage({ view }: InvitationPageProps) {
                 className="mt-5 w-full rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                 style={{ backgroundColor: primary }}
               >
-                {submitting ? "Guardando..." : "Guardar mi respuesta"}
+                {submitting ? t("inv.saving") : t("inv.saveResponse")}
               </button>
               {status === "pending" && (
                 <p className="mt-2 text-center text-xs text-slate-500">
-                  Elige una opción para poder guardar tu respuesta.
+                  {t("inv.pendingHint")}
                 </p>
               )}
             </form>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { translate, type Locale } from "@/lib/i18n";
 
 /** A photo surfaced to the gallery (sans sensitive fields). */
 export interface PhotoItem {
@@ -16,12 +17,20 @@ export interface PhotoItem {
  * loading/disabled states, inline errors and an empty state.
  * Guest uploads are out of scope for v1.
  */
-export default function PhotoGallery({ photos: initial }: { photos: PhotoItem[] }) {
+export default function PhotoGallery({
+  photos: initial,
+  locale,
+}: {
+  photos: PhotoItem[];
+  locale: Locale;
+}) {
   const [photos, setPhotos] = useState<PhotoItem[]>(initial);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const t = (key: string) => translate(locale, key);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -34,11 +43,11 @@ export default function PhotoGallery({ photos: initial }: { photos: PhotoItem[] 
       const res = await fetch("/api/photos", { method: "POST", body: fd });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data.error || "No se pudo subir la foto");
+        throw new Error(data.error || t("photo.errUpload"));
       }
       setPhotos((prev) => [data.photo, ...prev]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo subir la foto");
+      setError(err instanceof Error ? err.message : t("photo.errUpload"));
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -50,10 +59,10 @@ export default function PhotoGallery({ photos: initial }: { photos: PhotoItem[] 
     setError(null);
     try {
       const res = await fetch(`/api/photos/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("No se pudo eliminar la foto");
+      if (!res.ok) throw new Error(t("photo.errDelete"));
       setPhotos((prev) => prev.filter((p) => p.id !== id));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo eliminar la foto");
+      setError(err instanceof Error ? err.message : t("photo.errDelete"));
     } finally {
       setDeletingId(null);
     }
@@ -63,7 +72,7 @@ export default function PhotoGallery({ photos: initial }: { photos: PhotoItem[] 
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <label className="relative inline-flex cursor-pointer items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60">
-          {uploading ? "Subiendo…" : "Subir foto"}
+          {uploading ? t("photo.uploading") : t("photo.upload")}
           <input
             ref={fileRef}
             type="file"
@@ -73,9 +82,7 @@ export default function PhotoGallery({ photos: initial }: { photos: PhotoItem[] 
             onChange={handleFile}
           />
         </label>
-        <span className="text-xs text-slate-500">
-          PNG, JPG, WEBP o GIF · máx. 10 MB
-        </span>
+        <span className="text-xs text-slate-500">{t("photo.sizeHint")}</span>
       </div>
 
       {error && (
@@ -86,8 +93,7 @@ export default function PhotoGallery({ photos: initial }: { photos: PhotoItem[] 
 
       {photos.length === 0 && !uploading ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
-          Todavía no hay fotos. Sube las primeras fotos de la pareja para
-          mostrarlas en la galería.
+          {t("photo.empty")}
         </div>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -99,7 +105,7 @@ export default function PhotoGallery({ photos: initial }: { photos: PhotoItem[] 
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={`/api/photos/${photo.id}/file`}
-                alt="Foto de la pareja"
+                alt={t("photo.alt")}
                 className="aspect-square w-full object-cover"
               />
               <button
@@ -108,7 +114,7 @@ export default function PhotoGallery({ photos: initial }: { photos: PhotoItem[] 
                 disabled={deletingId === photo.id}
                 className="absolute right-2 top-2 rounded-lg bg-black/60 px-3 py-1 text-xs font-medium text-white transition hover:bg-red-600 disabled:opacity-60"
               >
-                {deletingId === photo.id ? "Eliminando…" : "Eliminar"}
+                {deletingId === photo.id ? t("photo.deleting") : t("photo.delete")}
               </button>
             </li>
           ))}
