@@ -124,7 +124,7 @@ function TaskCard({
       {task.description ? (
         <p className="mt-1 text-xs text-slate-500">{task.description}</p>
       ) : null}
-      <div className="mt-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="mt-2 flex items-center gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
         <button
           onClick={() => onEdit(task)}
           className="rounded border border-slate-200 px-2 py-0.5 text-[11px] text-slate-600 hover:bg-slate-50"
@@ -644,9 +644,9 @@ export default function TaskBoard({
                 return (
                   <div
                     key={task.id}
-                    className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3"
+                    className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-slate-200 bg-white p-3"
                   >
-                    <span className="w-28 shrink-0 text-xs font-medium text-slate-500">
+                    <span className="w-full shrink-0 text-xs font-medium text-slate-500 sm:w-28">
                       {task.dueDate ? formatDate(task.dueDate, locale) : t("task.noDate")}
                     </span>
                     <span

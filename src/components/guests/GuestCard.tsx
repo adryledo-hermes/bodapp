@@ -46,9 +46,9 @@ export default function GuestCard({
         }`}
       >
         {/* FRONT */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [backface-visibility:hidden]">
+        <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [backface-visibility:hidden]">
           <p className="mb-2 text-3xl">🎴</p>
-          <h3 className="text-center text-lg font-bold text-slate-900">
+          <h3 className="max-w-full text-center text-base font-bold break-words text-slate-900 sm:text-lg">
             {guest.fullName}
           </h3>
           {guest.alias && (

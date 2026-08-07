@@ -80,7 +80,7 @@ export default async function InvitePage({
             <p className="text-sm text-slate-500">{t("inv.accessSoon")}</p>
             <Link
               href={`/w/${slug}/invitation?g=${encodeURIComponent(invitation.id)}`}
-              className="mt-2 rounded-lg bg-slate-900 px-6 py-2 text-sm font-medium text-white hover:bg-slate-700"
+              className="tap-min mt-2 inline-flex items-center justify-center rounded-lg bg-slate-900 px-6 py-3 text-sm font-medium text-white hover:bg-slate-700"
             >
               {t("inv.viewInvitation")}
             </Link>

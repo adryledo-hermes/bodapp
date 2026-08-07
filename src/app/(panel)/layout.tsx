@@ -26,11 +26,11 @@ export default async function PanelLayout({
   return (
     <div className="min-h-full">
       <nav className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-3">
-          <span className="font-bold text-slate-900">Bodapp</span>
-          <div className="flex flex-1 gap-4 text-sm text-slate-600">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 sm:px-6">
+          <span className="mr-1 font-bold text-slate-900">Bodapp</span>
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
             {links.map((l) => (
-              <a key={l.href} href={l.href} className="hover:text-slate-900">
+              <a key={l.href} href={l.href} className="whitespace-nowrap hover:text-slate-900">
                 {l.label}
               </a>
             ))}
@@ -38,7 +38,7 @@ export default async function PanelLayout({
           <LocaleSwitcher locale={locale} />
         </div>
       </nav>
-      <div className="py-6">{children}</div>
+      <div className="py-4 sm:py-6">{children}</div>
     </div>
   );
 }

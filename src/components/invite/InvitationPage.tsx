@@ -154,7 +154,7 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
             <p className="text-xs uppercase tracking-[0.3em] text-white/80">
               {t("inv.invitation")}
             </p>
-            <h1 className="mt-3 text-3xl font-semibold sm:text-4xl">
+            <h1 className="mt-3 text-3xl font-semibold break-words text-white sm:text-4xl">
               {coupleTitle}
             </h1>
             <p className="mt-4 text-lg font-medium text-white/95">
@@ -232,7 +232,7 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
                     key={opt.value}
                     type="button"
                     onClick={() => setStatus(opt.value as RsvpStatus)}
-                    className={`rounded-xl border px-3 py-2 text-sm font-medium transition ${
+                    className={`tap-min rounded-xl border px-3 py-2.5 text-sm font-medium transition ${
                       status === opt.value
                         ? "border-transparent text-white"
                         : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
@@ -286,7 +286,7 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
               <button
                 type="submit"
                 disabled={submitting || status === "pending"}
-                className="mt-5 w-full rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                className="tap-min mt-5 w-full rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                 style={{ backgroundColor: primary }}
               >
                 {submitting ? t("inv.saving") : t("inv.saveResponse")}

@@ -96,7 +96,7 @@ export default function OtpChallenge({ token, locale }: OtpChallengeProps) {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+            className="tap-min rounded-lg bg-slate-900 py-2.5 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
           >
             {loading ? t("otp.sending") : t("otp.sendCode")}
           </button>
@@ -122,7 +122,7 @@ export default function OtpChallenge({ token, locale }: OtpChallengeProps) {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+            className="tap-min rounded-lg bg-slate-900 py-2.5 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
           >
             {loading ? t("otp.verifying") : t("otp.verify")}
           </button>

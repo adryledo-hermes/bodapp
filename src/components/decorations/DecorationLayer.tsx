@@ -295,7 +295,7 @@ export default function DecorationLayer({
                 </span>
                 <button
                   onClick={() => void removeDecoration(d.id)}
-                  className="absolute -right-1.5 -top-1.5 hidden h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white hover:bg-red-500 group-hover:flex"
+                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white hover:bg-red-500 md:hidden md:group-hover:flex"
                   aria-label={t("decor.deleteAria", { label: d.label ?? "" })}
                 >
                   ×

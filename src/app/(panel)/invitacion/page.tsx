@@ -31,7 +31,7 @@ export default async function InvitacionPage() {
   const content = normalizeTemplateContent(template?.content);
 
   return (
-    <main className="mx-auto max-w-7xl p-6">
+    <main className="mx-auto max-w-7xl p-4 sm:p-6">
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900">
           {translate(locale, "p.invitacion.title")}
