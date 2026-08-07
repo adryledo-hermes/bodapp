@@ -70,10 +70,10 @@ export default async function InvitePage({
               En breve podrás ver los detalles y confirmar tu asistencia.
             </p>
             <Link
-              href={`/w/${slug}`}
+              href={`/w/${slug}/invitation?g=${encodeURIComponent(invitation.id)}`}
               className="mt-2 rounded-lg bg-slate-900 px-6 py-2 text-sm font-medium text-white hover:bg-slate-700"
             >
-              Ver invitación
+              Ver mi invitación
             </Link>
           </div>
         ) : (
