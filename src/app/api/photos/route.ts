@@ -1,0 +1,111 @@
+import { NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
+import { prisma } from "@/lib/db";
+import { requireSession, tenantWhere } from "@/lib/auth-guard";
+import { deletePhoto, savePhoto } from "@/lib/storage";
+
+/** Max upload size: 10 MB. */
+const MAX_SIZE = 10 * 1024 * 1024;
+
+/** Allowed image mime types → stored file extension. */
+const MIME_TO_EXT: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+function serialize(photo: {
+  id: string;
+  mimeType: string;
+  size: number;
+  createdAt: Date;
+}) {
+  return {
+    id: photo.id,
+    mimeType: photo.mimeType,
+    size: photo.size,
+    createdAt: photo.createdAt.toISOString(),
+  };
+}
+
+// GET /api/photos — list the session wedding's photos (tenant-scoped)
+export async function GET() {
+  const auth = await requireSession();
+  if (auth.error) return auth.error;
+
+  const photos = await prisma.photo.findMany({
+    where: tenantWhere(auth.session),
+    orderBy: { createdAt: "desc" },
+    select: { id: true, mimeType: true, size: true, createdAt: true },
+  });
+
+  return NextResponse.json({ photos: photos.map(serialize) });
+}
+
+// POST /api/photos — upload a photo for the session wedding
+export async function POST(req: Request) {
+  const auth = await requireSession();
+  if (auth.error) return auth.error;
+
+  let form: FormData;
+  try {
+    form = await req.formData();
+  } catch {
+    return NextResponse.json({ error: "invalid form data" }, { status: 400 });
+  }
+
+  const file = form.get("photo");
+  if (!(file instanceof File)) {
+    return NextResponse.json({ error: "photo required" }, { status: 400 });
+  }
+
+  const ext = MIME_TO_EXT[file.type];
+  if (!ext) {
+    return NextResponse.json(
+      { error: "tipo de archivo no permitido (usa PNG, JPG, WEBP o GIF)" },
+      { status: 400 }
+    );
+  }
+
+  if (file.size > MAX_SIZE) {
+    return NextResponse.json(
+      { error: "el archivo supera el máximo de 10 MB" },
+      { status: 413 }
+    );
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  const id = randomUUID();
+  let filename: string;
+  try {
+    filename = await savePhoto(buffer, { id, ext });
+  } catch {
+    return NextResponse.json({ error: "no se pudo guardar la foto" }, { status: 500 });
+  }
+
+  let photo: {
+    id: string;
+    mimeType: string;
+    size: number;
+    createdAt: Date;
+  };
+  try {
+    photo = await prisma.photo.create({
+      data: {
+        weddingId: auth.session.weddingId,
+        filename,
+        mimeType: file.type,
+        size: file.size,
+      },
+      select: { id: true, mimeType: true, size: true, createdAt: true },
+    });
+  } catch {
+    // Avoid leaving an orphan file behind if the DB write fails.
+    await deletePhoto(filename).catch(() => {});
+    return NextResponse.json({ error: "no se pudo registrar la foto" }, { status: 500 });
+  }
+
+  return NextResponse.json({ photo: serialize(photo) }, { status: 201 });
+}
