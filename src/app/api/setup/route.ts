@@ -53,24 +53,50 @@ export async function POST(req: Request) {
 
     // Wedding + couple user must be created atomically: never a wedding
     // without its owner account.
-    const created = await prisma.$transaction(async (tx) => {
-      const wedding = await tx.wedding.create({
-        data: { slug, coupleNameA, coupleNameB, locale },
+    try {
+      const created = await prisma.$transaction(async (tx) => {
+        const wedding = await tx.wedding.create({
+          data: { slug, coupleNameA, coupleNameB, locale },
+        });
+        const user = await tx.user.create({
+          data: { weddingId: wedding.id, email, passwordHash, role: "couple" },
+        });
+        return { wedding, user };
       });
-      const user = await tx.user.create({
-        data: { weddingId: wedding.id, email, passwordHash, role: "couple" },
+
+      // Log the couple straight in — their first stop is the panel.
+      await createSession({
+        userId: created.user.id,
+        weddingId: created.wedding.id,
+        role: "couple",
       });
-      return { wedding, user };
-    });
 
-    // Log the couple straight in — their first stop is the panel.
-    await createSession({
-      userId: created.user.id,
-      weddingId: created.wedding.id,
-      role: "couple",
-    });
-
-    return NextResponse.json({ ok: true, redirect: "/guests" });
+      return NextResponse.json({ ok: true, redirect: "/guests" });
+    } catch (err) {
+      // P2002 = unique constraint violation on wedding.slug or user.email.
+      // This is the DB-level backstop for the one-time gate: two concurrent
+      // setup requests can both pass the `user.count() === 0` check (TOCTOU),
+      // but only one can insert — the loser lands here. Re-check the gate so
+      // the race resolves to the intended, safe error.
+      if (
+        err &&
+        typeof err === "object" &&
+        "code" in err &&
+        (err as { code?: string }).code === "P2002"
+      ) {
+        const nowConfigured = await prisma.user.count();
+        if (nowConfigured > 0) {
+          return NextResponse.json(
+            { error: "already_configured" },
+            { status: 403 }
+          );
+        }
+        // Fall through: both could still be zero (e.g. slug collision against
+        // a pre-seeded demo wedding with no users) → report as slug conflict.
+        return NextResponse.json({ error: "slug_conflict" }, { status: 409 });
+      }
+      throw err; // rethrow — caught by the outer handler → 500, no internals
+    }
   } catch (err) {
     console.error("[setup] onboarding failed:", err);
     // Never leak internals to the caller.

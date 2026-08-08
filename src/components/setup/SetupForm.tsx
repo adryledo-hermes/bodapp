@@ -39,6 +39,16 @@ export default function SetupForm() {
   );
   const t = (key: string) => translate(uiLocale, key);
 
+  // Mirror the UI language into the wedding locale once the client knows the
+  // saved cookie (post-mount), so a visitor whose UI is English doesn't get a
+  // Spanish-default wedding by accident. Only set it once — the user can still
+  // change the select afterwards.
+  const [localeSynced, setLocaleSynced] = useState(false);
+  if (!localeSynced && uiLocale !== "es") {
+    setLocale(uiLocale);
+    setLocaleSynced(true);
+  }
+
   // Live slug preview: the slug input is optional and auto-derives from the
   // couple's names, so the placeholder shows what would be generated.
   const derivedSlug = slug.trim()
@@ -49,6 +59,7 @@ export default function SetupForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (loading) return; // guard against Enter-key double submit
     setError("");
     setLoading(true);
     try {
@@ -197,7 +208,11 @@ export default function SetupForm() {
           ))}
         </select>
 
-        {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+        {error && (
+          <p role="alert" className="mb-3 text-sm text-red-600">
+            {error}
+          </p>
+        )}
 
         <button
           type="submit"
