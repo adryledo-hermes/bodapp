@@ -106,11 +106,8 @@ The run shows the app health probe. Then in a browser:
   `cd /opt/bodapp && docker compose logs --tail=100 app` ; the pipeline also prints
   logs on failure.
 - **`ENV_FILE` secret not available / empty on manual run from a non-default branch** →
-  by default GitHub only exposes **environment** secrets to jobs running from the
-  repo's **default branch** (`main`). The manual "Run workflow" lets you pick any
-  branch; if you run from a non-`main` branch the `prod` environment secrets may be
-  hidden. Fix: always deploy `main`, or set **Deployment branches** on the `prod`
-  environment to include your branch(es) and confirm the `push`/dispatch run is on
-  `main`.
+  the job is guarded with `if: github.ref == 'refs/heads/main'`, so a manual "Run workflow"
+  from another branch is skipped (not executed). Always deploy `main`. If you need other
+  branches, set **Deployment branches** on the `prod` environment and relax that guard.
 - **`.env` not matching DB** → `DATABASE_URL` and `POSTGRES_PASSWORD` inside
   `ENV_FILE` must agree with each other (compose re-interpolates from the same vars).

@@ -53,6 +53,10 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     environment: prod   # reads secrets from Settings → Environments → prod
+    # Fail fast: only deploy from the default branch so the `prod`
+    # environment secrets are always available (GH only exposes env
+    # secrets to the default branch unless Deployment branches say otherwise).
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
