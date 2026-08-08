@@ -24,8 +24,16 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 # ---------- Stage: build -----------------------------------------------------
-# Generate the Prisma client + run the production build. No DATABASE_URL is
-# required here — nothing touches the DB at compile time.
+# Generate the Prisma client + run the production build.
+#
+# Next.js collects page data during `next build` (incl. /api/auth/login), which
+# constructs the Prisma client at module load. That client reads DATABASE_URL
+# and throws if it's missing, so the build needs a value set — even though it is
+# NEVER used to connect (the real DB is reached only at runtime from the compose
+# .env via the `runner` stage, which is a separate stage below, so this
+# placeholder is NOT baked into the final image).
+ARG DATABASE_URL=postgresql://build:build@localhost:5432/build
+ENV DATABASE_URL=${DATABASE_URL}
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
