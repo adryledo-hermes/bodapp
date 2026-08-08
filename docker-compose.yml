@@ -53,7 +53,10 @@ services:
       migrate:
         condition: service_completed_successfully
     ports:
-      - "3000:3000"
+      # Host port is configurable (APP_PORT, default 8080) because 3000 may be
+      # taken by another app on the VPS. The container still listens on 3000
+      # internally (Dockerfile PORT=3000). Match this port in PUBLIC_BASE_URL.
+      - "${APP_PORT:-8080}:3000"
     volumes:
       # Photo storage: host dir ./storage → /app/storage (must be writable by
       # the container's non-root user, uid 1001 — see deploy/hetzner-setup.md).

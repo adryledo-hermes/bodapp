@@ -10,7 +10,7 @@ and it:
 3. Writes the server `.env` from a GitHub **secret** (`ENV_FILE`).
 4. Runs `deploy/deploy.sh`: fetches latest code → `docker compose up -d --build`
    (which also runs `prisma migrate deploy` automatically, then starts the app) →
-   probes `http://127.0.0.1:3000/login` and reports health.
+   probes `http://127.0.0.1:<APP_PORT>/login` and reports health.
 
 ## 0. What you need beforehand
 
@@ -91,9 +91,10 @@ Optional:
 ## 5. Verify
 
 The run shows the app health probe. Then in a browser:
-- `http://<VPS_IP>:3000/login` — panel should load.
-- Refresh `PUBLIC_BASE_URL` in `.env` (secret `ENV_FILE`) if the IP changed so QR
-  codes point at the right URL.
+- `http://<VPS_IP>:<APP_PORT>/login` — panel should load (default `APP_PORT` is `8080`;
+  set it in `ENV_FILE` if you prefer another host port, e.g. if 3000 is taken).
+- `PUBLIC_BASE_URL` in `ENV_FILE` must use the **same** host port + IP so QR codes
+  point at the right URL (e.g. `http://<VPS_IP>:8080` when `APP_PORT=8080`).
 
 ## Troubleshooting
 

@@ -10,10 +10,19 @@
 # Env vars read:
 #   REPO_DIR   - absolute path to the checked-out repo on the server
 #                (default /opt/bodapp)
+#   BRANCH     - git branch to deploy (default main)
+#   APP_PORT   - HOST port the app is published on (compose maps
+#                ${APP_PORT:-8080}:3000; must match PUBLIC_BASE_URL)
 # ------------------------------------------------------------------
 set -euo pipefail
 
 REPO_DIR="${REPO_DIR:-/opt/bodapp}"
+# APP_PORT: default 8080, but honour one set in the repo .env so the health
+# probe matches the host port compose actually publishes.
+if [ -z "${APP_PORT:-}" ] && [ -f "$REPO_DIR/.env" ]; then
+  APP_PORT="$(grep -E '^APP_PORT=' "$REPO_DIR/.env" 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '"' || true)"
+fi
+APP_PORT="${APP_PORT:-8080}"
 cd "$REPO_DIR"
 
 echo "==> [deploy] working in $REPO_DIR"
@@ -45,10 +54,10 @@ docker compose down --remove-orphans
 docker compose pull 2>/dev/null || true
 docker compose up -d --build
 
-# 4. Wait for the app to come up and probe it.
-echo "==> [deploy] waiting for app to respond..."
+# 4. Wait for the app to come up and probe it (host port = APP_PORT).
+echo "==> [deploy] waiting for app to respond on port $APP_PORT..."
 for i in $(seq 1 30); do
-  if curl -fsS -o /dev/null "http://127.0.0.1:3000/login" 2>/dev/null; then
+  if curl -fsS -o /dev/null "http://127.0.0.1:${APP_PORT}/login" 2>/dev/null; then
     echo "==> [deploy] OK — app responded on /login (try $i)"
     docker compose ps
     exit 0
