@@ -31,9 +31,17 @@ chown -R 1001:1001 storage 2>/dev/null \
   || chmod -R 777 storage 2>/dev/null \
   || true
 
-# 3. Prune old images (optional) then build & start everything.
-#    compose `app` depends_on `migrate: service_completed_successfully`,
-#    so `up --build` runs prisma migrate deploy before the app starts.
+# 3. Tear down any EXISTING containers/network first. Without this, a stale
+#    `app` container from a previous deploy still holds port 3000 and the new
+#    one fails to bind ("port is already allocated"). `down` leaves the named
+#    postgres volume (bodapp-pgdata) intact, so no data is lost — the DB will
+#    simply be restarted fresh against the same volume.
+echo "==> [deploy] stopping existing containers (keeping postgres volume)..."
+docker compose down --remove-orphans
+
+# 4. Build & start everything. compose `app` depends_on
+#    `migrate: service_completed_successfully`, so `up --build` runs
+#    `prisma migrate deploy` before the app starts.
 docker compose pull 2>/dev/null || true
 docker compose up -d --build
 
