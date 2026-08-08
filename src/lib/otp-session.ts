@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { cookieSecure } from "./cookie-secure";
 
 /**
  * Short-lived signed access for a guest who has passed the OTP challenge
@@ -46,7 +47,7 @@ export async function createInvitationAccess(
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: cookieSecure(),
     sameSite: "lax",
     path: "/",
     maxAge: MAX_AGE,

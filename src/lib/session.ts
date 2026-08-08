@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { cookieSecure } from "./cookie-secure";
 
 const SESSION_COOKIE = "bodapp_session";
 const MAX_AGE = 60 * 60 * 24 * 7; // 7 days
@@ -26,7 +27,7 @@ export async function createSession(payload: SessionPayload): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: cookieSecure(),
     sameSite: "lax",
     path: "/",
     maxAge: MAX_AGE,
