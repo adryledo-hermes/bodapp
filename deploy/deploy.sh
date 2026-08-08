@@ -54,10 +54,28 @@ docker compose down --remove-orphans
 docker compose pull 2>/dev/null || true
 docker compose up -d --build
 
-# 4. Wait for the app to come up and probe it (host port = APP_PORT).
-echo "==> [deploy] waiting for app to respond on port $APP_PORT..."
+# 4. Wait for the app to come up and probe it. Instead of trusting APP_PORT
+#    (the health probe must match the ACTUAL published host port), discover it
+#    from compose: `docker compose port app 3000` prints e.g. 0.0.0.0:8080.
+probe_host="127.0.0.1"
+probe_port="$(docker compose port app 3000 2>/dev/null | sed -E 's/.*://' || true)"
+probe_port="${probe_port:-${APP_PORT:-8080}}"
+
+# Prefer curl; fall back to wget; last resort a raw /dev/tcp TCP check.
+http_ok() {
+  local url="http://${probe_host}:${probe_port}/login"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsS -o /dev/null "$url" 2>/dev/null
+  elif command -v wget >/dev/null 2>&1; then
+    wget -q --spider -T 5 "$url" 2>/dev/null
+  else
+    (exec 3<>"/dev/tcp/${probe_host}/${probe_port}") 2>/dev/null
+  fi
+}
+
+echo "==> [deploy] waiting for app to respond on ${probe_host}:${probe_port}..."
 for i in $(seq 1 30); do
-  if curl -fsS -o /dev/null "http://127.0.0.1:${APP_PORT}/login" 2>/dev/null; then
+  if http_ok; then
     echo "==> [deploy] OK — app responded on /login (try $i)"
     docker compose ps
     exit 0
