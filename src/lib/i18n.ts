@@ -309,6 +309,24 @@ export const messages: Record<Locale, Record<string, string>> = {
     "login.enter": "Entrar",
     "login.err": "Error iniciando sesión",
     "login.errNetwork": "Error de red",
+
+    // ---- First-run setup ----
+    "setup.title": "Crea tu boda",
+    "setup.subtitle":
+      "Configura Bodapp por primera vez: los nombres de la pareja, el acceso y la dirección de vuestra invitación.",
+    "setup.coupleNameA": "Nombre de la pareja A",
+    "setup.coupleNameB": "Nombre de la pareja B",
+    "setup.email": "Email",
+    "setup.password": "Contraseña",
+    "setup.slug": "Dirección de la invitación (opcional)",
+    "setup.slugHint": "Se genera sola a partir de vuestros nombres.",
+    "setup.locale": "Idioma",
+    "setup.create": "Crear mi boda",
+    "setup.creating": "Creando...",
+    "setup.errGeneric": "No se pudo configurar la boda. Revisa los datos e inténtalo de nuevo.",
+    "setup.errAlreadyConfigured":
+      "Bodapp ya está configurado. Accede con tu email y contraseña.",
+    "setup.errNetwork": "Error de red. Inténtalo de nuevo.",
   },
 
   en: {
@@ -593,6 +611,24 @@ export const messages: Record<Locale, Record<string, string>> = {
     "login.enter": "Sign in",
     "login.err": "Error signing in",
     "login.errNetwork": "Network error",
+
+    // ---- First-run setup ----
+    "setup.title": "Create your wedding",
+    "setup.subtitle":
+      "Set up Bodapp for the first time: the couple's names, your access and your invitation address.",
+    "setup.coupleNameA": "Couple member A name",
+    "setup.coupleNameB": "Couple member B name",
+    "setup.email": "Email",
+    "setup.password": "Password",
+    "setup.slug": "Invitation address (optional)",
+    "setup.slugHint": "Auto-generated from your names if left blank.",
+    "setup.locale": "Language",
+    "setup.create": "Create my wedding",
+    "setup.creating": "Creating...",
+    "setup.errGeneric": "Could not set up the wedding. Check the details and try again.",
+    "setup.errAlreadyConfigured":
+      "Bodapp is already configured. Sign in with your email and password.",
+    "setup.errNetwork": "Network error. Try again.",
   },
 };
 
