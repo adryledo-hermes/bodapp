@@ -32,9 +32,13 @@ RUN npm ci
 # NEVER used to connect (the real DB is reached only at runtime from the compose
 # .env via the `runner` stage, which is a separate stage below, so this
 # placeholder is NOT baked into the final image).
+#
+# NOTE: the ARG/ENV must come AFTER `FROM base AS builder` — ENV lines placed
+# before a FROM belong to no stage and are ignored, which is why the build
+# previously failed with "DATABASE_URL is not set".
+FROM base AS builder
 ARG DATABASE_URL=postgresql://build:build@localhost:5432/build
 ENV DATABASE_URL=${DATABASE_URL}
-FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx --no-install prisma generate
