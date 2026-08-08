@@ -37,7 +37,8 @@ Deployment instructions: [`deploy/hetzner-setup.md`](deploy/hetzner-setup.md).
 
 ## Deploy (Docker Compose on Hetzner VPS)
 
-- **Runbook:** [`deploy/hetzner-setup.md`](deploy/hetzner-setup.md)
+- **One-click CI/CD deploy:** GitHub Actions → [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) (SSH deploy: click *Run workflow* on the Actions tab, or auto on push to `main`). Configure the required secrets + one-time server setup in [`deploy/github-actions-deploy.md`](deploy/github-actions-deploy.md).
+- **Manual runbook:** [`deploy/hetzner-setup.md`](deploy/hetzner-setup.md).
 - **Image:** multi-stage `Dockerfile` — `node:20-alpine`, webpack build
   (`next build --webpack`), Next.js standalone `server.js`, runs as non-root,
   serves HTTP on port 3000.

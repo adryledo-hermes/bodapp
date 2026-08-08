@@ -1,0 +1,91 @@
+# ------------------------------------------------------------------
+# Bodapp → Hetzner deploy
+#
+# One-click deploy: click "Run workflow" on the Actions tab, or it
+# also runs automatically on every push to `main` (remove the push
+# trigger below if you prefer manual-only).
+#
+# Strategy: SSH into the Hetzner VPS, write .env from a GitHub secret,
+# then run deploy/deploy.sh which fetches latest code, builds via
+# docker compose (running prisma migrations automatically) and probes
+# /login for health.
+#
+# REQUIRED GitHub repository secrets (Settings → Secrets → Actions):
+#   DEPLOY_HOST       - VPS IP or hostname, e.g. 116.203.12.34
+#   DEPLOY_USER       - SSH user (must have the DeployKey below)
+#   DEPLOY_SSH_KEY    - private SSH key (PEM) for that user
+#   ENV_FILE          - the ENTIRE contents of your server .env (all
+#                       secrets: DATABASE_URL/POSTGRES_*, TWILIO_*,
+#                       SESSION_SECRET, PUBLIC_BASE_URL, ...)
+# Optional:
+#   DEPLOY_PORT       - SSH port (default 22)
+#   REPO_DIR          - path on the server hosting the repo
+#                       (default /opt/bodapp)
+#
+# One-time server setup (do once):
+#   1. Install Docker Engine + compose plugin (see deploy/hetzner-setup.md).
+#   2. Clone the repo to /opt/bodapp:
+#        sudo apt install -y git
+#        sudo mkdir -p /opt/bodapp && sudo chown $USER /opt/bodapp
+#        git clone https://github.com/<you>/bodapp.git /opt/bodapp
+#   3. Give this workflow's public key SSH access (authorized_keys).
+#   4. Done — the workflow handles everything else.
+# ------------------------------------------------------------------
+name: Deploy to Hetzner
+
+on:
+  workflow_dispatch:        # ← the "Run workflow" button = one-click deploy
+    inputs:
+      branch:
+        description: "Branch to deploy"
+        required: true
+        default: "main"
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-hetzner
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          REPO_DIR: ${{ secrets.REPO_DIR }}
+          REPO_URL: ${{ secrets.REPO_URL }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          envs: ENV_FILE,REPO_DIR,BRANCH,REPO_URL
+          script: |
+            set -euo pipefail
+            REPO_DIR="${REPO_DIR:-/opt/bodapp}"
+            BRANCH="${BRANCH:-${{ github.event.inputs.branch || 'main' }}}"
+            REPO_URL="${REPO_URL:-https://github.com/${{ github.repository }}.git}"
+
+            echo "==> ensuring repo exists at $REPO_DIR"
+            if [ ! -d "$REPO_DIR/.git" ]; then
+              sudo mkdir -p "$REPO_DIR"
+              sudo chown "$(whoami)" "$REPO_DIR"
+              git clone "$REPO_URL" "$REPO_DIR"
+            fi
+
+            echo "==> writing .env from GitHub secret"
+            # ENV_FILE is the full .env contents; write it verbatim
+            printf '%s\n' "$ENV_FILE" > "$REPO_DIR/.env"
+            chmod 600 "$REPO_DIR/.env"
+
+            echo "==> running deploy script on $REPO_DIR (branch $BRANCH)"
+            cd "$REPO_DIR"
+            BRANCH="$BRANCH" bash deploy/deploy.sh
