@@ -49,6 +49,19 @@ export default function QrPanel({
               alt={t("qr.alt", { title: inv.title })}
               width={200}
               height={200}
+              onError={(e) => {
+                // Swap to a small fallback if the QR preview fails to load
+                // (e.g. transient 5xx), so the card still renders cleanly.
+                const el = e.currentTarget;
+                el.onerror = null;
+                el.src =
+                  "data:image/svg+xml;utf8," +
+                  encodeURIComponent(
+                    `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#f1f5f9"/><text x="100" y="104" font-family="sans-serif" font-size="18" fill="#64748b" text-anchor="middle">${t(
+                      "qr.unavailable"
+                    )}</text></svg>`
+                  );
+              }}
               className="h-48 w-48 rounded-lg border border-slate-100 bg-white object-contain"
             />
             <a

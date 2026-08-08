@@ -20,7 +20,9 @@ export async function DELETE(_req: Request, { params }: Ctx) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
-  await prisma.photo.delete({ where: { id } });
+  await prisma.photo.delete({
+    where: { id, weddingId: auth.session.weddingId },
+  });
   // Best effort: remove the file even if the DB delete already happened. Guarded
   // against traversal by deletePhoto.
   await deletePhoto(photo.filename).catch(() => {});

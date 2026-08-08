@@ -211,6 +211,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "qr.alt": "Código QR de {title}",
     "qr.download": "Descargar QR",
     "qr.fileName": "invitacion-qr-{id}.png",
+    "qr.unavailable": "No disponible",
 
     // ---- Photo gallery ----
     "photo.uploading": "Subiendo…",
@@ -494,6 +495,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "qr.alt": "QR code for {title}",
     "qr.download": "Download QR",
     "qr.fileName": "invitation-qr-{id}.png",
+    "qr.unavailable": "Not available",
 
     // ---- Photo gallery ----
     "photo.uploading": "Uploading…",
