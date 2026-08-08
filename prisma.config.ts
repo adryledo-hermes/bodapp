@@ -7,6 +7,9 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
+    // `npx prisma db seed` runs the demo-couple seeder (tsx is a devDependency
+    // and is present in the runtime image; see Dockerfile "deps" stage).
+    seed: "npx --no-install tsx prisma/seed.ts",
   },
   datasource: {
     url: process.env["DATABASE_URL"],

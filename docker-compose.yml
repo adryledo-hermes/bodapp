@@ -6,9 +6,9 @@ services:
     container_name: bodapp-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: bodapp
-      POSTGRES_PASSWORD: bodapp
-      POSTGRES_DB: bodapp
+      POSTGRES_USER: ${POSTGRES_USER:-bodapp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bodapp}
+      POSTGRES_DB: ${POSTGRES_DB:-bodapp}
     # Bind only to localhost — the app reaches it over the compose network,
     # so the DB is never exposed to the internet.
     ports:
@@ -16,7 +16,7 @@ services:
     volumes:
       - bodapp-pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bodapp -d bodapp"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bodapp} -d ${POSTGRES_DB:-bodapp}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -30,7 +30,11 @@ services:
     env_file: .env
     environment:
       # Point the app/migrate at the compose `postgres` service host.
-      DATABASE_URL: postgresql://bodapp:bodapp@postgres:5432/bodapp?schema=public
+      # Credentials are interpolated from ${POSTGRES_*} (read from the project
+      # .env) so no real secret is hardcoded in this committed file. Defaults
+      # keep `docker compose up` working out of the box. Set POSTGRES_PASSWORD
+      # (and the matching password in DATABASE_URL) in .env to override.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bodapp}:${POSTGRES_PASSWORD:-bodapp}@postgres:5432/${POSTGRES_DB:-bodapp}?schema=public
     depends_on:
       postgres:
         condition: service_healthy
@@ -43,7 +47,8 @@ services:
     env_file: .env
     environment:
       # Postgres host is the compose service name, not localhost.
-      DATABASE_URL: postgresql://bodapp:bodapp@postgres:5432/bodapp?schema=public
+      # Same ${POSTGRES_*} interpolation as the `migrate` service above.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bodapp}:${POSTGRES_PASSWORD:-bodapp}@postgres:5432/${POSTGRES_DB:-bodapp}?schema=public
     depends_on:
       migrate:
         condition: service_completed_successfully

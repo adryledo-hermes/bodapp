@@ -79,13 +79,14 @@ Fill these values (never commit `.env`):
 
 | Variable | Example | Notes |
 |---|---|---|
-| `DATABASE_URL` | `postgresql://bodapp:bodapp@postgres:5432/bodapp?schema=public` | **Host = `postgres`** (compose service). Compose overrides this anyway, but keep it coherent. |
+| `DATABASE_URL` | `postgresql://bodapp:PASSWORD@postgres:5432/bodapp?schema=public` | **Host = `postgres`** (compose service). Compose re-interpolates this from `POSTGRES_*` (below), so keep the user/password coherent. |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | `bodapp` / `bodapp` / `bodapp` | Credentials for the `postgres` service. `docker-compose.yml` interpolates all of these from `.env`, so all three (and `DATABASE_URL`) must agree. Change `POSTGRES_PASSWORD` for anything beyond local dev. |
 | `TWILIO_ACCOUNT_SID` | `ACxxxxxxxx...` | From Twilio console |
 | `TWILIO_AUTH_TOKEN` | `...` | From Twilio console |
-| `TWILIO_PHONE_NUMBER` | `+1234567890` | Verified SMS-capable number |
+| `TWILIO_PHONE_NUMBER` | `+123****7890` | Verified SMS-capable number |
 | `SESSION_SECRET` | `hex from openssl` | 32+ random bytes |
 | `PUBLIC_BASE_URL` | `http://<SERVER_IP>:3000` | Used to build invite/QR links |
-| `PHOTO_STORAGE_DIR` | `/app/storage` | Matches the compose volume mount |
+| `PHOTO_STORAGE_DIR` | *(leave unset)* | Optional. Unset = app default `/app/storage/photos` (matches the `photos/` subdir under the compose mount). If you set it, use `/app/storage/photos`. |
 
 ## 5. Prepare the photo storage directory
 
