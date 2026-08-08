@@ -54,9 +54,17 @@ ssh-keygen -t ed25519 -C "bodapp-github-actions" -f ~/.ssh/bodapp_deploy -N ""
 - **Private key** (`~/.ssh/bodapp_deploy`) → paste into the GitHub secret
   `DEPLOY_SSH_KEY` below.
 
-## 3. Configure GitHub repository secrets
+## 3. Configure a GitHub environment and its secrets
 
-Go to **Settings → Secrets and variables → Actions → New repository secret** and add:
+The workflow reads its secrets from a GitHub **environment** named `prod`
+(job-level `environment: prod`). Create it and add the secrets there.
+
+**Create the environment:** **Settings → Environments → New environment** → name it
+`prod` → **Save**. (Optionally set *Deployment branches* to `main` and add *Required
+reviewers* if you want an approval gate before deploys.)
+
+Then under **Settings → Environments → prod → Environment secrets → Add secret**,
+add each of these:
 
 | Secret | Value |
 |---|---|
@@ -97,5 +105,12 @@ The run shows the app health probe. Then in a browser:
 - **App comes up but health probe fails** → SSH in and run
   `cd /opt/bodapp && docker compose logs --tail=100 app` ; the pipeline also prints
   logs on failure.
+- **`ENV_FILE` secret not available / empty on manual run from a non-default branch** →
+  by default GitHub only exposes **environment** secrets to jobs running from the
+  repo's **default branch** (`main`). The manual "Run workflow" lets you pick any
+  branch; if you run from a non-`main` branch the `prod` environment secrets may be
+  hidden. Fix: always deploy `main`, or set **Deployment branches** on the `prod`
+  environment to include your branch(es) and confirm the `push`/dispatch run is on
+  `main`.
 - **`.env` not matching DB** → `DATABASE_URL` and `POSTGRES_PASSWORD` inside
   `ENV_FILE` must agree with each other (compose re-interpolates from the same vars).

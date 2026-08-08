@@ -10,7 +10,8 @@
 # docker compose (running prisma migrations automatically) and probes
 # /login for health.
 #
-# REQUIRED GitHub repository secrets (Settings → Secrets → Actions):
+# REQUIRED secrets (create a GitHub **environment** named `prod` and add these
+# as Environment secrets — Settings → Environments → prod → Environment secrets):
 #   DEPLOY_HOST       - VPS IP or hostname, e.g. 116.203.12.34
 #   DEPLOY_USER       - SSH user (must have the DeployKey below)
 #   DEPLOY_SSH_KEY    - private SSH key (PEM) for that user
@@ -51,6 +52,7 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
+    environment: prod   # reads secrets from Settings → Environments → prod
     steps:
       - name: Checkout
         uses: actions/checkout@v4
