@@ -68,7 +68,10 @@ COPY --from=builder /app/public ./public
 # Prisma schema + migrations + generated client for runtime queries & migrate.
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
-COPY --from=builder /app/src/generated ./src/generated
+# Full src/ (not just generated): the prisma seed runs via `tsx prisma/seed.ts`
+# against the SOURCE, importing ../src/lib/db and ../src/lib/password — those
+# must exist in the image or the seed fails with MODULE_NOT_FOUND.
+COPY --from=builder /app/src ./src
 COPY --from=builder /app/package.json ./package.json
 
 # Photo storage — writable by the non-root user. Compose bind-mounts ./storage
