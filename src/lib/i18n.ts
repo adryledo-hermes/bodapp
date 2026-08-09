@@ -69,6 +69,26 @@ export const messages: Record<Locale, Record<string, string>> = {
     "guest.plusOneYes": "sí",
     "guest.noPlusOne": "Sin acompañante",
     "guest.back": "volver ↺",
+    "guest.addGuest": "+ Añadir invitado",
+    "guest.addTitle": "Nuevo invitado",
+    "guest.cancel": "Cancelar",
+    "guest.fullName": "Nombre completo",
+    "guest.alias": "Apodo",
+    "guest.relationshipContext": "Contexto de la relación",
+    "guest.phone": "Teléfono",
+    "guest.phoneHint": "Ej.: +34 600 000 000",
+    "guest.plusOneAllowed": "Puede llevar acompañante",
+    "guest.plusOneName": "Nombre del acompañante",
+    "guest.paperInvitation": "Invitación en papel",
+    "guest.allergies": "Alergias",
+    "guest.musicPrefs": "Preferencias musicales",
+    "guest.listHint": "Separa con comas",
+    "guest.notes": "Notas",
+    "guest.save": "Guardar invitado",
+    "guest.saving": "Guardando…",
+    "guest.errSave": "No se pudo guardar el invitado. Revisa los datos e inténtalo de nuevo.",
+    "guest.errNetwork": "Error de red: no se pudo guardar.",
+    "guest.added": "Invitado añadido.",
 
     // ---- Seating canvas ----
     "seating.addTable": "+ Añadir mesa",
@@ -310,10 +330,10 @@ export const messages: Record<Locale, Record<string, string>> = {
     "login.err": "Error iniciando sesión",
     "login.errNetwork": "Error de red",
 
-    // ---- First-run setup ----
+    // ---- Setup / self-registration (multi-tenant) ----
     "setup.title": "Crea tu boda",
     "setup.subtitle":
-      "Configura Bodapp por primera vez: los nombres de la pareja, el acceso y la dirección de vuestra invitación.",
+      "Crea vuestra boda: los nombres de la pareja, vuestro acceso y la dirección de vuestra invitación.",
     "setup.coupleNameA": "Nombre de la pareja A",
     "setup.coupleNameB": "Nombre de la pareja B",
     "setup.email": "Email",
@@ -324,8 +344,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "setup.create": "Crear mi boda",
     "setup.creating": "Creando...",
     "setup.errGeneric": "No se pudo configurar la boda. Revisa los datos e inténtalo de nuevo.",
-    "setup.errAlreadyConfigured":
-      "Bodapp ya está configurado. Accede con tu email y contraseña.",
+    "setup.errEmailExists": "Ya existe una cuenta con ese email. Accede con él o usa otro.",
+    "setup.errSlugConflict": "Esa dirección de invitación ya está en uso. Prueba con otra.",
     "setup.errNetwork": "Error de red. Inténtalo de nuevo.",
   },
 
@@ -372,6 +392,26 @@ export const messages: Record<Locale, Record<string, string>> = {
     "guest.plusOneYes": "yes",
     "guest.noPlusOne": "No plus one",
     "guest.back": "back ↺",
+    "guest.addGuest": "+ Add guest",
+    "guest.addTitle": "New guest",
+    "guest.cancel": "Cancel",
+    "guest.fullName": "Full name",
+    "guest.alias": "Nickname",
+    "guest.relationshipContext": "Relationship context",
+    "guest.phone": "Phone",
+    "guest.phoneHint": "E.g. +34 600 000 000",
+    "guest.plusOneAllowed": "Can bring a plus one",
+    "guest.plusOneName": "Plus one name",
+    "guest.paperInvitation": "Paper invitation",
+    "guest.allergies": "Allergies",
+    "guest.musicPrefs": "Music preferences",
+    "guest.listHint": "Comma-separated",
+    "guest.notes": "Notes",
+    "guest.save": "Save guest",
+    "guest.saving": "Saving…",
+    "guest.errSave": "Could not save the guest. Check the details and try again.",
+    "guest.errNetwork": "Network error: could not save.",
+    "guest.added": "Guest added.",
 
     // ---- Seating canvas ----
     "seating.addTable": "+ Add table",
@@ -612,10 +652,10 @@ export const messages: Record<Locale, Record<string, string>> = {
     "login.err": "Error signing in",
     "login.errNetwork": "Network error",
 
-    // ---- First-run setup ----
+    // ---- Setup / self-registration (multi-tenant) ----
     "setup.title": "Create your wedding",
     "setup.subtitle":
-      "Set up Bodapp for the first time: the couple's names, your access and your invitation address.",
+      "Create your wedding: the couple's names, your access and your invitation address.",
     "setup.coupleNameA": "Couple member A name",
     "setup.coupleNameB": "Couple member B name",
     "setup.email": "Email",
@@ -626,8 +666,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "setup.create": "Create my wedding",
     "setup.creating": "Creating...",
     "setup.errGeneric": "Could not set up the wedding. Check the details and try again.",
-    "setup.errAlreadyConfigured":
-      "Bodapp is already configured. Sign in with your email and password.",
+    "setup.errEmailExists": "An account with that email already exists. Sign in with it or use another.",
+    "setup.errSlugConflict": "That invitation address is already taken. Try another one.",
     "setup.errNetwork": "Network error. Try again.",
   },
 };

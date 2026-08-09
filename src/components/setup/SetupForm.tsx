@@ -77,8 +77,10 @@ export default function SetupForm() {
       });
       const data = await res.json();
       if (!res.ok) {
-        if (data.error === "already_configured") {
-          setError(t("setup.errAlreadyConfigured"));
+        if (data.error === "email_exists") {
+          setError(t("setup.errEmailExists"));
+        } else if (data.error === "slug_conflict") {
+          setError(t("setup.errSlugConflict"));
         } else {
           setError(t("setup.errGeneric"));
         }

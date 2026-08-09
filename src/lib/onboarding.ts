@@ -1,5 +1,5 @@
 /**
- * First-run onboarding helpers (one-time setup flow).
+ * Couple self-registration helpers (multi-tenant setup flow).
  *
  * PURE module: no React, no Prisma, no Next imports — unit-testable in
  * isolation and safe to import from server routes, server pages and client

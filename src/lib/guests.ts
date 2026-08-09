@@ -18,6 +18,18 @@ export const guestSchema = z.object({
 
 export type GuestInput = z.infer<typeof guestSchema>;
 
+/**
+ * Split a comma-separated form value (allergies, music prefs) into trimmed,
+ * non-empty entries. PURE helper so the client form logic is unit-tested.
+ */
+export function splitList(input: string | null | undefined): string[] {
+  if (!input) return [];
+  return input
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 /** Shape a guest row for API/UI output. JSON fields are arrays already. */
 export function serializeGuest(guest: unknown) {
   return guest;

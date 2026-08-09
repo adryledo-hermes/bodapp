@@ -5,23 +5,21 @@ import { createSession } from "@/lib/session";
 import { applySlugDefaults, onboardingSchema } from "@/lib/onboarding";
 
 /**
- * First-run onboarding (ONE-TIME, intentionally PUBLIC).
+ * Open self-registration for couples (intentionally PUBLIC, multi-tenant).
  *
- * This is how the couple provisions the very first wedding + couple account on
- * a fresh deployment — there is no admin and no registered user yet, so the
- * endpoint cannot require a session. It is gated by the user-count check
- * below: as soon as ANY user exists the endpoint is locked forever (403
- * `already_configured`), so it can never be used to add a second tenant or to
- * reset an existing account.
+ * Any couple can provision their own wedding + account here at any time —
+ * this is no longer the first-run one-time gate. Every successful call
+ * creates an INDEPENDENT tenant: its own Wedding row (unique slug) and its
+ * own couple User row, then logs that couple straight in. Sessions and all
+ * panel queries are scoped to the created weddingId, so tenants can never
+ * read each other's data.
+ *
+ * SECURITY: because the endpoint is open, anyone who can reach it can create
+ * a wedding + account. Each one is independent (no cross-tenant access), but
+ * this trade-off is intentional for the self-registration use case.
  */
 export async function POST(req: Request) {
   try {
-    // One-time gate: only works before the first user exists.
-    const existingUsers = await prisma.user.count();
-    if (existingUsers > 0) {
-      return NextResponse.json({ error: "already_configured" }, { status: 403 });
-    }
-
     let body: unknown;
     try {
       body = await req.json();
@@ -37,10 +35,9 @@ export async function POST(req: Request) {
     const { coupleNameA, coupleNameB, email, password, locale } = parsed.data;
 
     // Derive the URL slug from the couple's names unless one was provided. If
-    // that slug is already taken (edge case on a re-seeded DB), append -2, -3,
-    // … — chosen over failing so the couple can onboard without having to
-    // invent a different name; slugs stay unique because each new one is
-    // re-checked against the DB.
+    // that slug is already taken, append -2, -3, … — chosen over failing so
+    // the couple can onboard without having to invent a different name; slugs
+    // stay unique because each new one is re-checked against the DB.
     const baseSlug = applySlugDefaults(parsed.data).slug;
     let slug = baseSlug;
     let suffix = 2;
@@ -73,26 +70,24 @@ export async function POST(req: Request) {
 
       return NextResponse.json({ ok: true, redirect: "/guests" });
     } catch (err) {
-      // P2002 = unique constraint violation on wedding.slug or user.email.
-      // This is the DB-level backstop for the one-time gate: two concurrent
-      // setup requests can both pass the `user.count() === 0` check (TOCTOU),
-      // but only one can insert — the loser lands here. Re-check the gate so
-      // the race resolves to the intended, safe error.
+      // P2002 = unique constraint violation. The slug-dedup loop above covers
+      // the common case, but a concurrent request can still race us to the
+      // DB — this is the backstop. Distinguish what collided via meta.target
+      // (wedding.slug → slug_conflict, user.email → email_exists). Never a
+      // 403: the endpoint stays open for other couples (multi-tenant).
       if (
         err &&
         typeof err === "object" &&
         "code" in err &&
         (err as { code?: string }).code === "P2002"
       ) {
-        const nowConfigured = await prisma.user.count();
-        if (nowConfigured > 0) {
-          return NextResponse.json(
-            { error: "already_configured" },
-            { status: 403 }
-          );
+        const target = (err as { meta?: { target?: unknown } }).meta?.target;
+        const targetStr = Array.isArray(target)
+          ? target.join(",")
+          : String(target ?? "");
+        if (targetStr.includes("email")) {
+          return NextResponse.json({ error: "email_exists" }, { status: 409 });
         }
-        // Fall through: both could still be zero (e.g. slug collision against
-        // a pre-seeded demo wedding with no users) → report as slug conflict.
         return NextResponse.json({ error: "slug_conflict" }, { status: 409 });
       }
       throw err; // rethrow — caught by the outer handler → 500, no internals

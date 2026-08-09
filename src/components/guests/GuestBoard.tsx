@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { filterGuests, type GuestCardData, type RsvpStatus } from "@/lib/guest-view";
 import GuestCard from "./GuestCard";
+import GuestForm from "./GuestForm";
 import { translate, type Locale } from "@/lib/i18n";
 
 const inputClassName =
@@ -35,6 +36,9 @@ export default function GuestBoard({
 
   return (
     <div className="space-y-6">
+      {/* Add-guest form is always available, even with zero guests. */}
+      <GuestForm locale={locale} />
+
       <div className="grid gap-3 sm:grid-cols-3">
         <input
           type="search"
