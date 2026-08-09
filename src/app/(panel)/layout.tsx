@@ -1,6 +1,7 @@
 import { getLocale } from "@/lib/locale-server";
 import { translate } from "@/lib/i18n";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
+import LogoutButton from "@/components/LogoutButton";
 import type { Locale } from "@/lib/i18n";
 
 function navLinks(locale: Locale) {
@@ -35,7 +36,10 @@ export default async function PanelLayout({
               </a>
             ))}
           </div>
-          <LocaleSwitcher locale={locale} />
+          <div className="flex items-center gap-2">
+            <LocaleSwitcher locale={locale} />
+            <LogoutButton locale={locale} />
+          </div>
         </div>
       </nav>
       <div className="py-4 sm:py-6">{children}</div>

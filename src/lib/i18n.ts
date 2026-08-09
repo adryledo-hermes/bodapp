@@ -35,6 +35,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "nav.invitacion": "Invitación",
     "nav.qr": "QR",
     "nav.fotos": "Fotos",
+    "nav.logout": "Salir",
+    "nav.loggingOut": "Saliendo...",
 
     // ---- Locale switcher ----
     "locale.switchTo": "Cambiar idioma",
@@ -358,6 +360,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "nav.invitacion": "Invitation",
     "nav.qr": "QR",
     "nav.fotos": "Photos",
+    "nav.logout": "Log out",
+    "nav.loggingOut": "Signing out...",
 
     // ---- Locale switcher ----
     "locale.switchTo": "Switch language",
