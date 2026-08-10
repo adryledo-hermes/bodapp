@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   capacityStatus,
+  duplicateSeats,
   parseTableShape,
   seatingConflictsByTable,
   type SeatingGuest,
@@ -87,6 +88,110 @@ export default function SeatingCanvas({
     for (const g of unassigned) map.set(g.id, guestLabel(g));
     return map;
   }, [tables, unassigned]);
+
+  // Seat numbers used by more than one guest at the same table (per table).
+  const duplicatesByTable = useMemo(() => {
+    const map = new Map<string, Set<number>>();
+    for (const d of duplicateSeats(tables)) {
+      map.set(d.tableId, new Set(d.seats));
+    }
+    return map;
+  }, [tables]);
+
+  // ---- Table repositioning (drag) ----
+  // INTERACTION CHOICE: tables are moved with POINTER events while guests are
+  // moved with HTML5 drag-and-drop. The two never conflict: the pointer
+  // handlers power table repositioning, and the existing dataTransfer
+  // drag/drop handlers keep powering guest assignment. A pointer-down that
+  // lands on an interactive element (button/input/select/draggable chip)
+  // never starts a table move.
+  const [drag, setDrag] = useState<null | {
+    tableId: string;
+    startX: number;
+    startY: number;
+    originPctX: number;
+    originPctY: number;
+    originTables: SeatTable[];
+  }>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+
+  function onTablePointerDown(e: React.PointerEvent, table: SeatTable) {
+    const target = e.target as HTMLElement;
+    if (target.closest("button, input, select, [draggable='true']")) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    setDrag({
+      tableId: table.id,
+      startX: e.clientX,
+      startY: e.clientY,
+      originPctX: table.positionX,
+      originPctY: table.positionY,
+      // Snapshot for rollback if the PATCH fails.
+      originTables: tables,
+    });
+  }
+
+  function onCanvasPointerMove(e: React.PointerEvent) {
+    if (!drag) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const clampPct = (v: number) => Math.min(100, Math.max(0, v));
+    const positionX = clampPct(
+      drag.originPctX + ((e.clientX - drag.startX) / rect.width) * 100
+    );
+    const positionY = clampPct(
+      drag.originPctY + ((e.clientY - drag.startY) / rect.height) * 100
+    );
+    setTables((prev) =>
+      prev.map((t) =>
+        t.id === drag.tableId ? { ...t, positionX, positionY } : t
+      )
+    );
+  }
+
+  function onCanvasPointerUp() {
+    if (!drag) return;
+    const { tableId, originTables } = drag;
+    setDrag(null);
+    const table = tables.find((t) => t.id === tableId);
+    const orig = originTables.find((t) => t.id === tableId);
+    if (!table || !orig) return;
+    // No actual movement → nothing to persist.
+    if (
+      table.positionX === orig.positionX &&
+      table.positionY === orig.positionY
+    ) {
+      return;
+    }
+    // Optimistic position is already in state; persist + rollback on failure.
+    void (async () => {
+      let res: Response;
+      try {
+        res = await send(`/api/tables/${tableId}`, "PATCH", {
+          positionX: table.positionX,
+          positionY: table.positionY,
+        });
+      } catch {
+        setTables(originTables);
+        flash("err", t("common.networkError"));
+        return;
+      }
+      if (!res.ok) {
+        setTables(originTables);
+        flash("err", t("seating.errPatch"));
+        return;
+      }
+      const { table: saved } = await res.json();
+      setTables((prev) =>
+        prev.map((t) =>
+          t.id === tableId
+            ? { ...t, positionX: saved.positionX, positionY: saved.positionY }
+            : t
+        )
+      );
+    })();
+  }
 
   function flash(kind: "ok" | "err", text: string) {
     setFeedback({ kind, text });
@@ -295,6 +400,60 @@ export default function SeatingCanvas({
     void patchTable(tableId, { capacity: next });
   }
 
+  /**
+   * Set a seated guest's seat number (1..capacity) or clear it (null).
+   * Optimistic update + rollback, mirrored from the other canvas writes.
+   */
+  async function changeSeat(
+    guestId: string,
+    tableId: string,
+    seatNumber: number | null
+  ) {
+    const prevTables = tables;
+    const apply = (value: number | null) =>
+      setTables((prev) =>
+        prev.map((t) =>
+          t.id === tableId
+            ? {
+                ...t,
+                guests: t.guests.map((g) =>
+                  g.id === guestId ? { ...g, seatNumber: value } : g
+                ),
+              }
+            : t
+        )
+      );
+    apply(seatNumber);
+
+    let res: Response;
+    try {
+      // guestSchema.partial() already accepts { seatNumber } (incl. null).
+      res = await send(`/api/guests/${guestId}`, "PATCH", { seatNumber });
+    } catch {
+      setTables(prevTables);
+      flash("err", t("common.networkError"));
+      return;
+    }
+    if (!res.ok) {
+      setTables(prevTables);
+      flash("err", t("seating.errSeat"));
+      return;
+    }
+    const { guest } = await res.json();
+    setTables((prev) =>
+      prev.map((t) =>
+        t.id === tableId
+          ? {
+              ...t,
+              guests: t.guests.map((g) =>
+                g.id === guestId ? { ...g, seatNumber: guest.seatNumber } : g
+              ),
+            }
+          : t
+      )
+    );
+  }
+
   function onDragStart(e: React.DragEvent, guestId: string) {
     e.dataTransfer.setData("text/plain", guestId);
     e.dataTransfer.effectAllowed = "move";
@@ -394,7 +553,12 @@ export default function SeatingCanvas({
       ) : (
         <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
           {/* ---- Canvas ---- */}
-          <div className="relative min-h-[560px] rounded-2xl border border-slate-200 bg-slate-50 p-6">
+          <div
+            ref={canvasRef}
+            onPointerMove={onCanvasPointerMove}
+            onPointerUp={onCanvasPointerUp}
+            className="relative min-h-[560px] select-none rounded-2xl border border-slate-200 bg-slate-50 p-6"
+          >
             {tables.length === 0 ? (
               <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-400">
                 {t("seating.emptyCanvas")}
@@ -409,7 +573,13 @@ export default function SeatingCanvas({
                     key={table.id}
                     onDragOver={onDragOver}
                     onDrop={(e) => onDrop(e, table.id)}
-                    className={`absolute flex flex-col items-center justify-between gap-2 p-3 shadow-lg transition-colors ${
+                    onPointerDown={(e) => onTablePointerDown(e, table)}
+                    title={t("seating.moveHint")}
+                    className={`absolute flex cursor-grab flex-col items-center justify-between gap-2 p-3 shadow-lg transition-colors active:cursor-grabbing ${
+                      drag && drag.tableId === table.id
+                        ? "z-10 ring-2 ring-indigo-400"
+                        : ""
+                    } ${
                       shape === "round"
                         ? "h-44 w-44 rounded-full"
                         : "h-36 w-52 rounded-xl"
@@ -492,26 +662,70 @@ export default function SeatingCanvas({
                       </span>
                     ) : (
                       <div className="flex max-h-24 w-full flex-wrap content-start justify-center gap-1 overflow-y-auto">
-                        {table.guests.map((g) => (
-                          <span
-                            key={g.id}
-                            draggable
-                            onDragStart={(e) => onDragStart(e, g.id)}
-                            className="group inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-800"
-                            title={g.fullName}
-                          >
-                            {guestLabel(g)}
-                            <button
-                              onClick={() => void clearGuest(g.id)}
-                              aria-label={t("seating.removeGuestAria", {
-                                name: guestLabel(g),
-                              })}
-                              className="text-indigo-400 hover:text-red-600"
-                            >
-                              ×
-                            </button>
-                          </span>
+                        {table.guests.map((g) => {
+                  const seat = g.seatNumber ?? null;
+                  const duplicateSet = duplicatesByTable.get(table.id);
+                  const inUse =
+                    seat !== null &&
+                    duplicateSet !== undefined &&
+                    duplicateSet.has(seat);
+                  return (
+                    <span
+                      key={g.id}
+                      draggable
+                      onDragStart={(e) => onDragStart(e, g.id)}
+                      title={
+                        inUse
+                          ? `${g.fullName} — ${t("seating.seatInUse")}`
+                          : g.fullName
+                      }
+                      className={`group inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${
+                        inUse
+                          ? "bg-red-100 text-red-800 ring-2 ring-red-400"
+                          : "bg-indigo-100 text-indigo-800"
+                      }`}
+                    >
+                      <select
+                        value={seat ?? ""}
+                        onChange={(e) => {
+                          const v =
+                            e.target.value === ""
+                              ? null
+                              : Number(e.target.value);
+                          void changeSeat(g.id, table.id, v);
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        aria-label={t("seating.seatAria", {
+                          name: guestLabel(g),
+                        })}
+                        title={t("seating.seatHint")}
+                        className={`w-7 cursor-pointer rounded border-0 bg-transparent text-center text-[10px] font-semibold focus:bg-white focus:outline-none ${
+                          inUse ? "text-red-700" : "text-indigo-600"
+                        }`}
+                      >
+                        <option value="">–</option>
+                        {Array.from(
+                          { length: Math.max(table.capacity, 1) },
+                          (_, i) => i + 1
+                        ).map((n) => (
+                          <option key={n} value={n}>
+                            {n}
+                          </option>
                         ))}
+                      </select>
+                      {guestLabel(g)}
+                      <button
+                        onClick={() => void clearGuest(g.id)}
+                        aria-label={t("seating.removeGuestAria", {
+                          name: guestLabel(g),
+                        })}
+                        className="text-indigo-400 hover:text-red-600"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  );
+                })}
                       </div>
                     )}
 

@@ -92,6 +92,7 @@ model Guest {
   plusOneName         String?
   rsvpStatus          RSVPStatus @default(pending)
   tableId             String?
+  seatNumber          Int? // concrete seat at their table (seating map); null when unassigned/not numbered
   notes               String?
   invitationToken     String     @unique
   createdAt           DateTime   @default(now())

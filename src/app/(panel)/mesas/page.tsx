@@ -12,6 +12,7 @@ type GuestRow = {
   id: string;
   fullName: string;
   alias: string | null;
+  seatNumber: number | null;
   from: { relationType: string; guestAId: string; guestBId: string }[];
   to: { relationType: string; guestAId: string; guestBId: string }[];
 };
@@ -23,6 +24,7 @@ function toSeatingGuest(g: GuestRow): SeatingGuest {
     id: g.id,
     fullName: g.fullName,
     alias: g.alias,
+    seatNumber: g.seatNumber,
     relations: [...g.from, ...g.to],
   };
 }

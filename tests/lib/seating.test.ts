@@ -5,6 +5,7 @@ import {
   capacityStatus,
   findConflicts,
   seatingConflictsByTable,
+  duplicateSeats,
   type RelationRef,
   type SeatingGuest,
 } from "../../src/lib/seating";
@@ -162,5 +163,61 @@ describe("seatingConflictsByTable", () => {
 
   it("returns an empty array when no tables exist", () => {
     expect(seatingConflictsByTable([])).toEqual([]);
+  });
+});
+
+describe("duplicateSeats", () => {
+  // Build a table node with guests carrying explicit seatNumbers.
+  const table = (
+    id: string,
+    seats: Array<[string, number | null | undefined]>
+  ) => ({
+    id,
+    guests: seats.map(([guestId, seatNumber]) => ({
+      id: guestId,
+      fullName: guestId,
+      alias: null,
+      seatNumber,
+    })),
+  });
+
+  it("returns [] when no seat numbers are duplicated within a table", () => {
+    const tables = [table("t1", [["g1", 1], ["g2", 2], ["g3", 3]])];
+    expect(duplicateSeats(tables)).toEqual([]);
+  });
+
+  it("flags a seat used by two guests at the same table", () => {
+    const tables = [table("t1", [["g1", 3], ["g2", 3], ["g3", 1]])];
+    expect(duplicateSeats(tables)).toEqual([{ tableId: "t1", seats: [3] }]);
+  });
+
+  it("flags multiple duplicate seats in a single table", () => {
+    const tables = [table("t1", [["g1", 2], ["g2", 2], ["g3", 4], ["g4", 4]])];
+    expect(duplicateSeats(tables)).toEqual([{ tableId: "t1", seats: [2, 4] }]);
+  });
+
+  it("does not flag the same seat number on different tables", () => {
+    const tables = [
+      table("t1", [["g1", 2], ["g2", 3]]),
+      table("t2", [["g3", 2], ["g4", 3]]),
+    ];
+    expect(duplicateSeats(tables)).toEqual([]);
+  });
+
+  it("treats null/undefined seat numbers as unseated (not duplicated)", () => {
+    const tables = [table("t1", [["g1", null], ["g2", undefined]])];
+    expect(duplicateSeats(tables)).toEqual([]);
+  });
+
+  it("flags duplicates only on tables that have them, omitting clean tables", () => {
+    const tables = [
+      table("t1", [["g1", 3], ["g2", 3]]),
+      table("t2", [["g3", 1], ["g4", 2]]),
+    ];
+    expect(duplicateSeats(tables)).toEqual([{ tableId: "t1", seats: [3] }]);
+  });
+
+  it("returns an empty array when no tables exist", () => {
+    expect(duplicateSeats([])).toEqual([]);
   });
 });

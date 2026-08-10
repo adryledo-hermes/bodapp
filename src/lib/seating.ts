@@ -18,6 +18,7 @@ export interface SeatingGuest {
   fullName: string;
   alias: string | null;
   relations?: RelationRef[];
+  seatNumber?: number | null; // concrete seat at their table (seating map)
 }
 
 /** Minimal table shape (name + geometry + the guests assigned to it). */
@@ -125,6 +126,36 @@ export function seatingConflictsByTable(
     if (conflicts.length > 0) {
       result.push({ tableId: table.id, conflicts });
     }
+  }
+  return result;
+}
+
+/**
+ * Per-table seat numbers currently used by more than one guest. A seat number
+ * is only "duplicate" within a single table — the same seat number on two
+ * different tables is perfectly fine. Tables with no collisions are omitted.
+ */
+export interface DuplicateSeats {
+  tableId: string;
+  seats: number[];
+}
+
+export function duplicateSeats(
+  tables: Array<Pick<SeatTable, "id" | "guests">>
+): DuplicateSeats[] {
+  const result: DuplicateSeats[] = [];
+  for (const table of tables) {
+    const counts = new Map<number, number>();
+    for (const g of table.guests) {
+      const seat = g.seatNumber;
+      if (typeof seat !== "number" || seat < 1) continue;
+      counts.set(seat, (counts.get(seat) ?? 0) + 1);
+    }
+    const seats = [...counts.entries()]
+      .filter(([, count]) => count > 1)
+      .map(([seat]) => seat)
+      .sort((a, b) => a - b);
+    if (seats.length > 0) result.push({ tableId: table.id, seats });
   }
   return result;
 }

@@ -14,6 +14,7 @@ export const guestSchema = z.object({
   plusOneAllowed: z.boolean().default(false),
   plusOneName: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  seatNumber: z.number().int().min(1).nullable().optional(),
 });
 
 export type GuestInput = z.infer<typeof guestSchema>;

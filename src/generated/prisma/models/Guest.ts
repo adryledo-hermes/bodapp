@@ -20,8 +20,18 @@ export type GuestModel = runtime.Types.Result.DefaultSelection<Prisma.$GuestPayl
 
 export type AggregateGuest = {
   _count: GuestCountAggregateOutputType | null
+  _avg: GuestAvgAggregateOutputType | null
+  _sum: GuestSumAggregateOutputType | null
   _min: GuestMinAggregateOutputType | null
   _max: GuestMaxAggregateOutputType | null
+}
+
+export type GuestAvgAggregateOutputType = {
+  seatNumber: number | null
+}
+
+export type GuestSumAggregateOutputType = {
+  seatNumber: number | null
 }
 
 export type GuestMinAggregateOutputType = {
@@ -36,6 +46,7 @@ export type GuestMinAggregateOutputType = {
   plusOneName: string | null
   rsvpStatus: $Enums.RSVPStatus | null
   tableId: string | null
+  seatNumber: number | null
   notes: string | null
   invitationToken: string | null
   createdAt: Date | null
@@ -54,6 +65,7 @@ export type GuestMaxAggregateOutputType = {
   plusOneName: string | null
   rsvpStatus: $Enums.RSVPStatus | null
   tableId: string | null
+  seatNumber: number | null
   notes: string | null
   invitationToken: string | null
   createdAt: Date | null
@@ -74,6 +86,7 @@ export type GuestCountAggregateOutputType = {
   plusOneName: number
   rsvpStatus: number
   tableId: number
+  seatNumber: number
   notes: number
   invitationToken: number
   createdAt: number
@@ -81,6 +94,14 @@ export type GuestCountAggregateOutputType = {
   _all: number
 }
 
+
+export type GuestAvgAggregateInputType = {
+  seatNumber?: true
+}
+
+export type GuestSumAggregateInputType = {
+  seatNumber?: true
+}
 
 export type GuestMinAggregateInputType = {
   id?: true
@@ -94,6 +115,7 @@ export type GuestMinAggregateInputType = {
   plusOneName?: true
   rsvpStatus?: true
   tableId?: true
+  seatNumber?: true
   notes?: true
   invitationToken?: true
   createdAt?: true
@@ -112,6 +134,7 @@ export type GuestMaxAggregateInputType = {
   plusOneName?: true
   rsvpStatus?: true
   tableId?: true
+  seatNumber?: true
   notes?: true
   invitationToken?: true
   createdAt?: true
@@ -132,6 +155,7 @@ export type GuestCountAggregateInputType = {
   plusOneName?: true
   rsvpStatus?: true
   tableId?: true
+  seatNumber?: true
   notes?: true
   invitationToken?: true
   createdAt?: true
@@ -177,6 +201,18 @@ export type GuestAggregateArgs<ExtArgs extends runtime.Types.Extensions.Internal
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: GuestAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: GuestSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: GuestMinAggregateInputType
@@ -207,6 +243,8 @@ export type GuestGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
   take?: number
   skip?: number
   _count?: GuestCountAggregateInputType | true
+  _avg?: GuestAvgAggregateInputType
+  _sum?: GuestSumAggregateInputType
   _min?: GuestMinAggregateInputType
   _max?: GuestMaxAggregateInputType
 }
@@ -225,11 +263,14 @@ export type GuestGroupByOutputType = {
   plusOneName: string | null
   rsvpStatus: $Enums.RSVPStatus
   tableId: string | null
+  seatNumber: number | null
   notes: string | null
   invitationToken: string
   createdAt: Date
   updatedAt: Date
   _count: GuestCountAggregateOutputType | null
+  _avg: GuestAvgAggregateOutputType | null
+  _sum: GuestSumAggregateOutputType | null
   _min: GuestMinAggregateOutputType | null
   _max: GuestMaxAggregateOutputType | null
 }
@@ -266,6 +307,7 @@ export type GuestWhereInput = {
   plusOneName?: Prisma.StringNullableFilter<"Guest"> | string | null
   rsvpStatus?: Prisma.EnumRSVPStatusFilter<"Guest"> | $Enums.RSVPStatus
   tableId?: Prisma.StringNullableFilter<"Guest"> | string | null
+  seatNumber?: Prisma.IntNullableFilter<"Guest"> | number | null
   notes?: Prisma.StringNullableFilter<"Guest"> | string | null
   invitationToken?: Prisma.StringFilter<"Guest"> | string
   createdAt?: Prisma.DateTimeFilter<"Guest"> | Date | string
@@ -290,6 +332,7 @@ export type GuestOrderByWithRelationInput = {
   plusOneName?: Prisma.SortOrderInput | Prisma.SortOrder
   rsvpStatus?: Prisma.SortOrder
   tableId?: Prisma.SortOrderInput | Prisma.SortOrder
+  seatNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
   invitationToken?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -318,6 +361,7 @@ export type GuestWhereUniqueInput = Prisma.AtLeast<{
   plusOneName?: Prisma.StringNullableFilter<"Guest"> | string | null
   rsvpStatus?: Prisma.EnumRSVPStatusFilter<"Guest"> | $Enums.RSVPStatus
   tableId?: Prisma.StringNullableFilter<"Guest"> | string | null
+  seatNumber?: Prisma.IntNullableFilter<"Guest"> | number | null
   notes?: Prisma.StringNullableFilter<"Guest"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Guest"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Guest"> | Date | string
@@ -341,13 +385,16 @@ export type GuestOrderByWithAggregationInput = {
   plusOneName?: Prisma.SortOrderInput | Prisma.SortOrder
   rsvpStatus?: Prisma.SortOrder
   tableId?: Prisma.SortOrderInput | Prisma.SortOrder
+  seatNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
   invitationToken?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.GuestCountOrderByAggregateInput
+  _avg?: Prisma.GuestAvgOrderByAggregateInput
   _max?: Prisma.GuestMaxOrderByAggregateInput
   _min?: Prisma.GuestMinOrderByAggregateInput
+  _sum?: Prisma.GuestSumOrderByAggregateInput
 }
 
 export type GuestScalarWhereWithAggregatesInput = {
@@ -367,6 +414,7 @@ export type GuestScalarWhereWithAggregatesInput = {
   plusOneName?: Prisma.StringNullableWithAggregatesFilter<"Guest"> | string | null
   rsvpStatus?: Prisma.EnumRSVPStatusWithAggregatesFilter<"Guest"> | $Enums.RSVPStatus
   tableId?: Prisma.StringNullableWithAggregatesFilter<"Guest"> | string | null
+  seatNumber?: Prisma.IntNullableWithAggregatesFilter<"Guest"> | number | null
   notes?: Prisma.StringNullableWithAggregatesFilter<"Guest"> | string | null
   invitationToken?: Prisma.StringWithAggregatesFilter<"Guest"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Guest"> | Date | string
@@ -385,6 +433,7 @@ export type GuestCreateInput = {
   plusOneAllowed?: boolean
   plusOneName?: string | null
   rsvpStatus?: $Enums.RSVPStatus
+  seatNumber?: number | null
   notes?: string | null
   invitationToken: string
   createdAt?: Date | string
@@ -409,6 +458,7 @@ export type GuestUncheckedCreateInput = {
   plusOneName?: string | null
   rsvpStatus?: $Enums.RSVPStatus
   tableId?: string | null
+  seatNumber?: number | null
   notes?: string | null
   invitationToken: string
   createdAt?: Date | string
@@ -429,6 +479,7 @@ export type GuestUpdateInput = {
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
+  seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   invitationToken?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -453,6 +504,7 @@ export type GuestUncheckedUpdateInput = {
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   tableId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   invitationToken?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -475,6 +527,7 @@ export type GuestCreateManyInput = {
   plusOneName?: string | null
   rsvpStatus?: $Enums.RSVPStatus
   tableId?: string | null
+  seatNumber?: number | null
   notes?: string | null
   invitationToken: string
   createdAt?: Date | string
@@ -493,6 +546,7 @@ export type GuestUpdateManyMutationInput = {
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
+  seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   invitationToken?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -513,6 +567,7 @@ export type GuestUncheckedUpdateManyInput = {
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   tableId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   invitationToken?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -551,10 +606,15 @@ export type GuestCountOrderByAggregateInput = {
   plusOneName?: Prisma.SortOrder
   rsvpStatus?: Prisma.SortOrder
   tableId?: Prisma.SortOrder
+  seatNumber?: Prisma.SortOrder
   notes?: Prisma.SortOrder
   invitationToken?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type GuestAvgOrderByAggregateInput = {
+  seatNumber?: Prisma.SortOrder
 }
 
 export type GuestMaxOrderByAggregateInput = {
@@ -569,6 +629,7 @@ export type GuestMaxOrderByAggregateInput = {
   plusOneName?: Prisma.SortOrder
   rsvpStatus?: Prisma.SortOrder
   tableId?: Prisma.SortOrder
+  seatNumber?: Prisma.SortOrder
   notes?: Prisma.SortOrder
   invitationToken?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -587,10 +648,15 @@ export type GuestMinOrderByAggregateInput = {
   plusOneName?: Prisma.SortOrder
   rsvpStatus?: Prisma.SortOrder
   tableId?: Prisma.SortOrder
+  seatNumber?: Prisma.SortOrder
   notes?: Prisma.SortOrder
   invitationToken?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type GuestSumOrderByAggregateInput = {
+  seatNumber?: Prisma.SortOrder
 }
 
 export type GuestScalarRelationFilter = {
@@ -664,6 +730,14 @@ export type BoolFieldUpdateOperationsInput = {
 
 export type EnumRSVPStatusFieldUpdateOperationsInput = {
   set?: $Enums.RSVPStatus
+}
+
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
 }
 
 export type GuestCreateNestedOneWithoutFromInput = {
@@ -748,6 +822,7 @@ export type GuestCreateWithoutWeddingInput = {
   plusOneAllowed?: boolean
   plusOneName?: string | null
   rsvpStatus?: $Enums.RSVPStatus
+  seatNumber?: number | null
   notes?: string | null
   invitationToken: string
   createdAt?: Date | string
@@ -770,6 +845,7 @@ export type GuestUncheckedCreateWithoutWeddingInput = {
   plusOneName?: string | null
   rsvpStatus?: $Enums.RSVPStatus
   tableId?: string | null
+  seatNumber?: number | null
   notes?: string | null
   invitationToken: string
   createdAt?: Date | string
@@ -821,6 +897,7 @@ export type GuestScalarWhereInput = {
   plusOneName?: Prisma.StringNullableFilter<"Guest"> | string | null
   rsvpStatus?: Prisma.EnumRSVPStatusFilter<"Guest"> | $Enums.RSVPStatus
   tableId?: Prisma.StringNullableFilter<"Guest"> | string | null
+  seatNumber?: Prisma.IntNullableFilter<"Guest"> | number | null
   notes?: Prisma.StringNullableFilter<"Guest"> | string | null
   invitationToken?: Prisma.StringFilter<"Guest"> | string
   createdAt?: Prisma.DateTimeFilter<"Guest"> | Date | string
@@ -839,6 +916,7 @@ export type GuestCreateWithoutFromInput = {
   plusOneAllowed?: boolean
   plusOneName?: string | null
   rsvpStatus?: $Enums.RSVPStatus
+  seatNumber?: number | null
   notes?: string | null
   invitationToken: string
   createdAt?: Date | string
@@ -862,6 +940,7 @@ export type GuestUncheckedCreateWithoutFromInput = {
   plusOneName?: string | null
   rsvpStatus?: $Enums.RSVPStatus
   tableId?: string | null
+  seatNumber?: number | null
   notes?: string | null
   invitationToken: string
   createdAt?: Date | string
@@ -886,6 +965,7 @@ export type GuestCreateWithoutToInput = {
   plusOneAllowed?: boolean
   plusOneName?: string | null
   rsvpStatus?: $Enums.RSVPStatus
+  seatNumber?: number | null
   notes?: string | null
   invitationToken: string
   createdAt?: Date | string
@@ -909,6 +989,7 @@ export type GuestUncheckedCreateWithoutToInput = {
   plusOneName?: string | null
   rsvpStatus?: $Enums.RSVPStatus
   tableId?: string | null
+  seatNumber?: number | null
   notes?: string | null
   invitationToken: string
   createdAt?: Date | string
@@ -944,6 +1025,7 @@ export type GuestUpdateWithoutFromInput = {
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
+  seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   invitationToken?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -967,6 +1049,7 @@ export type GuestUncheckedUpdateWithoutFromInput = {
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   tableId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   invitationToken?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -997,6 +1080,7 @@ export type GuestUpdateWithoutToInput = {
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
+  seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   invitationToken?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1020,6 +1104,7 @@ export type GuestUncheckedUpdateWithoutToInput = {
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   tableId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   invitationToken?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1039,6 +1124,7 @@ export type GuestCreateWithoutTableInput = {
   plusOneAllowed?: boolean
   plusOneName?: string | null
   rsvpStatus?: $Enums.RSVPStatus
+  seatNumber?: number | null
   notes?: string | null
   invitationToken: string
   createdAt?: Date | string
@@ -1061,6 +1147,7 @@ export type GuestUncheckedCreateWithoutTableInput = {
   plusOneAllowed?: boolean
   plusOneName?: string | null
   rsvpStatus?: $Enums.RSVPStatus
+  seatNumber?: number | null
   notes?: string | null
   invitationToken: string
   createdAt?: Date | string
@@ -1108,6 +1195,7 @@ export type GuestCreateManyWeddingInput = {
   plusOneName?: string | null
   rsvpStatus?: $Enums.RSVPStatus
   tableId?: string | null
+  seatNumber?: number | null
   notes?: string | null
   invitationToken: string
   createdAt?: Date | string
@@ -1126,6 +1214,7 @@ export type GuestUpdateWithoutWeddingInput = {
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
+  seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   invitationToken?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1148,6 +1237,7 @@ export type GuestUncheckedUpdateWithoutWeddingInput = {
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   tableId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   invitationToken?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1169,6 +1259,7 @@ export type GuestUncheckedUpdateManyWithoutWeddingInput = {
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   tableId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   invitationToken?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1188,6 +1279,7 @@ export type GuestCreateManyTableInput = {
   plusOneAllowed?: boolean
   plusOneName?: string | null
   rsvpStatus?: $Enums.RSVPStatus
+  seatNumber?: number | null
   notes?: string | null
   invitationToken: string
   createdAt?: Date | string
@@ -1206,6 +1298,7 @@ export type GuestUpdateWithoutTableInput = {
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
+  seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   invitationToken?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1228,6 +1321,7 @@ export type GuestUncheckedUpdateWithoutTableInput = {
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
+  seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   invitationToken?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1249,6 +1343,7 @@ export type GuestUncheckedUpdateManyWithoutTableInput = {
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
+  seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   invitationToken?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1309,6 +1404,7 @@ export type GuestSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   plusOneName?: boolean
   rsvpStatus?: boolean
   tableId?: boolean
+  seatNumber?: boolean
   notes?: boolean
   invitationToken?: boolean
   createdAt?: boolean
@@ -1334,6 +1430,7 @@ export type GuestSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   plusOneName?: boolean
   rsvpStatus?: boolean
   tableId?: boolean
+  seatNumber?: boolean
   notes?: boolean
   invitationToken?: boolean
   createdAt?: boolean
@@ -1356,6 +1453,7 @@ export type GuestSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   plusOneName?: boolean
   rsvpStatus?: boolean
   tableId?: boolean
+  seatNumber?: boolean
   notes?: boolean
   invitationToken?: boolean
   createdAt?: boolean
@@ -1378,13 +1476,14 @@ export type GuestSelectScalar = {
   plusOneName?: boolean
   rsvpStatus?: boolean
   tableId?: boolean
+  seatNumber?: boolean
   notes?: boolean
   invitationToken?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type GuestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "weddingId" | "fullName" | "alias" | "relationshipContext" | "phone" | "allergies" | "musicPrefs" | "paperInvitation" | "plusOneAllowed" | "plusOneName" | "rsvpStatus" | "tableId" | "notes" | "invitationToken" | "createdAt" | "updatedAt", ExtArgs["result"]["guest"]>
+export type GuestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "weddingId" | "fullName" | "alias" | "relationshipContext" | "phone" | "allergies" | "musicPrefs" | "paperInvitation" | "plusOneAllowed" | "plusOneName" | "rsvpStatus" | "tableId" | "seatNumber" | "notes" | "invitationToken" | "createdAt" | "updatedAt", ExtArgs["result"]["guest"]>
 export type GuestInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   table?: boolean | Prisma.Guest$tableArgs<ExtArgs>
   wedding?: boolean | Prisma.WeddingDefaultArgs<ExtArgs>
@@ -1423,6 +1522,7 @@ export type $GuestPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     plusOneName: string | null
     rsvpStatus: $Enums.RSVPStatus
     tableId: string | null
+    seatNumber: number | null
     notes: string | null
     invitationToken: string
     createdAt: Date
@@ -1867,6 +1967,7 @@ export interface GuestFieldRefs {
   readonly plusOneName: Prisma.FieldRef<"Guest", 'String'>
   readonly rsvpStatus: Prisma.FieldRef<"Guest", 'RSVPStatus'>
   readonly tableId: Prisma.FieldRef<"Guest", 'String'>
+  readonly seatNumber: Prisma.FieldRef<"Guest", 'Int'>
   readonly notes: Prisma.FieldRef<"Guest", 'String'>
   readonly invitationToken: Prisma.FieldRef<"Guest", 'String'>
   readonly createdAt: Prisma.FieldRef<"Guest", 'DateTime'>
