@@ -6,6 +6,7 @@ import type { Locale } from "@/lib/i18n";
 
 function navLinks(locale: Locale) {
   return [
+    { href: "/panel", label: translate(locale, "nav.dashboard") },
     { href: "/guests", label: translate(locale, "nav.guests") },
     { href: "/mesas", label: translate(locale, "nav.mesas") },
     { href: "/decoracion", label: translate(locale, "nav.decoracion") },

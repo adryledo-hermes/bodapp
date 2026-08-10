@@ -86,7 +86,7 @@ export default function SetupForm() {
         }
         return;
       }
-      router.push(data.redirect || "/guests");
+      router.push(data.redirect || "/panel");
     } catch {
       setError(t("setup.errNetwork"));
     } finally {

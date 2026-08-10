@@ -68,7 +68,7 @@ export async function POST(req: Request) {
         role: "couple",
       });
 
-      return NextResponse.json({ ok: true, redirect: "/guests" });
+      return NextResponse.json({ ok: true, redirect: "/panel" });
     } catch (err) {
       // P2002 = unique constraint violation. The slug-dedup loop above covers
       // the common case, but a concurrent request can still race us to the

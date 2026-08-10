@@ -35,5 +35,5 @@ export async function POST(req: Request) {
     role: user.role,
   });
 
-  return NextResponse.json({ ok: true, redirect: "/guests" });
+  return NextResponse.json({ ok: true, redirect: "/panel" });
 }

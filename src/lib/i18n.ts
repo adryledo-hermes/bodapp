@@ -28,6 +28,7 @@ export const LOCALES: readonly Locale[] = ["es", "en"] as const;
 export const messages: Record<Locale, Record<string, string>> = {
   es: {
     // ---- Panel navigation ----
+    "nav.dashboard": "Inicio",
     "nav.guests": "Invitados",
     "nav.mesas": "Mesas",
     "nav.decoracion": "Decoración",
@@ -37,6 +38,32 @@ export const messages: Record<Locale, Record<string, string>> = {
     "nav.fotos": "Fotos",
     "nav.logout": "Salir",
     "nav.loggingOut": "Saliendo...",
+
+    // ---- Dashboard ----
+    "dash.title": "Resumen de la boda",
+    "dash.subtitle": "Todo lo importante de tu boda en un vistazo.",
+    "dash.guests": "Invitados",
+    "dash.guestsTotal": "Total",
+    "dash.guestsPending": "Pendientes",
+    "dash.guestsConfirmed": "Confirmados",
+    "dash.guestsDeclined": "Declinados",
+    "dash.guestsMaybe": "Quizás",
+    "dash.tables": "Mesas",
+    "dash.tablesTotal": "Total de mesas",
+    "dash.invitations": "Invitaciones",
+    "dash.invitationsTotal": "Total",
+    "dash.invitationsSent": "Enviadas",
+    "dash.invitationsPending": "Sin responder",
+    "dash.tasks": "Tareas",
+    "dash.tasksTotal": "Total",
+    "dash.tasksDone": "Hechas",
+    "dash.tasksPending": "Pendientes",
+    "dash.nextTask": "Siguiente tarea",
+    "dash.noNextTask": "Sin tareas pendientes 🎉",
+    "dash.emptyTitle": "¡Bienvenido a tu panel de boda!",
+    "dash.emptyBody": "Añade tus invitados y configura las mesas para empezar a organizarlo todo.",
+    "dash.goGuests": "Añadir invitados",
+    "dash.goTables": "Configurar mesas",
 
     // ---- Locale switcher ----
     "locale.switchTo": "Cambiar idioma",
@@ -353,6 +380,7 @@ export const messages: Record<Locale, Record<string, string>> = {
 
   en: {
     // ---- Panel navigation ----
+    "nav.dashboard": "Dashboard",
     "nav.guests": "Guests",
     "nav.mesas": "Tables",
     "nav.decoracion": "Decorations",
@@ -362,6 +390,32 @@ export const messages: Record<Locale, Record<string, string>> = {
     "nav.fotos": "Photos",
     "nav.logout": "Log out",
     "nav.loggingOut": "Signing out...",
+
+    // ---- Dashboard ----
+    "dash.title": "Wedding overview",
+    "dash.subtitle": "Everything that matters about your wedding, in one glance.",
+    "dash.guests": "Guests",
+    "dash.guestsTotal": "Total",
+    "dash.guestsPending": "Pending",
+    "dash.guestsConfirmed": "Confirmed",
+    "dash.guestsDeclined": "Declined",
+    "dash.guestsMaybe": "Maybe",
+    "dash.tables": "Tables",
+    "dash.tablesTotal": "Total tables",
+    "dash.invitations": "Invitations",
+    "dash.invitationsTotal": "Total",
+    "dash.invitationsSent": "Sent",
+    "dash.invitationsPending": "No reply",
+    "dash.tasks": "Tasks",
+    "dash.tasksTotal": "Total",
+    "dash.tasksDone": "Done",
+    "dash.tasksPending": "Pending",
+    "dash.nextTask": "Next task",
+    "dash.noNextTask": "No pending tasks 🎉",
+    "dash.emptyTitle": "Welcome to your wedding dashboard!",
+    "dash.emptyBody": "Add your guests and set up your tables to get everything organised.",
+    "dash.goGuests": "Add guests",
+    "dash.goTables": "Set up tables",
 
     // ---- Locale switcher ----
     "locale.switchTo": "Switch language",

@@ -48,7 +48,7 @@ export default function LoginPage() {
         setError(data.error || t("login.err"));
         return;
       }
-      router.push(data.redirect || "/guests");
+      router.push(data.redirect || "/panel");
     } catch {
       setError(t("login.errNetwork"));
     } finally {
