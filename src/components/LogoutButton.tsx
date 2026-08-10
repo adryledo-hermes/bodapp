@@ -6,8 +6,8 @@ import { translate } from "@/lib/i18n";
 
 /**
  * Logs the couple out: POST /api/auth/logout (clears the session cookie) and
- * sends them back to /login. Plain button so it works from the server-rendered
- * panel layout without a form.
+ * sends them back to the welcome screen. Plain button so it works from the
+ * server-rendered panel layout without a form.
  */
 export default function LogoutButton({ locale }: { locale: "es" | "en" }) {
   const router = useRouter();
@@ -21,9 +21,9 @@ export default function LogoutButton({ locale }: { locale: "es" | "en" }) {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
     } catch {
-      // Even on a network error the cookie may be gone; still bounce to login.
+      // Even on a network error the cookie may be gone; still bounce to welcome.
     } finally {
-      router.push("/login");
+      router.push("/");
       router.refresh();
     }
   }

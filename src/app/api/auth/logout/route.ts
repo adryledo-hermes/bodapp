@@ -3,5 +3,5 @@ import { destroySession } from "@/lib/session";
 
 export async function POST() {
   await destroySession();
-  return NextResponse.json({ ok: true, redirect: "/login" });
+  return NextResponse.json({ ok: true, redirect: "/" });
 }

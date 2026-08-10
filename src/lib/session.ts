@@ -4,13 +4,13 @@ import { cookieSecure } from "./cookie-secure";
 
 const SESSION_COOKIE = "bodapp_session";
 
-// Expiration of the login session, configurable in days via env
-// SESSION_MAX_AGE_DAYS (default 7). The cookie maxAge and the JWT exp are kept
+// Expiration of the login session, configurable in HOURS via env
+// SESSION_MAX_AGE_HOURS (default 1). The cookie maxAge and the JWT exp are kept
 // in lockstep so a cookie can never outlive its signed token (or vice versa).
 function sessionMaxAgeSeconds(): number {
-  const days = Number(process.env.SESSION_MAX_AGE_DAYS);
-  const valid = Number.isFinite(days) && days > 0;
-  return (valid ? days : 7) * 24 * 60 * 60;
+  const hours = Number(process.env.SESSION_MAX_AGE_HOURS);
+  const valid = Number.isFinite(hours) && hours > 0;
+  return (valid ? hours : 1) * 60 * 60;
 }
 
 function getSecret(): Uint8Array {
@@ -27,10 +27,15 @@ export interface SessionPayload {
 
 export async function createSession(payload: SessionPayload): Promise<void> {
   const maxAge = sessionMaxAgeSeconds();
+  // jose's setExpirationTime treats a NUMBER as an absolute Unix timestamp
+  // (seconds since epoch), not a relative duration — so passing the raw seconds
+  // would expire the token in 1970 and break login. Pass an absolute value:
+  // now + maxAge. (A relative string like "1h" also works; absolute is exact.)
+  const expiresAt = Math.floor(Date.now() / 1000) + maxAge;
   const token = await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime(maxAge)
+    .setExpirationTime(expiresAt)
     .sign(getSecret());
 
   const cookieStore = await cookies();
