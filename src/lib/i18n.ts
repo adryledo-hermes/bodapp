@@ -67,6 +67,13 @@ export const messages: Record<Locale, Record<string, string>> = {
 
     // ---- Locale switcher ----
     "locale.switchTo": "Cambiar idioma",
+    // ---- Welcome / landing ----
+    "welcome.kicker": "Organiza y comparte tu boda",
+    "welcome.title": "Bodapp",
+    "welcome.subtitle": "Gestiona tus invitados, mesas, tareas e invitaciones en un solo lugar.",
+    "welcome.login": "Iniciar sesión",
+    "welcome.createCouple": "Crear nueva pareja",
+    "welcome.createCoupleHint": "Registra tu boda para empezar",
     "locale.es": "ES",
     "locale.en": "EN",
 
@@ -425,6 +432,13 @@ export const messages: Record<Locale, Record<string, string>> = {
 
     // ---- Locale switcher ----
     "locale.switchTo": "Switch language",
+    // ---- Welcome / landing ----
+    "welcome.kicker": "Organise & share your wedding",
+    "welcome.title": "Bodapp",
+    "welcome.subtitle": "Manage your guests, tables, tasks and invitations in one place.",
+    "welcome.login": "Log in",
+    "welcome.createCouple": "Create a new couple",
+    "welcome.createCoupleHint": "Register your wedding to get started",
     "locale.es": "ES",
     "locale.en": "EN",
 
