@@ -103,9 +103,14 @@ model Guest {
   wedding Wedding  @relation(fields: [weddingId], references: [id])
   from    GuestRelation[] @relation("guestFrom")
   to      GuestRelation[] @relation("guestTo")
+  // Optional personalised invitation this guest is grouped under (manual
+  // creation: pick several guests → one invitation with all their phones).
+  invitation   Invitation? @relation(fields: [invitationId], references: [id])
+  invitationId String?
 
   @@index([weddingId])
   @@index([tableId])
+  @@index([invitationId])
 }
 
 // Relationships between guests (partner, sibling, "doesn't get along", etc.)
@@ -135,6 +140,7 @@ model Invitation {
 
   wedding  Wedding   @relation(fields: [weddingId], references: [id])
   otpCodes OtpCode[]
+  guests   Guest[] // the guests this personalised invitation is addressed to
 
   @@index([weddingId])
 }

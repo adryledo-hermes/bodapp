@@ -125,7 +125,8 @@ export const GuestScalarFieldEnum = {
   notes: 'notes',
   invitationToken: 'invitationToken',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  invitationId: 'invitationId'
 } as const
 
 export type GuestScalarFieldEnum = (typeof GuestScalarFieldEnum)[keyof typeof GuestScalarFieldEnum]
