@@ -130,6 +130,14 @@ export default function SeatingCanvas({
       // Snapshot for rollback if the PATCH fails.
       originTables: tables,
     });
+    // Capture the pointer so dragging continues smoothly even when the cursor
+    // leaves the canvas bounds — otherwise pointermove/pointerup stop firing
+    // and the table gets stuck mid-drag (the "flaky" table dragging symptom).
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Very old engines / touch edge cases: drag still works without capture.
+    }
   }
 
   function onCanvasPointerMove(e: React.PointerEvent) {
@@ -691,6 +699,10 @@ export default function SeatingCanvas({
                           onDragOver={onDragOver}
                           onDrop={(e) => {
                             e.preventDefault();
+                            // Stop bubbling — otherwise the table's generic
+                            // onDrop runs afterwards and re-assigns the guest
+                            // WITHOUT the seat number, wiping the chair.
+                            e.stopPropagation();
                             const guestId = e.dataTransfer.getData("text/plain");
                             if (guestId) {
                               void assignToTable(guestId, table.id, chair.seatNumber);
