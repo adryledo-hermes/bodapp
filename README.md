@@ -3,14 +3,16 @@
 Wedding management + invitation platform for **v1** on a Hetzner VPS.
 
 Two surfaces:
-- **Private couple panel** — guests (Pokémon-card view), seating planner, decoration/gift layer, task board.
+- **Private couple panel** — dashboard, guests (editable Pokémon-card view + photos), seating planner (move tables, drag guests onto chairs), decoration/gift layer, task board, invitations manager.
 - **Public invitation portal** — QR/link → phone → SMS OTP → personalized invitation + RSVP.
 
 ## v1 scope locks
 - Multi-phone per invitation (couple/family): phone validated against the invitation's accepted phones *before* sending OTP.
+- Invitations are created **manually per guest/couple/group** in the panel (Invitations manager); each gets its own QR code.
+- Seating: always-visible chairs around each table — dropping a guest on a chair seats them AND fixes their seat number in one action; tables are draggable; every table auto-creates its attached centerpiece decoration.
 - OTP via **Twilio SMS only** (no WhatsApp Business number).
 - Couple's **bank account** shown on invitations.
-- Photo upload: couple in v1, guests in v1.1.
+- Photo upload: couple in v1, guests in v1.1 (guest photos now supported).
 - **No menu selection**, no CSV import, no 2FA, no GDPR tooling (all deferred to v2).
 - No domain — served on IP/port over HTTP; invitations distributed by QR/link.
 
