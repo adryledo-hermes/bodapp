@@ -5,7 +5,11 @@ import { z } from "zod";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-const bodySchema = z.object({ guestId: z.string().min(1) });
+const bodySchema = z.object({
+  guestId: z.string().min(1),
+  // Optional seat number: seat the guest AND fix their chair in one call.
+  seatNumber: z.number().int().min(1).nullable().optional(),
+});
 const bodySchemaClear = z.object({ guestId: z.string().min(1).optional() });
 
 /**
@@ -57,7 +61,14 @@ export async function POST(req: Request, { params }: Ctx) {
 
   const updated = await prisma.guest.update({
     where: { id: guest.id },
-    data: { tableId: id },
+    data: {
+      tableId: id,
+      // When a chair is specified, fix the seat number too — one atomic write
+      // so the guest can't end up seated but unchained.
+      ...(parsed.data.seatNumber === undefined
+        ? {}
+        : { seatNumber: parsed.data.seatNumber }),
+    },
     include: { table: true },
   });
   return NextResponse.json({ guest: updated });

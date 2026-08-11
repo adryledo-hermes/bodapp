@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import {
   capacityStatus,
+  chairPositions,
   duplicateSeats,
   parseTableShape,
   seatingConflictsByTable,
@@ -211,7 +212,11 @@ export default function SeatingCanvas({
     return null;
   }
 
-  async function assignToTable(guestId: string, targetTableId: string) {
+  async function assignToTable(
+    guestId: string,
+    targetTableId: string,
+    seatNumber?: number | null
+  ) {
     const rel = locateGuest(guestId);
     if (!rel) return;
     // Dropping on the guest's own table is a no-op.
@@ -224,7 +229,13 @@ export default function SeatingCanvas({
     setTables((prev) =>
       prev.map((t) => {
         if (t.id === targetTableId && !t.guests.some((g) => g.id === guestId)) {
-          return { ...t, guests: [...t.guests, rel.guest] };
+          return {
+            ...t,
+            guests: [
+              ...t.guests,
+              { ...rel.guest, seatNumber: seatNumber ?? rel.guest.seatNumber },
+            ],
+          };
         }
         if (rel.fromTableId && t.id === rel.fromTableId) {
           return { ...t, guests: t.guests.filter((g) => g.id !== guestId) };
@@ -237,6 +248,7 @@ export default function SeatingCanvas({
     try {
       res = await send(`/api/tables/${targetTableId}/guests`, "POST", {
         guestId,
+        ...(seatNumber === undefined ? {} : { seatNumber }),
       });
     } catch {
       setTables(prevTables);
@@ -398,60 +410,6 @@ export default function SeatingCanvas({
     if (!table) return;
     const next = Math.max(1, table.capacity + delta);
     void patchTable(tableId, { capacity: next });
-  }
-
-  /**
-   * Set a seated guest's seat number (1..capacity) or clear it (null).
-   * Optimistic update + rollback, mirrored from the other canvas writes.
-   */
-  async function changeSeat(
-    guestId: string,
-    tableId: string,
-    seatNumber: number | null
-  ) {
-    const prevTables = tables;
-    const apply = (value: number | null) =>
-      setTables((prev) =>
-        prev.map((t) =>
-          t.id === tableId
-            ? {
-                ...t,
-                guests: t.guests.map((g) =>
-                  g.id === guestId ? { ...g, seatNumber: value } : g
-                ),
-              }
-            : t
-        )
-      );
-    apply(seatNumber);
-
-    let res: Response;
-    try {
-      // guestSchema.partial() already accepts { seatNumber } (incl. null).
-      res = await send(`/api/guests/${guestId}`, "PATCH", { seatNumber });
-    } catch {
-      setTables(prevTables);
-      flash("err", t("common.networkError"));
-      return;
-    }
-    if (!res.ok) {
-      setTables(prevTables);
-      flash("err", t("seating.errSeat"));
-      return;
-    }
-    const { guest } = await res.json();
-    setTables((prev) =>
-      prev.map((t) =>
-        t.id === tableId
-          ? {
-              ...t,
-              guests: t.guests.map((g) =>
-                g.id === guestId ? { ...g, seatNumber: guest.seatNumber } : g
-              ),
-            }
-          : t
-      )
-    );
   }
 
   function onDragStart(e: React.DragEvent, guestId: string) {
@@ -685,34 +643,13 @@ export default function SeatingCanvas({
                           : "bg-indigo-100 text-indigo-800"
                       }`}
                     >
-                      <select
-                        value={seat ?? ""}
-                        onChange={(e) => {
-                          const v =
-                            e.target.value === ""
-                              ? null
-                              : Number(e.target.value);
-                          void changeSeat(g.id, table.id, v);
-                        }}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        aria-label={t("seating.seatAria", {
-                          name: guestLabel(g),
-                        })}
-                        title={t("seating.seatHint")}
-                        className={`w-7 cursor-pointer rounded border-0 bg-transparent text-center text-[10px] font-semibold focus:bg-white focus:outline-none ${
+                      <span
+                        className={`text-[10px] font-semibold ${
                           inUse ? "text-red-700" : "text-indigo-600"
                         }`}
                       >
-                        <option value="">–</option>
-                        {Array.from(
-                          { length: Math.max(table.capacity, 1) },
-                          (_, i) => i + 1
-                        ).map((n) => (
-                          <option key={n} value={n}>
-                            {n}
-                          </option>
-                        ))}
-                      </select>
+                        {seat !== null ? seat : "–"}
+                      </span>
                       {guestLabel(g)}
                       <button
                         onClick={() => void clearGuest(g.id)}
@@ -737,6 +674,47 @@ export default function SeatingCanvas({
                     >
                       ✕
                     </button>
+
+                    {/* Always-visible chairs: dropping a guest on a chair seats
+                        them at this table AND fixes their seat number in one
+                        action. The table body itself remains a generic drop
+                        target (no seat number). */}
+                    {chairPositions(table).map((chair) => {
+                      const occupant = table.guests.find(
+                        (g) => g.seatNumber === chair.seatNumber
+                      );
+                      const occupiedByOther =
+                        occupant && occupant.id !== drag?.tableId;
+                      return (
+                        <div
+                          key={chair.seatNumber}
+                          onDragOver={onDragOver}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const guestId = e.dataTransfer.getData("text/plain");
+                            if (guestId) {
+                              void assignToTable(guestId, table.id, chair.seatNumber);
+                            }
+                          }}
+                          title={t("seating.chairHint", {
+                            seat: chair.seatNumber,
+                          })}
+                          className={`absolute flex items-center justify-center rounded-full border text-[10px] font-semibold transition-colors ${
+                            occupiedByOther
+                              ? "border-indigo-300 bg-indigo-100 text-indigo-700 ring-2 ring-indigo-300"
+                              : "border-slate-300 bg-white text-slate-400 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-500"
+                          }`}
+                          style={{
+                            width: 26,
+                            height: 26,
+                            left: `calc(50% + ${chair.offsetX}% - 13px)`,
+                            top: `calc(50% + ${chair.offsetY}% - 13px)`,
+                          }}
+                        >
+                          {occupant ? occupant.fullName.charAt(0) : chair.seatNumber}
+                        </div>
+                      );
+                    })}
                   </div>
                 );
               })

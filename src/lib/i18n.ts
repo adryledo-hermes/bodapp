@@ -168,12 +168,9 @@ export const messages: Record<Locale, Record<string, string>> = {
     "seating.errCreate": "No se pudo crear la mesa.",
     "seating.errDelete": "No se pudo eliminar la mesa.",
     "seating.errPatch": "No se pudo guardar el cambio de la mesa.",
-    "seating.seat": "Asiento",
-    "seating.seatAria": "Asiento de {name}",
-    "seating.seatHint": "Número de asiento en la mesa",
     "seating.seatInUse": "Asiento ocupado por otro invitado",
+    "seating.chairHint": "Asiento {seat} — suelta aquí un invitado",
     "seating.moveHint": "Arrastra la mesa para moverla",
-    "seating.errSeat": "No se pudo guardar el asiento. Reintenta.",
 
     // ---- Task board ----
     "task.mesas": "Mesas",
@@ -542,12 +539,9 @@ export const messages: Record<Locale, Record<string, string>> = {
     "seating.errCreate": "Could not create the table.",
     "seating.errDelete": "Could not delete the table.",
     "seating.errPatch": "Could not save the table change.",
-    "seating.seat": "Seat",
-    "seating.seatAria": "Seat of {name}",
-    "seating.seatHint": "Seat number at the table",
     "seating.seatInUse": "Seat already taken by another guest",
+    "seating.chairHint": "Seat {seat} — drop a guest here",
     "seating.moveHint": "Drag the table to move it",
-    "seating.errSeat": "Could not save the seat. Try again.",
 
     // ---- Task board ----
     "task.mesas": "Tables",

@@ -159,3 +159,59 @@ export function duplicateSeats(
   }
   return result;
 }
+
+/** One chair's position relative to its table (percent offsets from center). */
+export interface ChairPosition {
+  seatNumber: number; // 1..capacity
+  offsetX: number; // percent of the table width, +right
+  offsetY: number; // percent of the table height, +down
+}
+
+/**
+ * Compute the chair layout for a table's capacity as per-seat offsets from the
+ * table center. Chairs always appear OUTSIDE the table edge:
+ *  - round: evenly spaced around the circumference
+ *  - rectangle: two facing rows (left/right sides)
+ * Values are in percent so the canvas can scale them with the table size.
+ * Pure + deterministic → unit-testable.
+ */
+export function chairPositions(table: Pick<SeatTable, "shape" | "capacity">): ChairPosition[] {
+  const capacity = Math.max(1, table.capacity);
+  const shape = parseTableShape(table.shape);
+  const result: ChairPosition[] = [];
+
+  if (shape === "round") {
+    // Evenly spaced around the circle, starting at the top.
+    for (let i = 0; i < capacity; i++) {
+      const angle = (i / capacity) * Math.PI * 2 - Math.PI / 2;
+      result.push({
+        seatNumber: i + 1,
+        offsetX: Math.cos(angle) * 70,
+        offsetY: Math.sin(angle) * 70,
+      });
+    }
+  } else {
+    // Two facing rows: left column seats 1..ceil(n/2), right column the rest.
+    const leftCount = Math.ceil(capacity / 2);
+    const rightCount = capacity - leftCount;
+    const rowStepX = capacity > 6 ? 42 : 55; // tighter on long tables
+    const startY = -((leftCount - 1) / 2) * 60;
+
+    let seat = 1;
+    for (let i = 0; i < leftCount; i++) {
+      result.push({
+        seatNumber: seat++,
+        offsetX: -rowStepX,
+        offsetY: startY + i * 60,
+      });
+    }
+    for (let i = 0; i < rightCount; i++) {
+      result.push({
+        seatNumber: seat++,
+        offsetX: rowStepX,
+        offsetY: startY + i * 60,
+      });
+    }
+  }
+  return result;
+}
