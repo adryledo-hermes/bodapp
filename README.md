@@ -33,6 +33,10 @@ npm run lint
 npm run typecheck
 ```
 
+## Testing
+- **Unit tests:** `npm test` (vitest — pure libs: slugs, seating, OTP, i18n parity, …).
+- **E2E UI tests (Playwright):** `npm run test:e2e` — see [`tests/e2e/README.md`](tests/e2e/README.md) (DB-free smoke on the welcome page; DB-backed flows added per feature).
+
 Deployment instructions: [`deploy/hetzner-setup.md`](deploy/hetzner-setup.md).
 
 ## Deploy (Docker Compose on Hetzner VPS)
