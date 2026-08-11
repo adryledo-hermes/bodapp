@@ -7,7 +7,7 @@ import { z } from "zod";
  * bare relative paths, extra path segments, or non-http protocols — is
  * rejected so a malicious value can't be stored/served as an image source.
  */
-export function isValidPhotoUrl(value: string): boolean {
+export function isValidPhotoUrl(value: string | null | undefined): boolean {
   if (typeof value !== "string") return false;
   const v = value.trim();
   if (!v) return false; // empty / whitespace

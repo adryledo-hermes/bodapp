@@ -16,6 +16,7 @@ function makeGuest(overrides: Partial<GuestCardData> = {}): GuestCardData {
     rsvpStatus: "pending",
     notes: null,
     table: null,
+    photoUrl: null,
     ...overrides,
   };
 }

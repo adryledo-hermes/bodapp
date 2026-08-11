@@ -61,11 +61,11 @@ export default function InvitationsManager({
     if (loading) return;
     setError("");
     if (!title.trim()) {
-      setError(t("inv.errTitle"));
+      setError(t("invman.errTitle"));
       return;
     }
     if (selected.size === 0) {
-      setError(t("inv.errNoGuests"));
+      setError(t("invman.errNoGuests"));
       return;
     }
     setLoading(true);
@@ -80,7 +80,7 @@ export default function InvitationsManager({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error === "guest not found" ? t("inv.errGuest") : t("inv.errSave"));
+        setError(data.error === "guest not found" ? t("invman.errGuest") : t("invman.errSave"));
         return;
       }
       setTitle("");
@@ -92,14 +92,14 @@ export default function InvitationsManager({
       ]);
       router.refresh();
     } catch {
-      setError(t("inv.errNetwork"));
+      setError(t("invman.errNetwork"));
     } finally {
       setLoading(false);
     }
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm(t("inv.confirmDelete"))) return;
+    if (!window.confirm(t("invman.confirmDelete"))) return;
     try {
       const res = await fetch(`/api/invitations/${id}`, { method: "DELETE" });
       if (!res.ok) return;
@@ -116,7 +116,7 @@ export default function InvitationsManager({
         onClick={() => setShowForm((v) => !v)}
         className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
       >
-        {showForm ? t("common.cancel") : t("inv.create")}
+        {showForm ? t("common.cancel") : t("invman.create")}
       </button>
 
       {showForm && (
@@ -125,7 +125,7 @@ export default function InvitationsManager({
           className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5"
         >
           <label className="block text-sm font-medium text-slate-700" htmlFor="inv-title">
-            {t("inv.titleLabel")} *
+            {t("invman.titleLabel")} *
           </label>
           <input
             id="inv-title"
@@ -133,16 +133,16 @@ export default function InvitationsManager({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className={inputClassName}
-            placeholder={t("inv.titlePlaceholder")}
+            placeholder={t("invman.titlePlaceholder")}
             autoFocus
           />
 
           <div>
             <p className="mb-2 text-sm font-medium text-slate-700">
-              {t("inv.guestsLabel")} ({selected.size})
+              {t("invman.guestsLabel")} ({selected.size})
             </p>
             {guests.length === 0 ? (
-              <p className="text-sm text-slate-400">{t("inv.noGuests")}</p>
+              <p className="text-sm text-slate-400">{t("invman.noGuests")}</p>
             ) : (
               <div className="grid max-h-64 gap-1.5 overflow-y-auto rounded-xl border border-slate-200 p-2 sm:grid-cols-2">
                 {guests.map((g) => {
@@ -183,14 +183,14 @@ export default function InvitationsManager({
             disabled={loading}
             className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
           >
-            {loading ? t("common.saving") : t("inv.save")}
+            {loading ? t("common.saving") : t("invman.save")}
           </button>
         </form>
       )}
 
       {invitations.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500">
-          {t("inv.empty")}
+          {t("invman.empty")}
         </div>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -204,14 +204,14 @@ export default function InvitationsManager({
                 <button
                   onClick={() => handleDelete(inv.id)}
                   className="tap-min rounded-lg px-2 py-1 text-sm text-slate-400 hover:bg-red-50 hover:text-red-600"
-                  aria-label={t("inv.delete")}
-                  title={t("inv.delete")}
+                  aria-label={t("invman.delete")}
+                  title={t("invman.delete")}
                 >
                   ✕
                 </button>
               </div>
               {inv.guests.length === 0 ? (
-                <p className="mt-2 text-xs text-slate-400">{t("inv.noGuests")}</p>
+                <p className="mt-2 text-xs text-slate-400">{t("invman.noGuests")}</p>
               ) : (
                 <ul className="mt-2 space-y-1">
                   {inv.guests.map((g) => (
@@ -226,7 +226,7 @@ export default function InvitationsManager({
                 download={`qr-${inv.id}.png`}
                 className="mt-4 inline-flex justify-center rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700"
               >
-                {t("inv.qrDownload")}
+                {t("invman.qrDownload")}
               </a>
             </li>
           ))}
