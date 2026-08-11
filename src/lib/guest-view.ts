@@ -25,8 +25,15 @@ export interface GuestCardData {
   plusOneName: string | null;
   rsvpStatus: string;
   notes: string | null;
+  photoUrl: string | null;
   table?: GuestTable | null;
 }
+
+/** Payload the edit form submits (mirrors GuestInput, minus computed fields). */
+export type GuestEditableFields = Omit<
+  GuestCardData,
+  "id" | "rsvpStatus" | "table"
+>;
 
 export interface GuestFilters {
   search?: string;

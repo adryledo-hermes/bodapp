@@ -121,6 +121,7 @@ export const GuestScalarFieldEnum = {
   rsvpStatus: 'rsvpStatus',
   tableId: 'tableId',
   seatNumber: 'seatNumber',
+  photoUrl: 'photoUrl',
   notes: 'notes',
   invitationToken: 'invitationToken',
   createdAt: 'createdAt',

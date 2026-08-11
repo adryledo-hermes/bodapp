@@ -125,6 +125,15 @@ export const messages: Record<Locale, Record<string, string>> = {
     "guest.errSave": "No se pudo guardar el invitado. Revisa los datos e inténtalo de nuevo.",
     "guest.errNetwork": "Error de red: no se pudo guardar.",
     "guest.added": "Invitado añadido.",
+    "guest.edit": "Editar",
+    "guest.editTitle": "Editar invitado",
+    "guest.photo": "Foto",
+    "guest.uploadPhoto": "Subir foto",
+    "guest.removePhoto": "Quitar foto",
+    "guest.uploading": "Subiendo…",
+    "guest.saved": "Cambios guardados.",
+    "guest.allergiesHint": "Separa con comas",
+    "guest.musicPrefsHint": "Separa con comas",
 
     // ---- Seating canvas ----
     "seating.addTable": "+ Añadir mesa",
@@ -490,6 +499,15 @@ export const messages: Record<Locale, Record<string, string>> = {
     "guest.errSave": "Could not save the guest. Check the details and try again.",
     "guest.errNetwork": "Network error: could not save.",
     "guest.added": "Guest added.",
+    "guest.edit": "Edit",
+    "guest.editTitle": "Edit guest",
+    "guest.photo": "Photo",
+    "guest.uploadPhoto": "Upload photo",
+    "guest.removePhoto": "Remove photo",
+    "guest.uploading": "Uploading…",
+    "guest.saved": "Changes saved.",
+    "guest.allergiesHint": "Comma-separated",
+    "guest.musicPrefsHint": "Comma-separated",
 
     // ---- Seating canvas ----
     "seating.addTable": "+ Add table",

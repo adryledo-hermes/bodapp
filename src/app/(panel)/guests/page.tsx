@@ -33,6 +33,7 @@ export default async function GuestsPage() {
     plusOneName: g.plusOneName,
     rsvpStatus: g.rsvpStatus,
     notes: g.notes,
+    photoUrl: g.photoUrl ?? null,
     table: g.table ? { id: g.table.id, label: g.table.name } : null,
   }));
 

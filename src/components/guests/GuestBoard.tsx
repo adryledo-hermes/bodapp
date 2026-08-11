@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { filterGuests, type GuestCardData, type RsvpStatus } from "@/lib/guest-view";
 import GuestCard from "./GuestCard";
 import GuestForm from "./GuestForm";
+import GuestEditForm from "./GuestEditForm";
 import { translate, type Locale } from "@/lib/i18n";
 
 const inputClassName =
@@ -19,6 +20,7 @@ export default function GuestBoard({
   const [search, setSearch] = useState("");
   const [rsvpStatus, setRsvpStatus] = useState<RsvpStatus | "">("");
   const [allergy, setAllergy] = useState("");
+  const [editing, setEditing] = useState<GuestCardData | null>(null);
 
   const t = (key: string) => translate(locale, key);
 
@@ -78,9 +80,18 @@ export default function GuestBoard({
       ) : (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {filtered.map((guest) => (
-            <GuestCard key={guest.id} guest={guest} locale={locale} />
+            <GuestCard
+              key={guest.id}
+              guest={guest}
+              locale={locale}
+              onEdit={setEditing}
+            />
           ))}
         </div>
+      )}
+
+      {editing && (
+        <GuestEditForm guest={editing} locale={locale} onClose={() => setEditing(null)} />
       )}
     </div>
   );

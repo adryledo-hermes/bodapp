@@ -93,6 +93,7 @@ model Guest {
   rsvpStatus          RSVPStatus @default(pending)
   tableId             String?
   seatNumber          Int? // concrete seat at their table (seating map); null when unassigned/not numbered
+  photoUrl            String? // app-relative /api/photos/<id>/file (tenant-scoped Photo row) or absolute URL
   notes               String?
   invitationToken     String     @unique
   createdAt           DateTime   @default(now())
