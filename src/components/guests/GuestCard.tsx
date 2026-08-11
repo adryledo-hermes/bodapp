@@ -140,7 +140,7 @@ export default function GuestCard({
         <button
           type="button"
           onClick={() => onEdit(guest)}
-          className="tap-min absolute -top-2 -right-2 z-10 rounded-full bg-slate-900 px-3 py-1 text-xs font-medium text-white opacity-0 shadow group-hover:opacity-100 focus:opacity-100 hover:bg-slate-700 md:opacity-0"
+          className="tap-min absolute -top-2 -right-2 z-10 rounded-full bg-slate-900 px-3 py-1 text-xs font-medium text-white shadow hover:bg-slate-700"
         >
           ✏ {t("guest.edit")}
         </button>

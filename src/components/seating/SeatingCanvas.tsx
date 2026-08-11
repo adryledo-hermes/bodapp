@@ -523,7 +523,7 @@ export default function SeatingCanvas({
             ref={canvasRef}
             onPointerMove={onCanvasPointerMove}
             onPointerUp={onCanvasPointerUp}
-            className="relative min-h-[560px] select-none rounded-2xl border border-slate-200 bg-slate-50 p-6"
+            className="relative min-h-[560px] touch-none select-none rounded-2xl border border-slate-200 bg-slate-50 p-6"
           >
             {tables.length === 0 ? (
               <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-400">
@@ -541,7 +541,7 @@ export default function SeatingCanvas({
                     onDrop={(e) => onDrop(e, table.id)}
                     onPointerDown={(e) => onTablePointerDown(e, table)}
                     title={t("seating.moveHint")}
-                    className={`absolute flex cursor-grab flex-col items-center justify-between gap-2 p-3 shadow-lg transition-colors active:cursor-grabbing ${
+                    className={`absolute flex touch-none cursor-grab flex-col items-center justify-between gap-2 p-3 shadow-lg transition-colors active:cursor-grabbing ${
                       drag && drag.tableId === table.id
                         ? "z-10 ring-2 ring-indigo-400"
                         : ""
