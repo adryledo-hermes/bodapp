@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DECORATION_KINDS,
+  defaultCenterpieceFor,
   defaultKindPosition,
   isDecorationKind,
   normalizeDecoration,
@@ -118,5 +119,25 @@ describe("defaultKindPosition", () => {
     expect(p.positionX).toBeLessThanOrEqual(490);
     expect(p.positionY).toBeGreaterThanOrEqual(10);
     expect(p.positionY).toBeLessThanOrEqual(290);
+  });
+});
+describe("defaultCenterpieceFor", () => {
+  it("creates a centerpiece at the table's center with the kind's default label", () => {
+    const cp = defaultCenterpieceFor({ positionX: 42, positionY: 37 });
+    expect(cp.kind).toBe("centerpiece");
+    expect(cp.label).toBe(DECORATION_KINDS.centerpiece.label);
+    expect(cp.positionX).toBe(42);
+    expect(cp.positionY).toBe(37);
+  });
+
+  it("keeps the table's position even when shape/capacity are provided", () => {
+    const cp = defaultCenterpieceFor({
+      positionX: 10.5,
+      positionY: 20.25,
+      shape: "rectangle",
+      capacity: 12,
+    });
+    expect(cp.positionX).toBe(10.5);
+    expect(cp.positionY).toBe(20.25);
   });
 });

@@ -37,7 +37,11 @@ export default async function MesasPage() {
 
   const tables = await prisma.table.findMany({
     where: tenantWhere(auth.session),
-    include: { guests: { include: { from: true, to: true } } },
+    include: {
+      guests: { include: { from: true, to: true } },
+      // Attached decorations (every table auto-ships a centerpiece).
+      decorations: { select: { id: true, kind: true, label: true } },
+    },
     orderBy: { name: "asc" },
   });
 
@@ -55,6 +59,11 @@ export default async function MesasPage() {
     positionX: t.positionX,
     positionY: t.positionY,
     guests: t.guests.map(toSeatingGuest),
+    decorations: t.decorations.map((d) => ({
+      id: d.id,
+      kind: d.kind,
+      label: d.label,
+    })),
   }));
 
   return (

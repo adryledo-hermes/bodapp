@@ -167,8 +167,9 @@ model Table {
   positionX Float    @default(0)
   positionY Float    @default(0)
 
-  wedding Wedding @relation(fields: [weddingId], references: [id])
-  guests  Guest[]
+  wedding     Wedding       @relation(fields: [weddingId], references: [id])
+  guests      Guest[]
+  decorations Decoration[]
 
   @@index([weddingId])
 }
@@ -181,10 +182,15 @@ model Decoration {
   label     String?
   positionX Float    @default(0)
   positionY Float    @default(0)
+  // When attached, the decoration belongs to a table on the seating canvas
+  // (e.g. a centerpiece created WITH its table). Null = free-floating.
+  tableId String?
 
   wedding Wedding @relation(fields: [weddingId], references: [id])
+  table   Table?  @relation(fields: [tableId], references: [id])
 
   @@index([weddingId])
+  @@index([tableId])
 }
 
 model Task {

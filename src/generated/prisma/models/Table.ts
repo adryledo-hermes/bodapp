@@ -242,6 +242,7 @@ export type TableWhereInput = {
   positionY?: Prisma.FloatFilter<"Table"> | number
   wedding?: Prisma.XOR<Prisma.WeddingScalarRelationFilter, Prisma.WeddingWhereInput>
   guests?: Prisma.GuestListRelationFilter
+  decorations?: Prisma.DecorationListRelationFilter
 }
 
 export type TableOrderByWithRelationInput = {
@@ -254,6 +255,7 @@ export type TableOrderByWithRelationInput = {
   positionY?: Prisma.SortOrder
   wedding?: Prisma.WeddingOrderByWithRelationInput
   guests?: Prisma.GuestOrderByRelationAggregateInput
+  decorations?: Prisma.DecorationOrderByRelationAggregateInput
 }
 
 export type TableWhereUniqueInput = Prisma.AtLeast<{
@@ -269,6 +271,7 @@ export type TableWhereUniqueInput = Prisma.AtLeast<{
   positionY?: Prisma.FloatFilter<"Table"> | number
   wedding?: Prisma.XOR<Prisma.WeddingScalarRelationFilter, Prisma.WeddingWhereInput>
   guests?: Prisma.GuestListRelationFilter
+  decorations?: Prisma.DecorationListRelationFilter
 }, "id">
 
 export type TableOrderByWithAggregationInput = {
@@ -308,6 +311,7 @@ export type TableCreateInput = {
   positionY?: number
   wedding: Prisma.WeddingCreateNestedOneWithoutTablesInput
   guests?: Prisma.GuestCreateNestedManyWithoutTableInput
+  decorations?: Prisma.DecorationCreateNestedManyWithoutTableInput
 }
 
 export type TableUncheckedCreateInput = {
@@ -319,6 +323,7 @@ export type TableUncheckedCreateInput = {
   positionX?: number
   positionY?: number
   guests?: Prisma.GuestUncheckedCreateNestedManyWithoutTableInput
+  decorations?: Prisma.DecorationUncheckedCreateNestedManyWithoutTableInput
 }
 
 export type TableUpdateInput = {
@@ -330,6 +335,7 @@ export type TableUpdateInput = {
   positionY?: Prisma.FloatFieldUpdateOperationsInput | number
   wedding?: Prisma.WeddingUpdateOneRequiredWithoutTablesNestedInput
   guests?: Prisma.GuestUpdateManyWithoutTableNestedInput
+  decorations?: Prisma.DecorationUpdateManyWithoutTableNestedInput
 }
 
 export type TableUncheckedUpdateInput = {
@@ -341,6 +347,7 @@ export type TableUncheckedUpdateInput = {
   positionX?: Prisma.FloatFieldUpdateOperationsInput | number
   positionY?: Prisma.FloatFieldUpdateOperationsInput | number
   guests?: Prisma.GuestUncheckedUpdateManyWithoutTableNestedInput
+  decorations?: Prisma.DecorationUncheckedUpdateManyWithoutTableNestedInput
 }
 
 export type TableCreateManyInput = {
@@ -495,6 +502,22 @@ export type FloatFieldUpdateOperationsInput = {
   divide?: number
 }
 
+export type TableCreateNestedOneWithoutDecorationsInput = {
+  create?: Prisma.XOR<Prisma.TableCreateWithoutDecorationsInput, Prisma.TableUncheckedCreateWithoutDecorationsInput>
+  connectOrCreate?: Prisma.TableCreateOrConnectWithoutDecorationsInput
+  connect?: Prisma.TableWhereUniqueInput
+}
+
+export type TableUpdateOneWithoutDecorationsNestedInput = {
+  create?: Prisma.XOR<Prisma.TableCreateWithoutDecorationsInput, Prisma.TableUncheckedCreateWithoutDecorationsInput>
+  connectOrCreate?: Prisma.TableCreateOrConnectWithoutDecorationsInput
+  upsert?: Prisma.TableUpsertWithoutDecorationsInput
+  disconnect?: Prisma.TableWhereInput | boolean
+  delete?: Prisma.TableWhereInput | boolean
+  connect?: Prisma.TableWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TableUpdateToOneWithWhereWithoutDecorationsInput, Prisma.TableUpdateWithoutDecorationsInput>, Prisma.TableUncheckedUpdateWithoutDecorationsInput>
+}
+
 export type TableCreateWithoutWeddingInput = {
   id?: string
   name: string
@@ -503,6 +526,7 @@ export type TableCreateWithoutWeddingInput = {
   positionX?: number
   positionY?: number
   guests?: Prisma.GuestCreateNestedManyWithoutTableInput
+  decorations?: Prisma.DecorationCreateNestedManyWithoutTableInput
 }
 
 export type TableUncheckedCreateWithoutWeddingInput = {
@@ -513,6 +537,7 @@ export type TableUncheckedCreateWithoutWeddingInput = {
   positionX?: number
   positionY?: number
   guests?: Prisma.GuestUncheckedCreateNestedManyWithoutTableInput
+  decorations?: Prisma.DecorationUncheckedCreateNestedManyWithoutTableInput
 }
 
 export type TableCreateOrConnectWithoutWeddingInput = {
@@ -562,6 +587,7 @@ export type TableCreateWithoutGuestsInput = {
   positionX?: number
   positionY?: number
   wedding: Prisma.WeddingCreateNestedOneWithoutTablesInput
+  decorations?: Prisma.DecorationCreateNestedManyWithoutTableInput
 }
 
 export type TableUncheckedCreateWithoutGuestsInput = {
@@ -572,6 +598,7 @@ export type TableUncheckedCreateWithoutGuestsInput = {
   capacity?: number
   positionX?: number
   positionY?: number
+  decorations?: Prisma.DecorationUncheckedCreateNestedManyWithoutTableInput
 }
 
 export type TableCreateOrConnectWithoutGuestsInput = {
@@ -598,6 +625,7 @@ export type TableUpdateWithoutGuestsInput = {
   positionX?: Prisma.FloatFieldUpdateOperationsInput | number
   positionY?: Prisma.FloatFieldUpdateOperationsInput | number
   wedding?: Prisma.WeddingUpdateOneRequiredWithoutTablesNestedInput
+  decorations?: Prisma.DecorationUpdateManyWithoutTableNestedInput
 }
 
 export type TableUncheckedUpdateWithoutGuestsInput = {
@@ -608,6 +636,67 @@ export type TableUncheckedUpdateWithoutGuestsInput = {
   capacity?: Prisma.IntFieldUpdateOperationsInput | number
   positionX?: Prisma.FloatFieldUpdateOperationsInput | number
   positionY?: Prisma.FloatFieldUpdateOperationsInput | number
+  decorations?: Prisma.DecorationUncheckedUpdateManyWithoutTableNestedInput
+}
+
+export type TableCreateWithoutDecorationsInput = {
+  id?: string
+  name: string
+  shape?: string
+  capacity?: number
+  positionX?: number
+  positionY?: number
+  wedding: Prisma.WeddingCreateNestedOneWithoutTablesInput
+  guests?: Prisma.GuestCreateNestedManyWithoutTableInput
+}
+
+export type TableUncheckedCreateWithoutDecorationsInput = {
+  id?: string
+  weddingId: string
+  name: string
+  shape?: string
+  capacity?: number
+  positionX?: number
+  positionY?: number
+  guests?: Prisma.GuestUncheckedCreateNestedManyWithoutTableInput
+}
+
+export type TableCreateOrConnectWithoutDecorationsInput = {
+  where: Prisma.TableWhereUniqueInput
+  create: Prisma.XOR<Prisma.TableCreateWithoutDecorationsInput, Prisma.TableUncheckedCreateWithoutDecorationsInput>
+}
+
+export type TableUpsertWithoutDecorationsInput = {
+  update: Prisma.XOR<Prisma.TableUpdateWithoutDecorationsInput, Prisma.TableUncheckedUpdateWithoutDecorationsInput>
+  create: Prisma.XOR<Prisma.TableCreateWithoutDecorationsInput, Prisma.TableUncheckedCreateWithoutDecorationsInput>
+  where?: Prisma.TableWhereInput
+}
+
+export type TableUpdateToOneWithWhereWithoutDecorationsInput = {
+  where?: Prisma.TableWhereInput
+  data: Prisma.XOR<Prisma.TableUpdateWithoutDecorationsInput, Prisma.TableUncheckedUpdateWithoutDecorationsInput>
+}
+
+export type TableUpdateWithoutDecorationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  shape?: Prisma.StringFieldUpdateOperationsInput | string
+  capacity?: Prisma.IntFieldUpdateOperationsInput | number
+  positionX?: Prisma.FloatFieldUpdateOperationsInput | number
+  positionY?: Prisma.FloatFieldUpdateOperationsInput | number
+  wedding?: Prisma.WeddingUpdateOneRequiredWithoutTablesNestedInput
+  guests?: Prisma.GuestUpdateManyWithoutTableNestedInput
+}
+
+export type TableUncheckedUpdateWithoutDecorationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  weddingId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  shape?: Prisma.StringFieldUpdateOperationsInput | string
+  capacity?: Prisma.IntFieldUpdateOperationsInput | number
+  positionX?: Prisma.FloatFieldUpdateOperationsInput | number
+  positionY?: Prisma.FloatFieldUpdateOperationsInput | number
+  guests?: Prisma.GuestUncheckedUpdateManyWithoutTableNestedInput
 }
 
 export type TableCreateManyWeddingInput = {
@@ -627,6 +716,7 @@ export type TableUpdateWithoutWeddingInput = {
   positionX?: Prisma.FloatFieldUpdateOperationsInput | number
   positionY?: Prisma.FloatFieldUpdateOperationsInput | number
   guests?: Prisma.GuestUpdateManyWithoutTableNestedInput
+  decorations?: Prisma.DecorationUpdateManyWithoutTableNestedInput
 }
 
 export type TableUncheckedUpdateWithoutWeddingInput = {
@@ -637,6 +727,7 @@ export type TableUncheckedUpdateWithoutWeddingInput = {
   positionX?: Prisma.FloatFieldUpdateOperationsInput | number
   positionY?: Prisma.FloatFieldUpdateOperationsInput | number
   guests?: Prisma.GuestUncheckedUpdateManyWithoutTableNestedInput
+  decorations?: Prisma.DecorationUncheckedUpdateManyWithoutTableNestedInput
 }
 
 export type TableUncheckedUpdateManyWithoutWeddingInput = {
@@ -655,10 +746,12 @@ export type TableUncheckedUpdateManyWithoutWeddingInput = {
 
 export type TableCountOutputType = {
   guests: number
+  decorations: number
 }
 
 export type TableCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   guests?: boolean | TableCountOutputTypeCountGuestsArgs
+  decorations?: boolean | TableCountOutputTypeCountDecorationsArgs
 }
 
 /**
@@ -678,6 +771,13 @@ export type TableCountOutputTypeCountGuestsArgs<ExtArgs extends runtime.Types.Ex
   where?: Prisma.GuestWhereInput
 }
 
+/**
+ * TableCountOutputType without action
+ */
+export type TableCountOutputTypeCountDecorationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DecorationWhereInput
+}
+
 
 export type TableSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -689,6 +789,7 @@ export type TableSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   positionY?: boolean
   wedding?: boolean | Prisma.WeddingDefaultArgs<ExtArgs>
   guests?: boolean | Prisma.Table$guestsArgs<ExtArgs>
+  decorations?: boolean | Prisma.Table$decorationsArgs<ExtArgs>
   _count?: boolean | Prisma.TableCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["table"]>
 
@@ -728,6 +829,7 @@ export type TableOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = ru
 export type TableInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   wedding?: boolean | Prisma.WeddingDefaultArgs<ExtArgs>
   guests?: boolean | Prisma.Table$guestsArgs<ExtArgs>
+  decorations?: boolean | Prisma.Table$decorationsArgs<ExtArgs>
   _count?: boolean | Prisma.TableCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type TableIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -742,6 +844,7 @@ export type $TablePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   objects: {
     wedding: Prisma.$WeddingPayload<ExtArgs>
     guests: Prisma.$GuestPayload<ExtArgs>[]
+    decorations: Prisma.$DecorationPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1147,6 +1250,7 @@ export interface Prisma__TableClient<T, Null = never, ExtArgs extends runtime.Ty
   readonly [Symbol.toStringTag]: "PrismaPromise"
   wedding<T extends Prisma.WeddingDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WeddingDefaultArgs<ExtArgs>>): Prisma.Prisma__WeddingClient<runtime.Types.Result.GetResult<Prisma.$WeddingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   guests<T extends Prisma.Table$guestsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Table$guestsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GuestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  decorations<T extends Prisma.Table$decorationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Table$decorationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DecorationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1605,6 +1709,30 @@ export type Table$guestsArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
   take?: number
   skip?: number
   distinct?: Prisma.GuestScalarFieldEnum | Prisma.GuestScalarFieldEnum[]
+}
+
+/**
+ * Table.decorations
+ */
+export type Table$decorationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Decoration
+   */
+  select?: Prisma.DecorationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Decoration
+   */
+  omit?: Prisma.DecorationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DecorationInclude<ExtArgs> | null
+  where?: Prisma.DecorationWhereInput
+  orderBy?: Prisma.DecorationOrderByWithRelationInput | Prisma.DecorationOrderByWithRelationInput[]
+  cursor?: Prisma.DecorationWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DecorationScalarFieldEnum | Prisma.DecorationScalarFieldEnum[]
 }
 
 /**

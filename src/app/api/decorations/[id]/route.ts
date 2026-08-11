@@ -51,6 +51,19 @@ export async function PATCH(req: Request, { params }: Ctx) {
   if (parsed.data.label !== undefined) data.label = norm.label;
   if (parsed.data.positionX !== undefined) data.positionX = norm.positionX;
   if (parsed.data.positionY !== undefined) data.positionY = norm.positionY;
+  if (parsed.data.tableId !== undefined) {
+    // Attaching to a table must respect tenant boundaries: the target table
+    // has to belong to the SAME wedding as this decoration.
+    if (parsed.data.tableId !== null) {
+      const targetTable = await prisma.table.findFirst({
+        where: { id: parsed.data.tableId, weddingId: auth.session.weddingId },
+      });
+      if (!targetTable) {
+        return NextResponse.json({ error: "table not found" }, { status: 404 });
+      }
+    }
+    data.tableId = parsed.data.tableId;
+  }
 
   const decoration = await prisma.decoration.update({
     where: { id },

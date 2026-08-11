@@ -30,6 +30,8 @@ export interface SeatTable {
   positionX: number;
   positionY: number;
   guests: SeatingGuest[];
+  /** Decorations attached to this table (auto-created centerpiece, etc.). */
+  decorations?: Array<{ id: string; kind: string; label?: string | null }>;
 }
 
 /** Flat guestId -> tableId (or null when unassigned) assignment map. */

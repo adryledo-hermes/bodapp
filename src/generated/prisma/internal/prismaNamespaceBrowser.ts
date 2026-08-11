@@ -186,7 +186,8 @@ export const DecorationScalarFieldEnum = {
   kind: 'kind',
   label: 'label',
   positionX: 'positionX',
-  positionY: 'positionY'
+  positionY: 'positionY',
+  tableId: 'tableId'
 } as const
 
 export type DecorationScalarFieldEnum = (typeof DecorationScalarFieldEnum)[keyof typeof DecorationScalarFieldEnum]

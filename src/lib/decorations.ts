@@ -111,3 +111,29 @@ export function defaultKindPosition(
   const positionY = Math.round((margin + cellH * row + cellH / 2) * 10) / 10;
   return { positionX, positionY };
 }
+
+/** Minimal table shape needed to derive its centerpiece placement. */
+export interface CenterpieceTable {
+  positionX: number;
+  positionY: number;
+  shape?: string | null;
+  capacity?: number | null;
+}
+
+/**
+ * The default centerpiece decoration for a table: kind=centerpiece, label =
+ * "Centro de mesa", positioned AT the table's center (its positionX/Y already
+ * are the table's center — the canvas anchors tables at their midpoint). This
+ * is what gets auto-created together with a new table so every table starts
+ * with an attachable centerpiece. Pure + deterministic → unit-testable.
+ */
+export function defaultCenterpieceFor(
+  table: CenterpieceTable
+): NormalizedDecoration & { positionX: number; positionY: number } {
+  return {
+    kind: "centerpiece",
+    label: DECORATION_KINDS.centerpiece.label,
+    positionX: table.positionX,
+    positionY: table.positionY,
+  };
+}

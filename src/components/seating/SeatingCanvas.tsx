@@ -622,6 +622,31 @@ export default function SeatingCanvas({
                       </div>
                     )}
 
+                    {/* Decorations attached to this table (e.g. its centerpiece).
+                        Rendered on top of the table — they travel with it. */}
+                    {table.decorations && table.decorations.length > 0 && (
+                      <div className="flex max-w-full flex-wrap items-center justify-center gap-1 overflow-hidden">
+                        {table.decorations.map((dec) => (
+                          <span
+                            key={dec.id}
+                            title={dec.label ?? dec.kind}
+                            className="rounded-full bg-fuchsia-50 px-1.5 py-0.5 text-xs"
+                          >
+                            {dec.kind === "centerpiece"
+                              ? "🕯️"
+                              : dec.kind === "giftTable"
+                                ? "🎁"
+                                : dec.kind === "photoWall"
+                                  ? "📸"
+                                  : dec.kind === "danceFloor"
+                                    ? "🪩"
+                                    : "✨"}{" "}
+                            <span className="text-fuchsia-700">{dec.label}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
                     {table.guests.length === 0 ? (
                       <span className="text-center text-[11px] text-slate-400">
                         {t("seating.dropGuest")}

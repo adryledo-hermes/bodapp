@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireSession, tenantWhere } from "@/lib/auth-guard";
 import { parseTableShape } from "@/lib/seating";
 import { tableCreateSchema } from "@/lib/tables";
+import { defaultCenterpieceFor } from "@/lib/decorations";
 
 // GET /api/tables — list tables for the session's wedding (tenant-scoped),
 // including each table's assigned guests.
@@ -38,12 +39,31 @@ export async function POST(req: Request) {
     );
   }
 
-  const table = await prisma.table.create({
-    data: {
-      ...parsed.data,
-      shape: parseTableShape(parsed.data.shape),
-      weddingId: auth.session.weddingId,
-    },
+  const table = await prisma.$transaction(async (tx) => {
+    const created = await tx.table.create({
+      data: {
+        ...parsed.data,
+        shape: parseTableShape(parsed.data.shape),
+        weddingId: auth.session.weddingId,
+      },
+    });
+
+    // Every table ships with its own attachable centerpiece (kind ·
+    // centerpiece), created atomically WITH the table so the couple never has
+    // to add one by hand. Positioned at the table's center.
+    const centerpiece = defaultCenterpieceFor(created);
+    await tx.decoration.create({
+      data: {
+        weddingId: auth.session.weddingId,
+        kind: centerpiece.kind,
+        label: centerpiece.label,
+        positionX: centerpiece.positionX,
+        positionY: centerpiece.positionY,
+        tableId: created.id,
+      },
+    });
+
+    return created;
   });
   return NextResponse.json({ table }, { status: 201 });
 }
