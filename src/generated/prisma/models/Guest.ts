@@ -41,6 +41,7 @@ export type GuestMinAggregateOutputType = {
   alias: string | null
   relationshipContext: string | null
   phone: string | null
+  favoriteSong: string | null
   paperInvitation: boolean | null
   plusOneAllowed: boolean | null
   plusOneName: string | null
@@ -62,6 +63,7 @@ export type GuestMaxAggregateOutputType = {
   alias: string | null
   relationshipContext: string | null
   phone: string | null
+  favoriteSong: string | null
   paperInvitation: boolean | null
   plusOneAllowed: boolean | null
   plusOneName: string | null
@@ -85,6 +87,7 @@ export type GuestCountAggregateOutputType = {
   phone: number
   allergies: number
   musicPrefs: number
+  favoriteSong: number
   paperInvitation: number
   plusOneAllowed: number
   plusOneName: number
@@ -116,6 +119,7 @@ export type GuestMinAggregateInputType = {
   alias?: true
   relationshipContext?: true
   phone?: true
+  favoriteSong?: true
   paperInvitation?: true
   plusOneAllowed?: true
   plusOneName?: true
@@ -137,6 +141,7 @@ export type GuestMaxAggregateInputType = {
   alias?: true
   relationshipContext?: true
   phone?: true
+  favoriteSong?: true
   paperInvitation?: true
   plusOneAllowed?: true
   plusOneName?: true
@@ -160,6 +165,7 @@ export type GuestCountAggregateInputType = {
   phone?: true
   allergies?: true
   musicPrefs?: true
+  favoriteSong?: true
   paperInvitation?: true
   plusOneAllowed?: true
   plusOneName?: true
@@ -270,6 +276,7 @@ export type GuestGroupByOutputType = {
   phone: string
   allergies: string[]
   musicPrefs: string[]
+  favoriteSong: string | null
   paperInvitation: boolean
   plusOneAllowed: boolean
   plusOneName: string | null
@@ -316,6 +323,7 @@ export type GuestWhereInput = {
   phone?: Prisma.StringFilter<"Guest"> | string
   allergies?: Prisma.StringNullableListFilter<"Guest">
   musicPrefs?: Prisma.StringNullableListFilter<"Guest">
+  favoriteSong?: Prisma.StringNullableFilter<"Guest"> | string | null
   paperInvitation?: Prisma.BoolFilter<"Guest"> | boolean
   plusOneAllowed?: Prisma.BoolFilter<"Guest"> | boolean
   plusOneName?: Prisma.StringNullableFilter<"Guest"> | string | null
@@ -344,6 +352,7 @@ export type GuestOrderByWithRelationInput = {
   phone?: Prisma.SortOrder
   allergies?: Prisma.SortOrder
   musicPrefs?: Prisma.SortOrder
+  favoriteSong?: Prisma.SortOrderInput | Prisma.SortOrder
   paperInvitation?: Prisma.SortOrder
   plusOneAllowed?: Prisma.SortOrder
   plusOneName?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -376,6 +385,7 @@ export type GuestWhereUniqueInput = Prisma.AtLeast<{
   phone?: Prisma.StringFilter<"Guest"> | string
   allergies?: Prisma.StringNullableListFilter<"Guest">
   musicPrefs?: Prisma.StringNullableListFilter<"Guest">
+  favoriteSong?: Prisma.StringNullableFilter<"Guest"> | string | null
   paperInvitation?: Prisma.BoolFilter<"Guest"> | boolean
   plusOneAllowed?: Prisma.BoolFilter<"Guest"> | boolean
   plusOneName?: Prisma.StringNullableFilter<"Guest"> | string | null
@@ -403,6 +413,7 @@ export type GuestOrderByWithAggregationInput = {
   phone?: Prisma.SortOrder
   allergies?: Prisma.SortOrder
   musicPrefs?: Prisma.SortOrder
+  favoriteSong?: Prisma.SortOrderInput | Prisma.SortOrder
   paperInvitation?: Prisma.SortOrder
   plusOneAllowed?: Prisma.SortOrder
   plusOneName?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -434,6 +445,7 @@ export type GuestScalarWhereWithAggregatesInput = {
   phone?: Prisma.StringWithAggregatesFilter<"Guest"> | string
   allergies?: Prisma.StringNullableListFilter<"Guest">
   musicPrefs?: Prisma.StringNullableListFilter<"Guest">
+  favoriteSong?: Prisma.StringNullableWithAggregatesFilter<"Guest"> | string | null
   paperInvitation?: Prisma.BoolWithAggregatesFilter<"Guest"> | boolean
   plusOneAllowed?: Prisma.BoolWithAggregatesFilter<"Guest"> | boolean
   plusOneName?: Prisma.StringNullableWithAggregatesFilter<"Guest"> | string | null
@@ -456,6 +468,7 @@ export type GuestCreateInput = {
   phone: string
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
+  favoriteSong?: string | null
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
@@ -482,6 +495,7 @@ export type GuestUncheckedCreateInput = {
   phone: string
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
+  favoriteSong?: string | null
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
@@ -506,6 +520,7 @@ export type GuestUpdateInput = {
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
+  favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -532,6 +547,7 @@ export type GuestUncheckedUpdateInput = {
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
+  favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -557,6 +573,7 @@ export type GuestCreateManyInput = {
   phone: string
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
+  favoriteSong?: string | null
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
@@ -579,6 +596,7 @@ export type GuestUpdateManyMutationInput = {
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
+  favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -600,6 +618,7 @@ export type GuestUncheckedUpdateManyInput = {
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
+  favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -641,6 +660,7 @@ export type GuestCountOrderByAggregateInput = {
   phone?: Prisma.SortOrder
   allergies?: Prisma.SortOrder
   musicPrefs?: Prisma.SortOrder
+  favoriteSong?: Prisma.SortOrder
   paperInvitation?: Prisma.SortOrder
   plusOneAllowed?: Prisma.SortOrder
   plusOneName?: Prisma.SortOrder
@@ -666,6 +686,7 @@ export type GuestMaxOrderByAggregateInput = {
   alias?: Prisma.SortOrder
   relationshipContext?: Prisma.SortOrder
   phone?: Prisma.SortOrder
+  favoriteSong?: Prisma.SortOrder
   paperInvitation?: Prisma.SortOrder
   plusOneAllowed?: Prisma.SortOrder
   plusOneName?: Prisma.SortOrder
@@ -687,6 +708,7 @@ export type GuestMinOrderByAggregateInput = {
   alias?: Prisma.SortOrder
   relationshipContext?: Prisma.SortOrder
   phone?: Prisma.SortOrder
+  favoriteSong?: Prisma.SortOrder
   paperInvitation?: Prisma.SortOrder
   plusOneAllowed?: Prisma.SortOrder
   plusOneName?: Prisma.SortOrder
@@ -906,6 +928,7 @@ export type GuestCreateWithoutWeddingInput = {
   phone: string
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
+  favoriteSong?: string | null
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
@@ -930,6 +953,7 @@ export type GuestUncheckedCreateWithoutWeddingInput = {
   phone: string
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
+  favoriteSong?: string | null
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
@@ -984,6 +1008,7 @@ export type GuestScalarWhereInput = {
   phone?: Prisma.StringFilter<"Guest"> | string
   allergies?: Prisma.StringNullableListFilter<"Guest">
   musicPrefs?: Prisma.StringNullableListFilter<"Guest">
+  favoriteSong?: Prisma.StringNullableFilter<"Guest"> | string | null
   paperInvitation?: Prisma.BoolFilter<"Guest"> | boolean
   plusOneAllowed?: Prisma.BoolFilter<"Guest"> | boolean
   plusOneName?: Prisma.StringNullableFilter<"Guest"> | string | null
@@ -1006,6 +1031,7 @@ export type GuestCreateWithoutFromInput = {
   phone: string
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
+  favoriteSong?: string | null
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
@@ -1031,6 +1057,7 @@ export type GuestUncheckedCreateWithoutFromInput = {
   phone: string
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
+  favoriteSong?: string | null
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
@@ -1059,6 +1086,7 @@ export type GuestCreateWithoutToInput = {
   phone: string
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
+  favoriteSong?: string | null
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
@@ -1084,6 +1112,7 @@ export type GuestUncheckedCreateWithoutToInput = {
   phone: string
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
+  favoriteSong?: string | null
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
@@ -1123,6 +1152,7 @@ export type GuestUpdateWithoutFromInput = {
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
+  favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1148,6 +1178,7 @@ export type GuestUncheckedUpdateWithoutFromInput = {
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
+  favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1182,6 +1213,7 @@ export type GuestUpdateWithoutToInput = {
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
+  favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1207,6 +1239,7 @@ export type GuestUncheckedUpdateWithoutToInput = {
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
+  favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1230,6 +1263,7 @@ export type GuestCreateWithoutInvitationInput = {
   phone: string
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
+  favoriteSong?: string | null
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
@@ -1255,6 +1289,7 @@ export type GuestUncheckedCreateWithoutInvitationInput = {
   phone: string
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
+  favoriteSong?: string | null
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
@@ -1304,6 +1339,7 @@ export type GuestCreateWithoutTableInput = {
   phone: string
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
+  favoriteSong?: string | null
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
@@ -1329,6 +1365,7 @@ export type GuestUncheckedCreateWithoutTableInput = {
   phone: string
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
+  favoriteSong?: string | null
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
@@ -1378,6 +1415,7 @@ export type GuestCreateManyWeddingInput = {
   phone: string
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
+  favoriteSong?: string | null
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
@@ -1400,6 +1438,7 @@ export type GuestUpdateWithoutWeddingInput = {
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
+  favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1424,6 +1463,7 @@ export type GuestUncheckedUpdateWithoutWeddingInput = {
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
+  favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1448,6 +1488,7 @@ export type GuestUncheckedUpdateManyWithoutWeddingInput = {
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
+  favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1471,6 +1512,7 @@ export type GuestCreateManyInvitationInput = {
   phone: string
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
+  favoriteSong?: string | null
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
@@ -1492,6 +1534,7 @@ export type GuestUpdateWithoutInvitationInput = {
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
+  favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1517,6 +1560,7 @@ export type GuestUncheckedUpdateWithoutInvitationInput = {
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
+  favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1541,6 +1585,7 @@ export type GuestUncheckedUpdateManyWithoutInvitationInput = {
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
+  favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1563,6 +1608,7 @@ export type GuestCreateManyTableInput = {
   phone: string
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
+  favoriteSong?: string | null
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
@@ -1584,6 +1630,7 @@ export type GuestUpdateWithoutTableInput = {
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
+  favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1609,6 +1656,7 @@ export type GuestUncheckedUpdateWithoutTableInput = {
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
+  favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1633,6 +1681,7 @@ export type GuestUncheckedUpdateManyWithoutTableInput = {
   phone?: Prisma.StringFieldUpdateOperationsInput | string
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
+  favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1695,6 +1744,7 @@ export type GuestSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   phone?: boolean
   allergies?: boolean
   musicPrefs?: boolean
+  favoriteSong?: boolean
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: boolean
@@ -1724,6 +1774,7 @@ export type GuestSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   phone?: boolean
   allergies?: boolean
   musicPrefs?: boolean
+  favoriteSong?: boolean
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: boolean
@@ -1750,6 +1801,7 @@ export type GuestSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   phone?: boolean
   allergies?: boolean
   musicPrefs?: boolean
+  favoriteSong?: boolean
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: boolean
@@ -1776,6 +1828,7 @@ export type GuestSelectScalar = {
   phone?: boolean
   allergies?: boolean
   musicPrefs?: boolean
+  favoriteSong?: boolean
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: boolean
@@ -1790,7 +1843,7 @@ export type GuestSelectScalar = {
   invitationId?: boolean
 }
 
-export type GuestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "weddingId" | "fullName" | "alias" | "relationshipContext" | "phone" | "allergies" | "musicPrefs" | "paperInvitation" | "plusOneAllowed" | "plusOneName" | "rsvpStatus" | "tableId" | "seatNumber" | "photoUrl" | "notes" | "invitationToken" | "createdAt" | "updatedAt" | "invitationId", ExtArgs["result"]["guest"]>
+export type GuestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "weddingId" | "fullName" | "alias" | "relationshipContext" | "phone" | "allergies" | "musicPrefs" | "favoriteSong" | "paperInvitation" | "plusOneAllowed" | "plusOneName" | "rsvpStatus" | "tableId" | "seatNumber" | "photoUrl" | "notes" | "invitationToken" | "createdAt" | "updatedAt" | "invitationId", ExtArgs["result"]["guest"]>
 export type GuestInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   table?: boolean | Prisma.Guest$tableArgs<ExtArgs>
   wedding?: boolean | Prisma.WeddingDefaultArgs<ExtArgs>
@@ -1828,6 +1881,7 @@ export type $GuestPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     phone: string
     allergies: string[]
     musicPrefs: string[]
+    favoriteSong: string | null
     paperInvitation: boolean
     plusOneAllowed: boolean
     plusOneName: string | null
@@ -2276,6 +2330,7 @@ export interface GuestFieldRefs {
   readonly phone: Prisma.FieldRef<"Guest", 'String'>
   readonly allergies: Prisma.FieldRef<"Guest", 'String[]'>
   readonly musicPrefs: Prisma.FieldRef<"Guest", 'String[]'>
+  readonly favoriteSong: Prisma.FieldRef<"Guest", 'String'>
   readonly paperInvitation: Prisma.FieldRef<"Guest", 'Boolean'>
   readonly plusOneAllowed: Prisma.FieldRef<"Guest", 'Boolean'>
   readonly plusOneName: Prisma.FieldRef<"Guest", 'String'>

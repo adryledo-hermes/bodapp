@@ -115,6 +115,7 @@ export const GuestScalarFieldEnum = {
   phone: 'phone',
   allergies: 'allergies',
   musicPrefs: 'musicPrefs',
+  favoriteSong: 'favoriteSong',
   paperInvitation: 'paperInvitation',
   plusOneAllowed: 'plusOneAllowed',
   plusOneName: 'plusOneName',
@@ -148,6 +149,7 @@ export const InvitationScalarFieldEnum = {
   weddingId: 'weddingId',
   title: 'title',
   acceptedPhones: 'acceptedPhones',
+  content: 'content',
   createdAt: 'createdAt'
 } as const
 
@@ -241,6 +243,14 @@ export const SortOrder = {
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const JsonNullValueInput = {

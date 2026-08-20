@@ -86,7 +86,8 @@ model Guest {
   relationshipContext String? // "de qué los conocemos"
   phone               String // E.164 primary phone
   allergies           String[] @default([])
-  musicPrefs          String[] @default([])
+  musicPrefs          String[] @default([]) // music GENRES (multiselect)
+  favoriteSong        String? // free-text favourite song
   paperInvitation     Boolean    @default(false)
   plusOneAllowed      Boolean    @default(false)
   plusOneName         String?
@@ -136,7 +137,11 @@ model Invitation {
   weddingId      String
   title          String   // e.g. "Familia García"
   acceptedPhones String[] @default([]) // MULTIPLE valid phones
-  createdAt      DateTime @default(now())
+  // Per-invitation personalization: { frame?, imageUrl?, titleA?, titleB?,
+  // message?, date?, time?, venue?, dressCode? }. Null = fall back to the
+  // wedding-wide template. Edited from the Invitations panel.
+  content   Json?
+  createdAt DateTime @default(now())
 
   wedding  Wedding   @relation(fields: [weddingId], references: [id])
   otpCodes OtpCode[]

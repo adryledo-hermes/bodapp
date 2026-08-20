@@ -13,7 +13,6 @@ function navLinks(locale: Locale) {
     { href: "/tareas", label: translate(locale, "nav.tareas") },
     { href: "/invitacion", label: translate(locale, "nav.invitacion") },
     { href: "/invitaciones", label: translate(locale, "nav.invitaciones") },
-    { href: "/qr", label: translate(locale, "nav.qr") },
     { href: "/fotos", label: translate(locale, "nav.fotos") },
   ];
 }
