@@ -169,6 +169,34 @@ export interface ChairPosition {
   offsetY: number; // percent of the table height, +down
 }
 
+/** Pixel size of a table node on the canvas, derived from shape + capacity. */
+export interface TableNodeSize {
+  width: number;
+  height: number;
+}
+
+/**
+ * The visual size of a table scales with its capacity so bigger tables
+ * actually LOOK bigger (and hold more chairs). Round tables grow in both
+ * dimensions; rectangle tables grow in width and slightly in height.
+ */
+export function tableNodeSize(table: {
+  shape?: string | null;
+  capacity: number;
+}): TableNodeSize {
+  const cap = Math.max(1, table.capacity);
+  const shape = parseTableShape(table.shape);
+  if (shape === "round") {
+    const size = Math.min(64, 40 + cap * 3);
+    return { width: size, height: size };
+  }
+  // Rectangle: width grows with capacity, height stays modest.
+  return {
+    width: Math.min(192, 88 + cap * 4),
+    height: Math.max(46, Math.min(72, 34 + cap * 2)),
+  };
+}
+
 /**
  * Compute the chair layout for a table's capacity as per-seat offsets from the
  * table center. Chairs always appear OUTSIDE the table edge:

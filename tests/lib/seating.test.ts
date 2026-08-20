@@ -7,6 +7,7 @@ import {
   findConflicts,
   seatingConflictsByTable,
   duplicateSeats,
+  tableNodeSize,
   type RelationRef,
   type SeatingGuest,
 } from "../../src/lib/seating";
@@ -266,5 +267,36 @@ describe("chairPositions", () => {
     expect(chairs).toHaveLength(8);
     const r = chairs.map((c) => Math.hypot(c.offsetX, c.offsetY));
     for (const radius of r) expect(radius).toBeCloseTo(70, 5);
+  });
+});
+
+describe("tableNodeSize", () => {
+  it("round tables grow with capacity (square)", () => {
+    const small = tableNodeSize({ shape: "round", capacity: 4 });
+    const big = tableNodeSize({ shape: "round", capacity: 12 });
+    expect(small.width).toBe(small.height);
+    expect(big.width).toBe(big.height);
+    expect(big.width).toBeGreaterThan(small.width);
+  });
+
+  it("rectangle tables grow in width, stay short in height", () => {
+    const small = tableNodeSize({ shape: "rectangle", capacity: 4 });
+    const big = tableNodeSize({ shape: "rectangle", capacity: 12 });
+    expect(big.width).toBeGreaterThan(small.width);
+    expect(big.height).toBeLessThanOrEqual(72);
+    expect(big.height).toBeGreaterThanOrEqual(46);
+  });
+
+  it("clamps capacity to at least 1 and caps at the max", () => {
+    const min = tableNodeSize({ shape: "round", capacity: 0 });
+    expect(min.width).toBe(43); // 40 + 1*3
+    const max = tableNodeSize({ shape: "rectangle", capacity: 50 });
+    expect(max.width).toBe(192); // capped
+  });
+
+  it("defaults an unknown shape to round", () => {
+    expect(tableNodeSize({ shape: "hexagon", capacity: 8 }).width).toBe(
+      tableNodeSize({ shape: "round", capacity: 8 }).width
+    );
   });
 });

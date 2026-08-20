@@ -37,7 +37,7 @@ npm run typecheck
 
 ## Features (v1.2.1)
 - **Guests**: editable Pokémon-style cards with profile photo; **relationship context dropdown** (Familia, Amigos, Trabajo… + "Otro" free text); **allergy multiselect** (common options + free text); **music split** — genres multiselect + free-text favourite song. Search/filter by name, RSVP, allergy, table.
-- **Seating**: always-visible chairs — drop a guest on a chair to seat them AND fix seat number in one action; tables draggable (incl. mobile, `touch-action: none`); table size scales with capacity; duplicate-seat + capacity + conflict warnings.
+- **Seating**: always-visible chairs — drop a guest on a chair to seat them AND fix seat number in one action; re-seat a guest within the same table by dropping on another chair; tables draggable (incl. mobile, `touch-action: none`); **table size scales with capacity**; shape/capacity changes no longer reset position or capacity (PATCH writes only the changed field); duplicate-seat + capacity + conflict warnings.
 - **Invitations**: per-guest/group invitations created manually; each invitation can be opened and personalised (frame, image, text) with its QR underneath (QR panel removed).
 - **Dashboard** (`/panel`): guests/tables/invitations/tasks summary + next pending task.
 - **Decorations**: decorations attachable to tables; every table auto-creates its centerpiece.

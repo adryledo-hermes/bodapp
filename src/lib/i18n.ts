@@ -199,6 +199,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "seating.seatInUse": "Asiento ocupado por otro invitado",
     "seating.chairHint": "Asiento {seat} — suelta aquí un invitado",
     "seating.moveHint": "Arrastra la mesa para moverla",
+    "seating.errSeat": "No se pudo cambiar el asiento. Reintenta.",
 
     // ---- Task board ----
     "task.mesas": "Mesas",
@@ -601,6 +602,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "seating.seatInUse": "Seat already taken by another guest",
     "seating.chairHint": "Seat {seat} — drop a guest here",
     "seating.moveHint": "Drag the table to move it",
+    "seating.errSeat": "Could not change the seat. Try again.",
 
     // ---- Task board ----
     "task.mesas": "Tables",

@@ -7,6 +7,7 @@ import {
   duplicateSeats,
   parseTableShape,
   seatingConflictsByTable,
+  tableNodeSize,
   type SeatingGuest,
   type SeatTable,
 } from "@/lib/seating";
@@ -96,6 +97,13 @@ export default function SeatingCanvas({
     for (const d of duplicateSeats(tables)) {
       map.set(d.tableId, new Set(d.seats));
     }
+    return map;
+  }, [tables]);
+
+  // Size each table node from its shape + capacity (bigger tables look bigger).
+  const sizesById = useMemo(() => {
+    const map = new Map<string, { width: number; height: number }>();
+    for (const t of tables) map.set(t.id, tableNodeSize(t));
     return map;
   }, [tables]);
 
@@ -227,8 +235,40 @@ export default function SeatingCanvas({
   ) {
     const rel = locateGuest(guestId);
     if (!rel) return;
-    // Dropping on the guest's own table is a no-op.
-    if (rel.fromTableId === targetTableId) return;
+
+    // Dropping on a chair of the guest's OWN table = re-seat within the same
+    // table: keep the table, just change the seat number (one PATCH).
+    if (rel.fromTableId === targetTableId) {
+      if (seatNumber === undefined || seatNumber === rel.guest.seatNumber) {
+        return; // same seat / generic table drop → no-op
+      }
+      const prevTables = tables;
+      setTables((prev) =>
+        prev.map((t) =>
+          t.id === targetTableId
+            ? {
+                ...t,
+                guests: t.guests.map((g) =>
+                  g.id === guestId ? { ...g, seatNumber } : g
+                ),
+              }
+            : t
+        )
+      );
+      let res: Response;
+      try {
+        res = await send(`/api/guests/${guestId}`, "PATCH", { seatNumber });
+      } catch {
+        setTables(prevTables);
+        flash("err", t("common.networkError"));
+        return;
+      }
+      if (!res.ok) {
+        setTables(prevTables);
+        flash("err", t("seating.errSeat"));
+      }
+      return;
+    }
 
     const prevTables = tables;
     const prevUnassigned = unassigned;
@@ -397,11 +437,17 @@ export default function SeatingCanvas({
         t.id === tableId
           ? {
               ...t,
-              name: table.name,
-              shape: table.shape,
-              capacity: table.capacity,
-              positionX: table.positionX,
-              positionY: table.positionY,
+              // ONLY apply the fields this PATCH actually touched — never
+              // clobber position/capacity/shape with values the server may
+              // echo back from defaults (the reset-on-change bug).
+              name: patch.name !== undefined ? table.name : t.name,
+              shape: patch.shape !== undefined ? table.shape : t.shape,
+              capacity:
+                patch.capacity !== undefined ? table.capacity : t.capacity,
+              positionX:
+                patch.positionX !== undefined ? table.positionX : t.positionX,
+              positionY:
+                patch.positionY !== undefined ? table.positionY : t.positionY,
             }
           : t
       )
@@ -534,6 +580,7 @@ export default function SeatingCanvas({
                 const cap = capacityStatus(table, table.guests.length);
                 const conflicts = conflictsByTable.get(table.id) ?? [];
                 const shape = parseTableShape(table.shape);
+                const nodeSize = sizesById.get(table.id) ?? { width: 52, height: 52 };
                 return (
                   <div
                     key={table.id}
@@ -546,9 +593,7 @@ export default function SeatingCanvas({
                         ? "z-10 ring-2 ring-indigo-400"
                         : ""
                     } ${
-                      shape === "round"
-                        ? "h-44 w-44 rounded-full"
-                        : "h-36 w-52 rounded-xl"
+                      shape === "round" ? "rounded-full" : "rounded-xl"
                     } ${
                       cap.ok
                         ? "border-2 border-slate-300 bg-white"
@@ -557,6 +602,8 @@ export default function SeatingCanvas({
                     style={{
                       left: `${table.positionX}%`,
                       top: `${table.positionY}%`,
+                      width: nodeSize.width,
+                      height: nodeSize.height,
                       transform: "translate(-50%, -50%)",
                     }}
                   >
