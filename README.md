@@ -35,6 +35,22 @@ npm run lint
 npm run typecheck
 ```
 
+## Features (v1.2.1)
+- **Guests**: editable Pokémon-style cards with profile photo; **relationship context dropdown** (Familia, Amigos, Trabajo… + "Otro" free text); **allergy multiselect** (common options + free text); **music split** — genres multiselect + free-text favourite song. Search/filter by name, RSVP, allergy, table.
+- **Seating**: always-visible chairs — drop a guest on a chair to seat them AND fix seat number in one action; tables draggable (incl. mobile, `touch-action: none`); table size scales with capacity; duplicate-seat + capacity + conflict warnings.
+- **Invitations**: per-guest/group invitations created manually; each invitation can be opened and personalised (frame, image, text) with its QR underneath (QR panel removed).
+- **Dashboard** (`/panel`): guests/tables/invitations/tasks summary + next pending task.
+- **Decorations**: decorations attachable to tables; every table auto-creates its centerpiece.
+- **Tasks**: Kanban + calendar views, pre-seeded Spanish wedding checklist.
+- **Public portal**: QR → phone → SMS OTP → personalised invitation + RSVP.
+
+## Usage
+1. Open the app; at `/` choose **Log in** (existing couple) or **Create a new couple** (self-registration at `/setup`).
+2. **Guests** — add/edit guests (profile photo, context, allergies, music). Cards flip for details.
+3. **Tables** — create tables, drag them around, drop guests on chairs.
+4. **Invitations** — create per-group invitations, open one to personalise (frame/image/text) and download its QR.
+5. **Tasks / Decorations / Photos** — plan and track the wedding.
+
 ## Roadmap
 - ✅ **v1.2.1 (in progress)** — UX improvements: mobile nav drawer, guest context dropdown + allergy multiselect + music split (genres + favourite song), seating fixes (same-table re-seat, table size by capacity, position reset bug), separate profile photo vs wedding gallery, invitation panel upgrades (disable already-invited, rich per-invitation editor with frame/image/text, QR inline, QR panel removed).
 - ✅ **v1.2** — Dashboard, per-guest seat numbers + draggable tables, attachable decorations (auto centerpiece), invitations per group, guest editing + photos, Playwright harness.

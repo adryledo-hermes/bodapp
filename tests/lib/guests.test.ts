@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { tenantWhere } from "../../src/lib/auth-guard";
-import { guestSchema, isValidPhotoUrl, splitList } from "../../src/lib/guests";
+import { guestSchema, isValidPhotoUrl, mergeCustomTags, splitList } from "../../src/lib/guests";
 
 describe("tenant scoping guard", () => {
   const session = { userId: "u1", weddingId: "w-A", role: "couple" };
@@ -118,5 +118,32 @@ describe("splitList (comma-separated form values)", () => {
     expect(splitList(undefined)).toEqual([]);
     expect(splitList("")).toEqual([]);
     expect(splitList("   ")).toEqual([]);
+  });
+});
+
+describe("mergeCustomTags (checkbox tags + free-text other)", () => {
+  it("merges selected + custom, trimmed, non-empty", () => {
+    expect(
+      mergeCustomTags(["Frutos secos", " Gluten "], "  Sésamo ")
+    ).toEqual(["Frutos secos", "Gluten", "Sésamo"]);
+  });
+
+  it("dedupes case-insensitively (selected vs custom)", () => {
+    expect(mergeCustomTags(["Pop"], " pop ")).toEqual(["Pop"]);
+    expect(mergeCustomTags(["Pop", "Pop"], null)).toEqual(["Pop"]);
+  });
+
+  it("drops empty/whitespace custom and returns [] when nothing selected", () => {
+    expect(mergeCustomTags([], "   ")).toEqual([]);
+    expect(mergeCustomTags([], null)).toEqual([]);
+    expect(mergeCustomTags([], undefined)).toEqual([]);
+  });
+
+  it("order: selected tags first, then custom", () => {
+    expect(mergeCustomTags(["Rock", "Pop"], "Jazz")).toEqual([
+      "Rock",
+      "Pop",
+      "Jazz",
+    ]);
   });
 });

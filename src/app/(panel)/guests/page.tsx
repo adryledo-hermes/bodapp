@@ -28,6 +28,7 @@ export default async function GuestsPage() {
     phone: g.phone,
     allergies: g.allergies,
     musicPrefs: g.musicPrefs,
+    favoriteSong: g.favoriteSong,
     paperInvitation: g.paperInvitation,
     plusOneAllowed: g.plusOneAllowed,
     plusOneName: g.plusOneName,

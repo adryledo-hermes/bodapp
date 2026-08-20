@@ -1,6 +1,79 @@
 import { z } from "zod";
 
 /**
+ * Structured guest-field options (v1.2.1): relationship contexts, common
+ * allergies and music genres are presented as dropdowns/multiselects, with an
+ * "other" free-text escape hatch. Values are stored as typed strings.
+ */
+
+/** Relationship contexts offered in the dropdown ("otro" = free text). */
+export const GUEST_CONTEXTS = [
+  "Familia",
+  "Amigos",
+  "Trabajo",
+  "Universidad",
+  "Infancia",
+  "Vecinos",
+  "Pareja de invitado",
+  "Otro",
+] as const;
+
+/** Common allergy options (multiselect + free text). */
+export const ALLERGY_OPTIONS = [
+  "Frutos secos",
+  "Gluten",
+  "Lácteos",
+  "Huevo",
+  "Marisco",
+  "Pescado",
+  "Soja",
+  "Sésamo",
+  "Apio",
+] as const;
+
+/** Music genre options (multiselect + free text). */
+export const MUSIC_GENRES = [
+  "Pop",
+  "Rock",
+  "Indie",
+  "Electrónica",
+  "Flamenco",
+  "Latino",
+  "Reguetón",
+  "Chiringuito",
+  "Clásica",
+  "Jazz",
+  "Funk / Soul",
+  "Sesión 80s",
+  "Sesión 90s",
+  "Baladas",
+] as const;
+
+/**
+ * Merge checkbox-chosen tags with a free-text "other" tag: trims, drops
+ * empties and dedupes (case-insensitive). Pure helper → unit-testable.
+ * Used for allergies (genres): the free-text field lets the couple add any
+ * allergy/genre that isn't in the fixed options.
+ */
+export function mergeCustomTags(
+  selected: readonly string[],
+  custom: string | null | undefined
+): string[] {
+  const result: string[] = [];
+  const seen = new Set<string>();
+  const push = (v: string) => {
+    const t = v.trim();
+    const key = t.toLowerCase();
+    if (!t || seen.has(key)) return;
+    seen.add(key);
+    result.push(t);
+  };
+  for (const s of selected) push(s);
+  if (custom) push(custom);
+  return result;
+}
+
+/**
  * Validate a guest-photo URL. The couple can store EITHER an app-relative URL
  * served by the existing tenant-scoped photo endpoint (`/api/photos/<id>/file`)
  * OR an absolute http(s) URL (e.g. a CDN). Everything else — empty values,
@@ -41,7 +114,8 @@ export const guestSchema = z.object({
     .min(5)
     .regex(/^\+?[0-9 ]{5,20}$/, "Teléfono inválido"),
   allergies: z.array(z.string()).default([]),
-  musicPrefs: z.array(z.string()).default([]),
+  musicPrefs: z.array(z.string()).default([]), // genres
+  favoriteSong: z.string().nullable().optional(),
   paperInvitation: z.boolean().default(false),
   plusOneAllowed: z.boolean().default(false),
   plusOneName: z.string().optional().nullable(),

@@ -3,8 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  splitList,
+  GUEST_CONTEXTS,
+  ALLERGY_OPTIONS,
+  MUSIC_GENRES,
   isValidPhotoUrl,
+  mergeCustomTags,
   type GuestInput,
 } from "@/lib/guests";
 import type { GuestCardData } from "@/lib/guest-view";
@@ -20,12 +23,38 @@ export default function GuestEditForm({ guest, locale, onClose }: GuestEditFormP
   const router = useRouter();
   const [fullName, setFullName] = useState(guest.fullName);
   const [alias, setAlias] = useState(guest.alias ?? "");
-  const [relationshipContext, setRelationshipContext] = useState(
-    guest.relationshipContext ?? ""
+  const initialContext = guest.relationshipContext ?? "";
+  const [contextSelect, setContextSelect] = useState(
+    GUEST_CONTEXTS.includes(initialContext as (typeof GUEST_CONTEXTS)[number])
+      ? initialContext
+      : initialContext
+        ? "Otro"
+        : ""
+  );
+  const [contextOther, setContextOther] = useState(
+    GUEST_CONTEXTS.includes(initialContext as (typeof GUEST_CONTEXTS)[number])
+      ? ""
+      : initialContext
   );
   const [phone, setPhone] = useState(guest.phone);
-  const [allergies, setAllergies] = useState(guest.allergies.join(", "));
-  const [musicPrefs, setMusicPrefs] = useState(guest.musicPrefs.join(", "));
+  const [selectedAllergies, setSelectedAllergies] = useState<string[]>(
+    guest.allergies.filter((a) =>
+      (ALLERGY_OPTIONS as readonly string[]).includes(a)
+    )
+  );
+  const [allergyOther, setAllergyOther] = useState(
+    guest.allergies.find(
+      (a) => !(ALLERGY_OPTIONS as readonly string[]).includes(a)
+    ) ?? ""
+  );
+  const [selectedGenres, setSelectedGenres] = useState<string[]>(
+    guest.musicPrefs.filter((g) => (MUSIC_GENRES as readonly string[]).includes(g))
+  );
+  const [genreOther, setGenreOther] = useState(
+    guest.musicPrefs.find((g) => !(MUSIC_GENRES as readonly string[]).includes(g)) ??
+      ""
+  );
+  const [favoriteSong, setFavoriteSong] = useState(guest.favoriteSong ?? "");
   const [paperInvitation, setPaperInvitation] = useState(guest.paperInvitation);
   const [plusOneAllowed, setPlusOneAllowed] = useState(guest.plusOneAllowed);
   const [plusOneName, setPlusOneName] = useState(guest.plusOneName ?? "");
@@ -81,10 +110,14 @@ export default function GuestEditForm({ guest, locale, onClose }: GuestEditFormP
     const payload: GuestInput = {
       fullName: fullName.trim(),
       alias: alias.trim() || null,
-      relationshipContext: relationshipContext.trim() || null,
+      relationshipContext:
+        contextSelect === "Otro"
+          ? contextOther.trim() || null
+          : contextSelect || null,
       phone: phone.trim(),
-      allergies: splitList(allergies),
-      musicPrefs: splitList(musicPrefs),
+      allergies: mergeCustomTags(selectedAllergies, allergyOther),
+      musicPrefs: mergeCustomTags(selectedGenres, genreOther),
+      favoriteSong: favoriteSong.trim() || null,
       paperInvitation,
       plusOneAllowed,
       plusOneName: plusOneAllowed && plusOneName.trim() ? plusOneName.trim() : null,
@@ -194,13 +227,29 @@ export default function GuestEditForm({ guest, locale, onClose }: GuestEditFormP
         <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="ef-rel">
           {t("guest.relationshipContext")}
         </label>
-        <input
+        <select
           id="ef-rel"
-          type="text"
-          value={relationshipContext}
-          onChange={(e) => setRelationshipContext(e.target.value)}
-          className={`mb-4 ${inputClassName}`}
-        />
+          value={contextSelect}
+          onChange={(e) => setContextSelect(e.target.value)}
+          className={`mb-2 ${inputClassName}`}
+        >
+          <option value="">{t("guest.relationshipSelect")}</option>
+          {GUEST_CONTEXTS.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+        {contextSelect === "Otro" && (
+          <input
+            type="text"
+            value={contextOther}
+            onChange={(e) => setContextOther(e.target.value)}
+            placeholder={t("guest.relationshipOther")}
+            className={`mb-4 ${inputClassName}`}
+          />
+        )}
+        {contextSelect !== "Otro" && <div className="mb-4" />}
 
         <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="ef-phone">
           {t("guest.phone")} *
@@ -215,27 +264,87 @@ export default function GuestEditForm({ guest, locale, onClose }: GuestEditFormP
         />
         <p className="mb-4 text-xs text-slate-400">{t("guest.phoneHint")}</p>
 
-        <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="ef-alg">
+        <span className="mb-1 block text-sm font-medium text-slate-700">
           {t("guest.allergies")}
-        </label>
+        </span>
+        <div className="mb-2 grid grid-cols-2 gap-1.5 rounded-lg border border-slate-200 p-2 sm:grid-cols-3">
+          {ALLERGY_OPTIONS.map((a) => {
+            const checked = selectedAllergies.includes(a);
+            return (
+              <label
+                key={a}
+                className={`flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-1 text-xs ${
+                  checked ? "bg-rose-50 text-rose-800" : "hover:bg-slate-50"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() =>
+                    setSelectedAllergies((prev) =>
+                      checked ? prev.filter((x) => x !== a) : [...prev, a]
+                    )
+                  }
+                  className="h-3.5 w-3.5"
+                />
+                {a}
+              </label>
+            );
+          })}
+        </div>
         <input
-          id="ef-alg"
           type="text"
-          value={allergies}
-          onChange={(e) => setAllergies(e.target.value)}
-          placeholder={t("guest.allergiesHint")}
+          value={allergyOther}
+          onChange={(e) => setAllergyOther(e.target.value)}
+          placeholder={t("guest.allergiesOther")}
           className={`mb-4 ${inputClassName}`}
         />
 
-        <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="ef-music">
-          {t("guest.musicPrefs")}
+        <span className="mb-1 block text-sm font-medium text-slate-700">
+          {t("guest.genres")}
+        </span>
+        <div className="mb-2 grid grid-cols-2 gap-1.5 rounded-lg border border-slate-200 p-2 sm:grid-cols-3">
+          {MUSIC_GENRES.map((g) => {
+            const checked = selectedGenres.includes(g);
+            return (
+              <label
+                key={g}
+                className={`flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-1 text-xs ${
+                  checked ? "bg-indigo-50 text-indigo-800" : "hover:bg-slate-50"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() =>
+                    setSelectedGenres((prev) =>
+                      checked ? prev.filter((x) => x !== g) : [...prev, g]
+                    )
+                  }
+                  className="h-3.5 w-3.5"
+                />
+                {g}
+              </label>
+            );
+          })}
+        </div>
+        <input
+          type="text"
+          value={genreOther}
+          onChange={(e) => setGenreOther(e.target.value)}
+          placeholder={t("guest.genreOther")}
+          className={`mb-4 ${inputClassName}`}
+        />
+
+        <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="ef-song">
+          {t("guest.favoriteSong")}
         </label>
         <input
-          id="ef-music"
+          id="ef-song"
           type="text"
-          value={musicPrefs}
-          onChange={(e) => setMusicPrefs(e.target.value)}
-          placeholder={t("guest.musicPrefsHint")}
+          value={favoriteSong}
+          onChange={(e) => setFavoriteSong(e.target.value)}
+          placeholder={t("guest.favoriteSongHint")}
           className={`mb-4 ${inputClassName}`}
         />
 

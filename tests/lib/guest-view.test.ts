@@ -17,6 +17,7 @@ function makeGuest(overrides: Partial<GuestCardData> = {}): GuestCardData {
     notes: null,
     table: null,
     photoUrl: null,
+    favoriteSong: null,
     ...overrides,
   };
 }

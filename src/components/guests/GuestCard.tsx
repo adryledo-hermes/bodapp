@@ -97,6 +97,12 @@ export default function GuestCard({
               </div>
             )}
 
+            {guest.favoriteSong && (
+              <p className="mt-1.5 text-xs text-indigo-600">
+                ♫ {guest.favoriteSong}
+              </p>
+            )}
+
             <p className="absolute bottom-3 text-[11px] text-slate-400">
               {t("guest.flipHint")}
             </p>

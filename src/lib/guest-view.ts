@@ -20,6 +20,7 @@ export interface GuestCardData {
   phone: string;
   allergies: string[];
   musicPrefs: string[];
+  favoriteSong: string | null;
   paperInvitation: boolean;
   plusOneAllowed: boolean;
   plusOneName: string | null;
