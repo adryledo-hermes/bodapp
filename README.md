@@ -53,7 +53,7 @@ npm run typecheck
 5. **Tasks / Decorations / Photos** — plan and track the wedding.
 
 ## Roadmap
-- ✅ **v1.2.1 (in progress)** — UX improvements: mobile nav drawer, guest context dropdown + allergy multiselect + music split (genres + favourite song), seating fixes (same-table re-seat, table size by capacity, position reset bug), separate profile photo vs wedding gallery, invitation panel upgrades (disable already-invited, rich per-invitation editor with frame/image/text, QR inline, QR panel removed).
+- ✅ **v1.2.1** — Mobile nav drawer; guest context dropdown + allergy multiselect + music split (genres + favourite song); seating fixes (same-table re-seat, table size by capacity, PATCH-only-changed-fields so position/capacity never reset); profile photo vs wedding gallery separation; invitation panel upgrades (disable already-invited, rich per-invitation editor with frame/image/text, QR inline under each invitation, QR panel removed).
 - ✅ **v1.2** — Dashboard, per-guest seat numbers + draggable tables, attachable decorations (auto centerpiece), invitations per group, guest editing + photos, Playwright harness.
 - ✅ **v1.1** — Multi-couple self-registration, welcome screen, configurable session expiry, logout, cookie/OTP hardening.
 - ⬜ **v1.3** — Seating-map PDF export, guest relations UI, CSV import, OTP delivery dashboard, email notifications, 2FA, PWA.
