@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { translate, type Locale } from "@/lib/i18n";
+import InvitationDetail from "./InvitationDetail";
 
 /** A guest selectable for grouping into an invitation. */
 export interface InviteeOption {
@@ -17,6 +18,7 @@ export interface InviteeOption {
 export interface ManagerInvitation {
   id: string;
   title: string;
+  content?: unknown; // per-invitation personalization (frame/image/text)
   guests: Array<{ id: string; fullName: string; phone: string }>;
 }
 
@@ -37,6 +39,7 @@ export default function InvitationsManager({
 }) {
   const router = useRouter();
   const [invitations, setInvitations] = useState(initial);
+  const [detail, setDetail] = useState<ManagerInvitation | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -214,14 +217,24 @@ export default function InvitationsManager({
             >
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-base font-semibold text-slate-900">{inv.title}</h3>
-                <button
-                  onClick={() => handleDelete(inv.id)}
-                  className="tap-min rounded-lg px-2 py-1 text-sm text-slate-400 hover:bg-red-50 hover:text-red-600"
-                  aria-label={t("invman.delete")}
-                  title={t("invman.delete")}
-                >
-                  ✕
-                </button>
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setDetail(inv)}
+                    className="tap-min rounded-lg px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50"
+                    title={t("invman.personalize")}
+                  >
+                    🎨 {t("invman.personalize")}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(inv.id)}
+                    className="tap-min rounded-lg px-2 py-1 text-sm text-slate-400 hover:bg-red-50 hover:text-red-600"
+                    aria-label={t("invman.delete")}
+                    title={t("invman.delete")}
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
               {inv.guests.length === 0 ? (
                 <p className="mt-2 text-xs text-slate-400">{t("invman.noGuests")}</p>
@@ -244,6 +257,14 @@ export default function InvitationsManager({
             </li>
           ))}
         </ul>
+      )}
+
+      {detail && (
+        <InvitationDetail
+          invitation={detail}
+          locale={locale}
+          onClose={() => setDetail(null)}
+        />
       )}
     </div>
   );

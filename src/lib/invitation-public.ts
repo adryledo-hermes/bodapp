@@ -8,6 +8,7 @@ import {
   normalizeTemplateContent,
   type TemplateContent,
 } from "./invitation";
+import { normalizeInvitationContent } from "./invitation-inline";
 import { isRsvpStatus, type RsvpStatus } from "./rsvp";
 
 /**
@@ -91,6 +92,8 @@ export interface InvitationView {
   invitees: PublicGuest[];
   greeting: string;
   bankAccount: string | null;
+  /** Per-invitation personalization (frame + image) applied over the template. */
+  inline: { frame: string; imageUrl: string | null };
 }
 
 /** Build the "¡Hola, Ana y Luis!" greeting for the invitee(s). */
@@ -116,9 +119,22 @@ export function buildInvitationView(params: {
   wedding: { coupleNameA: string; coupleNameB: string; bankAccount: string | null };
   template: unknown;
   invitation: { id: string };
+  inline?: unknown; // per-invitation content (raw) — frame/image/text overrides
   guests: InviteeGuest[];
 }): InvitationView {
-  const content = normalizeTemplateContent(params.template);
+  const base = normalizeTemplateContent(params.template);
+  const inline = normalizeInvitationContent(params.inline);
+  // Per-invitation text overrides win over the wedding template when present.
+  const content = {
+    ...base,
+    titleA: inline.titleA || base.titleA,
+    titleB: inline.titleB || base.titleB,
+    message: inline.message || base.message,
+    date: inline.date || base.date,
+    time: inline.time || base.time,
+    venue: inline.venue || base.venue,
+    dressCode: inline.dressCode || base.dressCode,
+  };
   const invitees = params.guests.map(publicPlateOf);
   return {
     token: params.invitation.id,
@@ -130,5 +146,6 @@ export function buildInvitationView(params: {
     invitees,
     greeting: buildGreeting(invitees),
     bankAccount: params.wedding.bankAccount ?? null,
+    inline: { frame: inline.frame, imageUrl: inline.imageUrl },
   };
 }

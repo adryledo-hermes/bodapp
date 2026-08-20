@@ -66,6 +66,7 @@ export async function loadPublicInvitationView(
     wedding,
     template: template?.content,
     invitation,
+    inline: invitation.content,
     guests: guests as unknown as InviteeGuest[],
   });
 }

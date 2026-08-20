@@ -32,10 +32,13 @@ const sharedRateLimiter = createPhoneRateLimiter({
  */
 export async function findInvitationByToken(
   token: string
-): Promise<{ id: string; weddingId: string; acceptedPhones: string[] } | null> {
+): Promise<
+  | { id: string; weddingId: string; acceptedPhones: string[]; content: unknown }
+  | null
+> {
   return prisma.invitation.findUnique({
     where: { id: token },
-    select: { id: true, weddingId: true, acceptedPhones: true },
+    select: { id: true, weddingId: true, acceptedPhones: true, content: true },
   });
 }
 

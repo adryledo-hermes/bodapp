@@ -41,3 +41,33 @@ body {
   }
 }
 
+
+/* ---- Invitation frames (v1.2.1) — decorative borders for the public
+   invitation card; the couple picks one per invitation in the editor. */
+.inv-frame-flores {
+  background:
+    radial-gradient(circle at 10% 10%, rgba(251, 207, 232, 0.45) 0 9%, transparent 9.5%),
+    radial-gradient(circle at 90% 15%, rgba(244, 114, 182, 0.3) 0 6%, transparent 6.5%),
+    radial-gradient(circle at 12% 88%, rgba(251, 207, 232, 0.4) 0 7%, transparent 7.5%),
+    radial-gradient(circle at 88% 85%, rgba(244, 114, 182, 0.3) 0 8%, transparent 8.5%),
+    #fff;
+}
+.inv-frame-lino {
+  background:
+    repeating-linear-gradient(45deg, rgba(0,0,0,0.015) 0 2px, transparent 2px 8px),
+    #fdfaf5;
+}
+.inv-frame-dorado {
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #d4af37, 0 0 0 7px #fff;
+}
+.inv-frame-minima {
+  box-shadow: 0 0 0 1px #e2e8f0 inset;
+}
+.inv-frame-clasica {
+  box-shadow: 0 0 0 3px #fff, 0 0 0 6px rgba(183, 110, 121, 0.35);
+}
+.inv-frame-boho {
+  background:
+    linear-gradient(rgba(255,255,255,0.75), rgba(255,255,255,0.75)),
+    repeating-linear-gradient(45deg, rgba(201, 137, 108, 0.25) 0 10px, transparent 10px 20px);
+}

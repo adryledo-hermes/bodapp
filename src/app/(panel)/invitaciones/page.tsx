@@ -19,6 +19,12 @@ export default async function InvitacionesPage() {
       include: {
         guests: { select: { id: true, fullName: true, phone: true } },
       },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        guests: true,
+      },
       orderBy: { createdAt: "desc" },
     }),
     // All guests, so the couple can hand-pick who goes into each invitation.
@@ -49,6 +55,7 @@ export default async function InvitacionesPage() {
         invitations={invitations.map((inv) => ({
           id: inv.id,
           title: inv.title,
+          content: inv.content,
           guests: inv.guests,
         }))}
         guests={guests}

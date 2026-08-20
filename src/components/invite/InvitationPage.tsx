@@ -144,9 +144,17 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
           <LocaleSwitcher locale={locale} />
         </div>
         <div
-          className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm"
+          className={`overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm inv-frame-${currentView.inline.frame}`}
           style={{ borderColor: `${primary}55` }}
         >
+          {currentView.inline.imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={currentView.inline.imageUrl}
+              alt={t("inv.invitation")}
+              className="max-h-72 w-full object-cover"
+            />
+          )}
           <div
             className="bg-gradient-to-r px-6 py-10 text-center text-white sm:px-10"
             style={{ backgroundColor: primary }}
