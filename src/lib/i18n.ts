@@ -156,6 +156,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "guest.edit": "Editar",
     "guest.editTitle": "Editar invitado",
     "guest.photo": "Foto",
+    "guest.photoProfile": "Foto de perfil",
+    "guest.photoProfileHint": "Se muestra solo en la tarjeta del invitado (las fotos de la boda van en el panel Fotos).",
     "guest.uploadPhoto": "Subir foto",
     "guest.removePhoto": "Quitar foto",
     "guest.uploading": "Subiendo…",
@@ -351,7 +353,7 @@ export const messages: Record<Locale, Record<string, string>> = {
       "Crea una invitación personalizada para cada invitado, pareja o grupo: elige quiénes la reciben y su QR se generará al instante.",
     "p.fotos.title": "Fotos",
     "p.fotos.subtitle":
-      "Sube las fotos de la pareja (compromiso, boda…) para mostrarlas en la galería.",
+      "Galería compartida de la boda: fotos del compromiso, la celebración… (distinta de la foto de perfil de cada invitado).",
 
     // ---- OTP public flow ----
     "otp.yourPhone": "Tu teléfono",
@@ -559,6 +561,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "guest.edit": "Edit",
     "guest.editTitle": "Edit guest",
     "guest.photo": "Photo",
+    "guest.photoProfile": "Profile photo",
+    "guest.photoProfileHint": "Shown only on the guest card (wedding photos go in the Photos panel).",
     "guest.uploadPhoto": "Upload photo",
     "guest.removePhoto": "Remove photo",
     "guest.uploading": "Uploading…",
@@ -753,7 +757,7 @@ export const messages: Record<Locale, Record<string, string>> = {
       "Create a personalised invitation for each guest, couple or group: pick who receives it and its QR code is generated on the spot.",
     "p.fotos.title": "Photos",
     "p.fotos.subtitle":
-      "Upload the couple's photos (engagement, wedding…) to show them in the gallery.",
+      "Shared wedding gallery: engagement, celebration photos… (separate from each guest's profile photo).",
 
     // ---- OTP public flow ----
     "otp.yourPhone": "Your phone",

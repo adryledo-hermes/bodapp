@@ -164,40 +164,46 @@ export default function GuestEditForm({ guest, locale, onClose }: GuestEditFormP
           </button>
         </div>
 
-        {/* Photo */}
-        <div className="mb-4 flex items-center gap-4">
-          {photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={photoUrl}
-              alt={t("guest.photo")}
-              className="h-20 w-20 rounded-full object-cover ring-2 ring-indigo-100"
-            />
-          ) : (
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 text-2xl">
-              🎴
-            </div>
-          )}
-          <div className="flex flex-col gap-2">
-            <label className="tap-min inline-block cursor-pointer rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
-              {uploading ? t("guest.uploading") : t("guest.uploadPhoto")}
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/gif"
-                className="hidden"
-                onChange={handlePhotoChange}
+        {/* Profile photo — separate from the wedding gallery (Fotos panel) */}
+        <div className="mb-4">
+          <p className="mb-1 text-sm font-semibold text-slate-700">
+            {t("guest.photoProfile")}
+          </p>
+          <div className="flex items-center gap-4">
+            {photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={photoUrl}
+                alt={t("guest.photoProfile")}
+                className="h-20 w-20 rounded-full object-cover ring-2 ring-indigo-100"
               />
-            </label>
-            {photoUrl && (
-              <button
-                type="button"
-                onClick={removePhoto}
-                className="tap-min rounded-lg px-3 py-1 text-left text-sm text-rose-600 hover:bg-rose-50"
-              >
-                ✕ {t("guest.removePhoto")}
-              </button>
+            ) : (
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 text-2xl">
+                🎴
+              </div>
             )}
+            <div className="flex flex-col gap-2">
+              <label className="tap-min inline-block cursor-pointer rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
+                {uploading ? t("guest.uploading") : t("guest.uploadPhoto")}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  className="hidden"
+                  onChange={handlePhotoChange}
+                />
+              </label>
+              {photoUrl && (
+                <button
+                  type="button"
+                  onClick={removePhoto}
+                  className="tap-min rounded-lg px-3 py-1 text-left text-sm text-rose-600 hover:bg-rose-50"
+                >
+                  ✕ {t("guest.removePhoto")}
+                </button>
+              )}
+            </div>
           </div>
+          <p className="mt-1.5 text-xs text-slate-400">{t("guest.photoProfileHint")}</p>
         </div>
 
         {/* Fields */}
