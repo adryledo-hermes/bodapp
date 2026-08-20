@@ -39,6 +39,9 @@ export const messages: Record<Locale, Record<string, string>> = {
     "nav.fotos": "Fotos",
     "nav.logout": "Salir",
     "nav.loggingOut": "Saliendo...",
+    "nav.openMenu": "Abrir menú",
+    "nav.closeMenu": "Cerrar menú",
+    "nav.menu": "Menú",
 
     // ---- Dashboard ----
     "dash.title": "Resumen de la boda",
@@ -438,6 +441,9 @@ export const messages: Record<Locale, Record<string, string>> = {
     "nav.fotos": "Photos",
     "nav.logout": "Log out",
     "nav.loggingOut": "Signing out...",
+    "nav.openMenu": "Open menu",
+    "nav.closeMenu": "Close menu",
+    "nav.menu": "Menu",
 
     // ---- Dashboard ----
     "dash.title": "Wedding overview",

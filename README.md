@@ -46,7 +46,8 @@ npm run typecheck
 
 ## Usage
 1. Open the app; at `/` choose **Log in** (existing couple) or **Create a new couple** (self-registration at `/setup`).
-2. **Guests** — add/edit guests (profile photo, context, allergies, music). Cards flip for details.
+2. Navigate: **mobile** uses a hamburger → slide-in drawer; **desktop** shows the links inline in the header.
+3. **Guests** — add/edit guests (profile photo, context, allergies, music). Cards flip for details.
 3. **Tables** — create tables, drag them around, drop guests on chairs.
 4. **Invitations** — create per-group invitations, open one to personalise (frame/image/text) and download its QR.
 5. **Tasks / Decorations / Photos** — plan and track the wedding.

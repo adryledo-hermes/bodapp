@@ -1,21 +1,10 @@
 import { getLocale } from "@/lib/locale-server";
 import { translate } from "@/lib/i18n";
+import { navLinks } from "@/lib/nav";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import LogoutButton from "@/components/LogoutButton";
+import NavDrawer from "@/components/NavDrawer";
 import type { Locale } from "@/lib/i18n";
-
-function navLinks(locale: Locale) {
-  return [
-    { href: "/panel", label: translate(locale, "nav.dashboard") },
-    { href: "/guests", label: translate(locale, "nav.guests") },
-    { href: "/mesas", label: translate(locale, "nav.mesas") },
-    { href: "/decoracion", label: translate(locale, "nav.decoracion") },
-    { href: "/tareas", label: translate(locale, "nav.tareas") },
-    { href: "/invitacion", label: translate(locale, "nav.invitacion") },
-    { href: "/invitaciones", label: translate(locale, "nav.invitaciones") },
-    { href: "/fotos", label: translate(locale, "nav.fotos") },
-  ];
-}
 
 export default async function PanelLayout({
   children,
@@ -28,16 +17,22 @@ export default async function PanelLayout({
   return (
     <div className="min-h-full">
       <nav className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center gap-x-4 px-4 py-3 sm:px-6">
+          {/* Mobile: hamburger opens the nav drawer */}
+          <NavDrawer links={links} locale={locale} />
+
           <span className="mr-1 font-bold text-slate-900">Bodapp</span>
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
+
+          {/* Desktop: inline links (hidden on mobile — drawer takes over) */}
+          <div className="hidden min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600 lg:flex">
             {links.map((l) => (
               <a key={l.href} href={l.href} className="whitespace-nowrap hover:text-slate-900">
                 {l.label}
               </a>
             ))}
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="ml-auto flex items-center gap-2">
             <LocaleSwitcher locale={locale} />
             <LogoutButton locale={locale} />
           </div>
