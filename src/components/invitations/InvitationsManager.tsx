@@ -10,6 +10,7 @@ export interface InviteeOption {
   fullName: string;
   alias: string | null;
   phone: string;
+  invitationId: string | null; // set → already invited → disabled
 }
 
 /** An invitation as rendered by the manager. */
@@ -147,16 +148,22 @@ export default function InvitationsManager({
               <div className="grid max-h-64 gap-1.5 overflow-y-auto rounded-xl border border-slate-200 p-2 sm:grid-cols-2">
                 {guests.map((g) => {
                   const checked = selected.has(g.id);
+                  const alreadyInvited = g.invitationId !== null;
                   return (
                     <label
                       key={g.id}
                       className={`flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm ${
-                        checked ? "bg-indigo-50 text-indigo-900" : "hover:bg-slate-50"
+                        alreadyInvited
+                          ? "cursor-not-allowed opacity-50"
+                          : checked
+                            ? "bg-indigo-50 text-indigo-900"
+                            : "hover:bg-slate-50"
                       }`}
                     >
                       <input
                         type="checkbox"
-                        checked={checked}
+                        checked={checked || alreadyInvited}
+                        disabled={alreadyInvited}
                         onChange={() => toggleGuest(g.id)}
                         className="h-4 w-4"
                       />
@@ -164,7 +171,13 @@ export default function InvitationsManager({
                         {g.fullName}
                         {g.alias ? ` (${g.alias})` : ""}
                       </span>
-                      <span className="text-xs text-slate-400">{g.phone}</span>
+                      {alreadyInvited ? (
+                        <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-medium text-slate-500">
+                          {t("invman.alreadyInvited")}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400">{g.phone}</span>
+                      )}
                     </label>
                   );
                 })}

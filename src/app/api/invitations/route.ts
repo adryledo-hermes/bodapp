@@ -62,6 +62,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "guest not found" }, { status: 404 });
   }
 
+  // A guest that already has an invitation can't be invited again — the UI
+  // disables them, and the server enforces it (defense in depth).
+  const alreadyInvited = guests.find((g) => g.invitationId !== null);
+  if (alreadyInvited) {
+    return NextResponse.json(
+      { error: "already invited", guestId: alreadyInvited.id },
+      { status: 409 }
+    );
+  }
+
   const invitation = await prisma.$transaction(async (tx) => {
     const created = await tx.invitation.create({
       data: {

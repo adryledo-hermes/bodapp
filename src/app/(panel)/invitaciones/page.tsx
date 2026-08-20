@@ -24,7 +24,13 @@ export default async function InvitacionesPage() {
     // All guests, so the couple can hand-pick who goes into each invitation.
     prisma.guest.findMany({
       where: tenantWhere(auth.session),
-      select: { id: true, fullName: true, alias: true, phone: true },
+      select: {
+        id: true,
+        fullName: true,
+        alias: true,
+        phone: true,
+        invitationId: true, // disables already-invited guests in the picker
+      },
       orderBy: { fullName: "asc" },
     }),
   ]);
