@@ -16,14 +16,11 @@ export default async function InvitacionesPage() {
   const [invitations, guests] = await Promise.all([
     prisma.invitation.findMany({
       where: tenantWhere(auth.session),
-      include: {
-        guests: { select: { id: true, fullName: true, phone: true } },
-      },
       select: {
         id: true,
         title: true,
         content: true,
-        guests: true,
+        guests: { select: { id: true, fullName: true, phone: true } },
       },
       orderBy: { createdAt: "desc" },
     }),

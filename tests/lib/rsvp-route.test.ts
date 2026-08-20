@@ -34,7 +34,8 @@ const mockedLoadView = vi.mocked(loadPublicInvitationView);
 const INVITATION = {
   id: "inv-family",
   weddingId: "wed-1",
-  acceptedPhones: ["+34600000001", "+34600000002"],
+  acceptedPhones: ["+346****0001", "+346****0002"],
+  content: null, // no per-invitation personalization in these tests
 };
 
 interface ViewGuest {
