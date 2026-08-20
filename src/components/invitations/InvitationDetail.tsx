@@ -162,9 +162,9 @@ export default function InvitationDetail({
 
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="block text-sm font-medium text-slate-700">{t("inv.dateLabel")}
-                <input className={`mt-1 ${inputClassName}`} value={content.date} onChange={(e) => set("date", e.target.value)} /></label>
+                <input type="date" className={`mt-1 ${inputClassName}`} value={content.date} onChange={(e) => set("date", e.target.value)} /></label>
               <label className="block text-sm font-medium text-slate-700">{t("inv.timeLabel")}
-                <input className={`mt-1 ${inputClassName}`} value={content.time} onChange={(e) => set("time", e.target.value)} /></label>
+                <input type="time" className={`mt-1 ${inputClassName}`} value={content.time} onChange={(e) => set("time", e.target.value)} /></label>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="block text-sm font-medium text-slate-700">{t("inv.venueLabel")}

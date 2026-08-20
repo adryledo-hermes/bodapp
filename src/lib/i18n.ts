@@ -33,7 +33,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "nav.mesas": "Mesas",
     "nav.decoracion": "Decoración",
     "nav.tareas": "Tareas",
-    "nav.invitacion": "Invitación",
+    "nav.invitacion": "Plantilla de invitación",
     "nav.invitaciones": "Invitaciones",
     "nav.fotos": "Fotos",
     "nav.logout": "Salir",
@@ -361,9 +361,9 @@ export const messages: Record<Locale, Record<string, string>> = {
     "p.decoracion.title": "Decoración",
     "p.decoracion.subtitle":
       "Coloca los espacios de decoración y regalos sobre el plano del comedor: centros de mesa, mesa de regalos, photocall o pista de baile. Cambia a \"Mesas\" para organizar los invitados.",
-    "p.invitacion.title": "Invitación",
+    "p.invitacion.title": "Plantilla de invitación",
     "p.invitacion.subtitle":
-      "Personaliza el texto y los colores de vuestra invitación y añade vuestra cuenta bancaria para los regalos. Cada vez que publiques se creará una nueva versión de la plantilla.",
+      "Define el marco, la imagen y el texto base de vuestras invitaciones. Cada invitación se crea a partir de esta plantilla añadiendo los nombres de los invitados.",
     "p.qr.title": "Códigos QR",
     "p.qr.subtitle":
       "Genera un código QR por invitación. Al escanearlo, los invitados llegarán a la página de entrada con su teléfono.",
@@ -457,7 +457,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "nav.mesas": "Tables",
     "nav.decoracion": "Decorations",
     "nav.tareas": "Tasks",
-    "nav.invitacion": "Invitation",
+    "nav.invitacion": "Invitation template",
     "nav.invitaciones": "Invitations",
     "nav.fotos": "Photos",
     "nav.logout": "Log out",
@@ -784,9 +784,9 @@ export const messages: Record<Locale, Record<string, string>> = {
     "p.decoracion.title": "Decorations",
     "p.decoracion.subtitle":
       "Place the decoration and gifts areas on the dining room floor plan: centerpieces, gift table, photo wall or dance floor. Switch to \"Tables\" to organise the guests.",
-    "p.invitacion.title": "Invitation",
+    "p.invitacion.title": "Invitation template",
     "p.invitacion.subtitle":
-      "Customise the text and colours of your invitation and add your bank account for gifts. Each time you publish, a new template version is created.",
+      "Set the frame, image and base copy for your invitations. Every invitation is created from this template, adding the guests' names.",
     "p.qr.title": "QR codes",
     "p.qr.subtitle":
       "Generate a QR code per invitation. On scanning it, guests will reach the entry page with their phone.",

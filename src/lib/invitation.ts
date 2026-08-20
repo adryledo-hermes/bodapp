@@ -24,6 +24,9 @@ export interface TemplateContent {
   bankAccount: string;
   sections: string[];
   colors: TemplateColors;
+  /** Decorative frame (real floral SVG image) + optional header image. */
+  frame: string;
+  imageUrl: string | null;
 }
 
 /** The default (unpublished) template content, shown until the couple saves. */
@@ -38,6 +41,8 @@ export const DEFAULT_TEMPLATE: TemplateContent = {
   bankAccount: "",
   sections: [],
   colors: { primary: "#B76E79", accent: "#F7E7CE" },
+  frame: "clasica",
+  imageUrl: null,
 };
 
 /** The version of the "no template persisted yet" state. Bumps on publish. */
@@ -79,6 +84,17 @@ export function normalizeTemplateContent(raw: unknown): TemplateContent {
       primary: pickColor("primary", DEFAULT_TEMPLATE.colors.primary),
       accent: pickColor("accent", DEFAULT_TEMPLATE.colors.accent),
     },
+    // frame: accept any stored frame id; the UI only offers known options but
+    // unknown values degrade to the default frame (never inject CSS here —
+    // the frame id maps to a hard-coded CSS class in globals.css).
+    frame:
+      typeof r.frame === "string" && r.frame
+        ? r.frame
+        : DEFAULT_TEMPLATE.frame,
+    imageUrl:
+      typeof r.imageUrl === "string" && r.imageUrl.trim()
+        ? r.imageUrl.trim()
+        : null,
   };
 }
 

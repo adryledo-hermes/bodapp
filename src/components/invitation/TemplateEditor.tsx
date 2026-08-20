@@ -6,6 +6,7 @@ import {
   isValidHexColor,
   type TemplateContent,
 } from "@/lib/invitation";
+import { FRAME_OPTIONS } from "@/lib/invitation-inline";
 import { translate, type Locale } from "@/lib/i18n";
 
 interface TemplateEditorProps {
@@ -26,6 +27,8 @@ interface DraftState {
   primary: string;
   accent: string;
   bankAccount: string;
+  frame: string;
+  imageUrl: string | null;
 }
 
 function toDraft(content: TemplateContent, bankAccount: string): DraftState {
@@ -40,6 +43,8 @@ function toDraft(content: TemplateContent, bankAccount: string): DraftState {
     primary: content.colors?.primary ?? DEFAULT_TEMPLATE.colors.primary,
     accent: content.colors?.accent ?? DEFAULT_TEMPLATE.colors.accent,
     bankAccount: bankAccount ?? "",
+    frame: content.frame ?? DEFAULT_TEMPLATE.frame,
+    imageUrl: content.imageUrl ?? null,
   };
 }
 
@@ -58,6 +63,7 @@ export default function TemplateEditor({
   );
   const [version, setVersion] = useState(initialVersion);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -68,6 +74,32 @@ export default function TemplateEditor({
 
   const set = (key: keyof DraftState, value: string) =>
     setDraft((d) => ({ ...d, [key]: value }));
+
+  async function uploadImage(file: File) {
+    const form = new FormData();
+    form.append("photo", file);
+    const res = await fetch("/api/photos", { method: "POST", body: form });
+    if (!res.ok) throw new Error("upload failed");
+    const data = await res.json();
+    const id = data.photo?.id;
+    if (!id) throw new Error("no photo id");
+    return `/api/photos/${id}/file`;
+  }
+
+  async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setMessage(null);
+    try {
+      const url = await uploadImage(file);
+      setDraft((d) => ({ ...d, imageUrl: url }));
+    } catch {
+      setMessage({ type: "error", text: t("tpl.errSave") });
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -86,6 +118,8 @@ export default function TemplateEditor({
             venue: draft.venue,
             dressCode: draft.dressCode,
             colors: { primary: draft.primary, accent: draft.accent },
+            frame: draft.frame,
+            imageUrl: draft.imageUrl,
           },
           bankAccount: draft.bankAccount,
         }),
@@ -175,10 +209,10 @@ export default function TemplateEditor({
               </label>
               <input
                 id="date"
+                type="date"
                 className={inputCls}
                 value={draft.date}
                 onChange={(e) => set("date", e.target.value)}
-                placeholder="12 de septiembre de 2026"
               />
             </div>
             <div>
@@ -187,10 +221,10 @@ export default function TemplateEditor({
               </label>
               <input
                 id="time"
+                type="time"
                 className={inputCls}
                 value={draft.time}
                 onChange={(e) => set("time", e.target.value)}
-                placeholder="13:00 h"
               />
             </div>
           </div>
@@ -219,6 +253,66 @@ export default function TemplateEditor({
               onChange={(e) => set("dressCode", e.target.value)}
               placeholder="Etiqueta informal"
             />
+          </div>
+
+          <div>
+            <span className="mb-1 block text-sm font-medium text-slate-700">
+              {t("invman.frame")}
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {FRAME_OPTIONS.map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => set("frame", f.id)}
+                  className={`tap-min rounded-lg border px-3 py-1.5 text-xs font-medium ${
+                    draft.frame === f.id
+                      ? "border-indigo-400 bg-indigo-50 text-indigo-700"
+                      : "border-slate-300 text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <span className="mb-1 block text-sm font-medium text-slate-700">
+              {t("invman.image")}
+            </span>
+            <div className="flex items-center gap-3">
+              {draft.imageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={draft.imageUrl}
+                  alt={t("invman.image")}
+                  className="h-14 w-20 rounded-lg object-cover"
+                />
+              )}
+              <label className="tap-min inline-block cursor-pointer rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
+                {uploading
+                  ? t("guest.uploading")
+                  : draft.imageUrl
+                    ? t("invman.changeImage")
+                    : t("invman.uploadImage")}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  className="hidden"
+                  onChange={handleImage}
+                />
+              </label>
+              {draft.imageUrl && (
+                <button
+                  type="button"
+                  onClick={() => setDraft((d) => ({ ...d, imageUrl: null }))}
+                  className="tap-min rounded-lg px-2 py-1 text-sm text-rose-600 hover:bg-rose-50"
+                >
+                  ✕ {t("invman.removeImage")}
+                </button>
+              )}
+            </div>
           </div>
 
           <div>
@@ -294,13 +388,21 @@ export default function TemplateEditor({
             fall back to the safe defaults — a non-hex value can never reach the
             `style=` attribute (see HEX_COLOR_RE in @/lib/invitation). */}
         <div
-          className="overflow-hidden rounded-lg border border-slate-200 shadow-sm"
+          className={`inv-frame-${draft.frame} relative overflow-hidden rounded-lg border border-slate-200 shadow-sm`}
           style={{
             background: isValidHexColor(draft.accent)
               ? draft.accent
               : DEFAULT_TEMPLATE.colors.accent,
           }}
         >
+          {draft.imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={draft.imageUrl}
+              alt={t("invman.image")}
+              className="max-h-44 w-full object-cover"
+            />
+          )}
           <div
             className="p-8 text-center"
             style={{

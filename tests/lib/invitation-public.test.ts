@@ -5,6 +5,7 @@ import {
   type InviteeGuest,
 } from "../../src/lib/invitation-public";
 import { DEFAULT_TEMPLATE } from "../../src/lib/invitation";
+import { DEFAULT_FRAME } from "../../src/lib/invitation-inline";
 
 const baseGuest: InviteeGuest = {
   id: "guest-1",
@@ -152,5 +153,39 @@ describe("buildInvitationView", () => {
       guests: [sampleGuest()],
     });
     expect(view.token).toBe("inv-42");
+  });
+
+  it("an invitation with no own content inherits the template's frame + image", () => {
+    const view = buildInvitationView({
+      wedding,
+      template: { frame: "flores", imageUrl: "/api/photos/x/file" },
+      invitation,
+      guests: [sampleGuest()],
+    });
+    expect(view.inline.frame).toBe("flores");
+    expect(view.inline.imageUrl).toBe("/api/photos/x/file");
+  });
+
+  it("an invitation with its own content overrides the template frame + image", () => {
+    const view = buildInvitationView({
+      wedding,
+      template: { frame: "flores", imageUrl: "/api/photos/x/file" },
+      invitation,
+      inline: { frame: "lino", imageUrl: "/api/photos/y/file" },
+      guests: [sampleGuest()],
+    });
+    expect(view.inline.frame).toBe("lino");
+    expect(view.inline.imageUrl).toBe("/api/photos/y/file");
+  });
+
+  it("falls back to the default frame when neither template nor invitation set one", () => {
+    const view = buildInvitationView({
+      wedding,
+      template: {},
+      invitation,
+      guests: [sampleGuest()],
+    });
+    expect(view.inline.frame).toBe(DEFAULT_FRAME);
+    expect(view.inline.imageUrl).toBeNull();
   });
 });

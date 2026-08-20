@@ -146,6 +146,11 @@ export function buildInvitationView(params: {
     invitees,
     greeting: buildGreeting(invitees),
     bankAccount: params.wedding.bankAccount ?? null,
-    inline: { frame: inline.frame, imageUrl: inline.imageUrl },
+    // An invitation with NO own content (pre-1.2.2 rows, or not yet saved)
+    // inherits the template's frame + image; otherwise it uses its own.
+    inline: {
+      frame: params.inline ? inline.frame : base.frame,
+      imageUrl: params.inline ? inline.imageUrl : base.imageUrl,
+    },
   };
 }

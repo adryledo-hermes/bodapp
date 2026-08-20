@@ -72,6 +72,30 @@ export async function POST(req: Request) {
     );
   }
 
+  // A new invitation starts from the published TEMPLATE (frame, image, copy)
+  // and adds the guests' names as titleA/titleB — so every invitation is the
+  // template personalised with who it goes to.
+  const template = await prisma.invitationTemplate.findFirst({
+    where: { weddingId: auth.session.weddingId },
+    orderBy: { version: "desc" },
+    select: { content: true },
+  });
+  const raw = (template?.content ?? {}) as Record<string, unknown>;
+  const pick = (key: string): string =>
+    typeof raw[key] === "string" ? (raw[key] as string) : "";
+  const [first, second] = guests.map((g) => g.fullName.trim());
+  const baseContent: Record<string, string | null> = {
+    titleA: first ?? "",
+    titleB: second ?? "",
+    message: pick("message") || null,
+    date: pick("date") || null,
+    time: pick("time") || null,
+    venue: pick("venue") || null,
+    dressCode: pick("dressCode") || null,
+    frame: typeof raw.frame === "string" ? raw.frame : "clasica",
+    imageUrl: typeof raw.imageUrl === "string" ? raw.imageUrl : null,
+  };
+
   const invitation = await prisma.$transaction(async (tx) => {
     const created = await tx.invitation.create({
       data: {
@@ -79,6 +103,7 @@ export async function POST(req: Request) {
         title: parsed.data.title.trim(),
         acceptedPhones: buildAcceptedPhones(guests),
         guests: { connect: guests.map((g) => ({ id: g.id })) },
+        content: baseContent,
       },
       include: { guests: { select: { id: true, fullName: true, phone: true } } },
     });
