@@ -77,6 +77,7 @@ export default async function DecoracionPage() {
           label: d.label,
           positionX: d.positionX,
           positionY: d.positionY,
+          tableId: d.tableId,
         }))}
         locale={locale}
       />

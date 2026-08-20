@@ -283,15 +283,15 @@ describe("tableNodeSize", () => {
     const small = tableNodeSize({ shape: "rectangle", capacity: 4 });
     const big = tableNodeSize({ shape: "rectangle", capacity: 12 });
     expect(big.width).toBeGreaterThan(small.width);
-    expect(big.height).toBeLessThanOrEqual(72);
-    expect(big.height).toBeGreaterThanOrEqual(46);
+    expect(big.height).toBeLessThanOrEqual(76);
+    expect(big.height).toBeGreaterThanOrEqual(52);
   });
 
   it("clamps capacity to at least 1 and caps at the max", () => {
     const min = tableNodeSize({ shape: "round", capacity: 0 });
-    expect(min.width).toBe(43); // 40 + 1*3
+    expect(min.width).toBe(49); // 44 + 1*5
     const max = tableNodeSize({ shape: "rectangle", capacity: 50 });
-    expect(max.width).toBe(192); // capped
+    expect(max.width).toBe(240); // capped
   });
 
   it("defaults an unknown shape to round", () => {

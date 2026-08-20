@@ -37,10 +37,11 @@ npm run typecheck
 
 ## Features (v1.2.1)
 - **Guests**: editable Pokémon-style cards with **profile photo** (shown only on the card); **relationship context dropdown** (Familia, Amigos, Trabajo… + "Otro" free text); **allergy multiselect** (common options + free text); **music split** — genres multiselect + free-text favourite song. Search/filter by name, RSVP, allergy, table.
-- **Seating**: always-visible chairs — drop a guest on a chair to seat them AND fix seat number in one action; re-seat a guest within the same table by dropping on another chair; tables draggable (incl. mobile, `touch-action: none`); **table size scales with capacity**; shape/capacity changes no longer reset position or capacity (PATCH writes only the changed field); duplicate-seat + capacity + conflict warnings.
+- **Seating**: always-visible chairs — drop a guest on a chair to seat them AND fix seat number in one action; re-seat a guest within the same table by dropping on another chair; tables draggable (incl. mobile, `touch-action: none`); **table size scales clearly with capacity** (round: 44+5/seat, rect: 100+8/seat × 44+3/seat); shape/capacity changes no longer reset position or capacity (PATCH writes only the changed field); duplicate-seat + capacity + conflict warnings.
 - **Invitations**: per-guest/group invitations created manually (**already-invited guests are disabled** in the picker); each invitation can be opened and personalised — **decorative frame** (flores/lino/dorado/mínima/clásica/bohemia), **own image** and **text overrides** (names, message, date, venue, dress code) — with its **QR underneath** and a download link (the old QR panel is gone; `/qr` redirects to `/invitaciones`).
 - **Dashboard** (`/panel`): guests/tables/invitations/tasks summary + next pending task.
-- **Decorations**: decorations attachable to tables; every table auto-creates its centerpiece.
+- **Decorations**: decorations **attach to a table when dropped on it** (rendered at the table's position) and **move together when the table moves**; drop on empty canvas to detach; every table auto-creates its centerpiece.
+- **Photos**: the **wedding gallery shows ONLY wedding photos** — guest profile photos and invitation images (same storage) are excluded from it. The invitation editor shows a **live preview** (frame + image + text) under the current data.
 - **Tasks**: Kanban + calendar views, pre-seeded Spanish wedding checklist.
 - **Public portal**: QR → phone → SMS OTP → personalised invitation + RSVP.
 

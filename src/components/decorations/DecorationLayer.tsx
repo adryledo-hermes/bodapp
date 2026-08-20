@@ -8,7 +8,7 @@ import {
   normalizeDecoration,
   type DecorationKind,
 } from "@/lib/decorations";
-import { parseTableShape, type SeatTable } from "@/lib/seating";
+import { parseTableShape, tableNodeSize, type SeatTable } from "@/lib/seating";
 import { plural, translate, type Locale } from "@/lib/i18n";
 
 /**
@@ -20,6 +20,8 @@ export interface DecorationItem {
   label: string | null;
   positionX: number;
   positionY: number;
+  /** When attached to a table, the decoration lives ON it and moves with it. */
+  tableId: string | null;
 }
 
 type Feedback = { kind: "ok" | "err"; text: string } | null;
@@ -76,7 +78,14 @@ export default function DecorationLayer({
   const [decorations, setDecorations] = useState<DecorationItem[]>(
     initialDecorations.map((d) => {
       const n = normalizeDecoration(d);
-      return { id: d.id, ...n };
+      return {
+        id: d.id,
+        kind: n.kind,
+        label: n.label,
+        positionX: n.positionX,
+        positionY: n.positionY,
+        tableId: d.tableId ?? null,
+      };
     })
   );
   const [feedback, setFeedback] = useState<Feedback>(null);
@@ -119,7 +128,14 @@ export default function DecorationLayer({
     const n = normalizeDecoration(decoration);
     setDecorations((prev) => [
       ...prev,
-      { id: decoration.id, kind: n.kind, label: n.label, positionX: n.positionX, positionY: n.positionY },
+      {
+        id: decoration.id,
+        kind: n.kind,
+        label: n.label,
+        positionX: n.positionX,
+        positionY: n.positionY,
+        tableId: null,
+      },
     ]);
     setNewKind("centerpiece");
     setNewLabel("");
@@ -174,12 +190,66 @@ export default function DecorationLayer({
     e.dataTransfer.dropEffect = "move";
   }
 
-  function onDrop(e: React.DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    const id = e.dataTransfer.getData("text/plain");
-    if (!id) return;
-    const pos = positionFromEvent(e);
-    void moveDecoration(id, pos.positionX, pos.positionY);
+  /** Attach a decoration to a table: fix its position to the table center. */
+  function attachToTable(id: string, tableId: string) {
+    const table = tables.find((t) => t.id === tableId);
+    if (!table) return;
+    const prev = decorations;
+    setDecorations((list) =>
+      list.map((d) =>
+        d.id === id
+          ? { ...d, tableId, positionX: table.positionX, positionY: table.positionY }
+          : d
+      )
+    );
+    let res: Response;
+    void (async () => {
+      try {
+        res = await send(`/api/decorations/${id}`, "PATCH", {
+          tableId,
+          positionX: table.positionX,
+          positionY: table.positionY,
+        });
+      } catch {
+        setDecorations(prev);
+        flash("err", t("common.networkError"));
+        return;
+      }
+      if (!res.ok) {
+        setDecorations(prev);
+        flash("err", t("decor.errAttach"));
+      } else {
+        flash("ok", t("decor.okAttached"));
+      }
+    })();
+  }
+
+  /** Detach a decoration from its table (drop it on open canvas space). */
+  function detachFromTable(id: string, positionX: number, positionY: number) {
+    const prev = decorations;
+    setDecorations((list) =>
+      list.map((d) =>
+        d.id === id ? { ...d, tableId: null, positionX, positionY } : d
+      )
+    );
+    let res: Response;
+    void (async () => {
+      try {
+        res = await send(`/api/decorations/${id}`, "PATCH", {
+          tableId: null,
+          positionX,
+          positionY,
+        });
+      } catch {
+        setDecorations(prev);
+        flash("err", t("common.networkError"));
+        return;
+      }
+      if (!res.ok) {
+        setDecorations(prev);
+        flash("err", t("decor.errAttach"));
+      }
+    })();
   }
 
   return (
@@ -244,29 +314,46 @@ export default function DecorationLayer({
         </div>
       )}
 
-      {/* ---- Canvas with static table shapes + draggable decorations ---- */}
+      {/* ---- Canvas: table shapes are drop targets (attach) ---- */}
       <div
         className="relative min-h-[560px] rounded-2xl border border-slate-200 bg-slate-50 p-6"
         onDragOver={onDragOver}
-        onDrop={onDrop}
+        onDrop={(e) => {
+          // Drop NOT over a table → move freely (detach if it was attached).
+          e.preventDefault();
+          const id = e.dataTransfer.getData("text/plain");
+          if (!id) return;
+          const pos = positionFromEvent(e);
+          const wasAttached = decorations.find((d) => d.id === id)?.tableId;
+          if (wasAttached) void detachFromTable(id, pos.positionX, pos.positionY);
+          else void moveDecoration(id, pos.positionX, pos.positionY);
+        }}
       >
-        {/* Static table shapes (background context only, not interactive). */}
+        {/* Tables: drop a decoration ON one to attach it (moves with the table) */}
         {tables.map((table) => {
           const shape = parseTableShape(table.shape);
+          const size = tableNodeSize(table);
           return (
             <div
               key={table.id}
-              aria-hidden
-              className={`pointer-events-none absolute flex items-center justify-center border-2 border-slate-300 bg-white/60 text-xs text-slate-400 ${
-                shape === "round"
-                  ? "h-24 w-24 rounded-full"
-                  : "h-20 w-36 rounded-xl"
+              className={`absolute flex items-center justify-center border-2 border-dashed border-slate-400 bg-white/60 text-xs text-slate-500 ${
+                shape === "round" ? "rounded-full" : "rounded-xl"
               }`}
               style={{
                 left: `${table.positionX}%`,
                 top: `${table.positionY}%`,
+                width: size.width,
+                height: size.height,
                 transform: "translate(-50%, -50%)",
               }}
+              onDragOver={onDragOver}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation(); // don't fall through to the canvas move
+                const id = e.dataTransfer.getData("text/plain");
+                if (id) void attachToTable(id, table.id);
+              }}
+              title={t("decor.tableDropHint")}
             >
               {table.name}
             </div>
@@ -280,19 +367,35 @@ export default function DecorationLayer({
         ) : (
           decorations.map((d) => {
             const meta = DECORATION_KINDS[d.kind as DecorationKind] ?? DECORATION_KINDS.other;
+            // Attached decorations render at their table's center so they
+            // visually MOVE WITH the table when its position changes.
+            const attached = d.tableId
+              ? tables.find((t) => t.id === d.tableId)
+              : undefined;
+            const left = attached ? attached.positionX : d.positionX;
+            const top = attached ? attached.positionY : d.positionY;
             return (
               <div
                 key={d.id}
                 draggable
                 onDragStart={(e) => onDragStart(e, d.id)}
-                className="group absolute flex -translate-x-1/2 -translate-y-1/2 cursor-grab flex-col items-center rounded-xl border border-fuchsia-300 bg-white/95 px-3 py-2 shadow-md transition-colors hover:border-fuchsia-400 active:cursor-grabbing"
-                style={{ left: `${d.positionX}%`, top: `${d.positionY}%` }}
-                title={t("decor.dragTitle")}
+                className={`group absolute flex -translate-x-1/2 -translate-y-1/2 cursor-grab flex-col items-center rounded-xl border px-3 py-2 shadow-md transition-colors active:cursor-grabbing ${
+                  attached
+                    ? "border-emerald-300 bg-emerald-50/95 hover:border-emerald-400"
+                    : "border-fuchsia-300 bg-white/95 hover:border-fuchsia-400"
+                }`}
+                style={{ left: `${left}%`, top: `${top}%` }}
+                title={attached ? t("decor.attachedTitle") : t("decor.dragTitle")}
               >
                 <span className="text-2xl leading-none">{meta.emoji}</span>
                 <span className="mt-1 max-w-[140px] truncate text-center text-[11px] font-medium text-slate-700">
                   {d.label}
                 </span>
+                {attached && (
+                  <span className="rounded-full bg-emerald-200 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-800">
+                    {t("decor.attached")}
+                  </span>
+                )}
                 <button
                   onClick={() => void removeDecoration(d.id)}
                   className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white hover:bg-red-500 md:hidden md:group-hover:flex"

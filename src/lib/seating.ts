@@ -176,9 +176,10 @@ export interface TableNodeSize {
 }
 
 /**
- * The visual size of a table scales with its capacity so bigger tables
- * actually LOOK bigger (and hold more chairs). Round tables grow in both
- * dimensions; rectangle tables grow in width and slightly in height.
+ * The visual size of a table node on the canvas, derived from shape + capacity
+ * so bigger tables actually LOOK bigger (clamped to sensible minimums — a 44px
+ * table was unusable). Round tables grow in both dimensions; rectangle tables
+ * grow in width and modestly in height.
  */
 export function tableNodeSize(table: {
   shape?: string | null;
@@ -187,13 +188,13 @@ export function tableNodeSize(table: {
   const cap = Math.max(1, table.capacity);
   const shape = parseTableShape(table.shape);
   if (shape === "round") {
-    const size = Math.min(64, 40 + cap * 3);
+    const size = Math.min(130, 44 + cap * 5);
     return { width: size, height: size };
   }
   // Rectangle: width grows with capacity, height stays modest.
   return {
-    width: Math.min(192, 88 + cap * 4),
-    height: Math.max(46, Math.min(72, 34 + cap * 2)),
+    width: Math.min(240, 100 + cap * 8),
+    height: Math.max(52, Math.min(76, 44 + cap * 3)),
   };
 }
 

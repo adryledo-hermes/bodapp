@@ -174,14 +174,42 @@ export default function InvitationDetail({
             </div>
           </div>
 
-          {/* Right: live QR + save */}
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-sm font-semibold text-slate-800">{t("invman.qr")}</p>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={qrUrl} alt={t("invman.qr")} className="h-44 w-44 rounded-lg border border-slate-100 bg-white object-contain" />
-            <a href={qrUrl} download={`qr-${invitation.id}.png`} className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700">
-              {t("invman.qrDownload")}
-            </a>
+          {/* Right: live preview + QR + save */}
+          <div className="flex flex-col gap-3">
+            {/* Live preview — mirrors the public invitation as the couple edits */}
+            <div className={`overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm inv-frame-${content.frame}`}>
+              {content.imageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={content.imageUrl} alt={t("invman.preview")} className="max-h-44 w-full object-cover" />
+              )}
+              <div className="p-4 text-center">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-slate-400">{t("invman.preview")}</p>
+                <h3 className="mt-1 text-lg font-semibold break-words text-slate-900">
+                  {[content.titleA, content.titleB].filter(Boolean).join(" & ") || invitation.title}
+                </h3>
+                {content.message && (
+                  <p className="mt-2 line-clamp-3 text-xs whitespace-pre-line text-slate-600">{content.message}</p>
+                )}
+                {(content.date || content.venue) && (
+                  <p className="mt-2 text-xs text-slate-500">
+                    {[content.date, content.time].filter(Boolean).join(" · ")}
+                    {content.venue ? ` — ${content.venue}` : ""}
+                  </p>
+                )}
+                {content.dressCode && (
+                  <p className="mt-1 text-xs text-slate-400">{t("inv.dressCodeLabel")}: {content.dressCode}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-semibold text-slate-800">{t("invman.qr")}</p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={qrUrl} alt={t("invman.qr")} className="h-36 w-36 rounded-lg border border-slate-100 bg-white object-contain" />
+              <a href={qrUrl} download={`qr-${invitation.id}.png`} className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700">
+                {t("invman.qrDownload")}
+              </a>
+            </div>
           </div>
         </div>
 
