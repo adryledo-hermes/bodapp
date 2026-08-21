@@ -3,7 +3,6 @@
 import { useState } from "react";
 import {
   DEFAULT_TEMPLATE,
-  isValidHexColor,
   type TemplateContent,
 } from "@/lib/invitation";
 import { translate, type Locale } from "@/lib/i18n";
@@ -379,76 +378,71 @@ export default function TemplateEditor({
         </div>
       </section>
 
-      {/* ---- Live preview ---- */}
+      {/* ---- Live preview — mirrors the real guest invitation ---- */}
       <section className="rounded-xl border border-slate-200 bg-white p-5">
         <h2 className="mb-4 text-lg font-semibold text-slate-900">{t("tpl.preview")}</h2>
-        {/* Defense-in-depth: only apply color values that are valid hex, else
-            fall back to the safe defaults — a non-hex value can never reach the
-            `style=` attribute (see HEX_COLOR_RE in @/lib/invitation). */}
-        <div
-          className="relative overflow-hidden rounded-lg border border-[#D8D1C7] bg-[#FCFAF6] shadow-sm"
-          style={{
-            background: isValidHexColor(draft.accent)
-              ? draft.accent
-              : DEFAULT_TEMPLATE.colors.accent,
-          }}
-        >
+        <div className="mx-auto max-w-md overflow-hidden rounded-[2rem] border border-[#D8D1C7] bg-[#FCFAF6] shadow-[0_18px_60px_rgba(93,79,63,0.12)]">
           {draft.imageUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={draft.imageUrl}
-              alt={t("invman.image")}
-              className="max-h-44 w-full object-cover"
-            />
+            <img src={draft.imageUrl} alt={t("invman.image")} className="max-h-44 w-full object-cover" />
           )}
-          <div
-            className="p-8 text-center"
-            style={{
-              color: isValidHexColor(draft.primary)
-                ? draft.primary
-                : DEFAULT_TEMPLATE.colors.primary,
-            }}
-          >
+          <div className="px-8 py-10 text-center">
+            <p className="text-[10px] uppercase tracking-[0.36em] text-[#7A6A5A]">{t("inv.invitation")}</p>
+            <div className="mx-auto mt-4 h-px w-12 bg-[#7A6A5A]" />
             {draft.titleA || draft.titleB ? (
-              <p className="mb-1 text-3xl font-bold">
+              <h1 className="inv-serif mt-4 text-3xl font-normal italic tracking-wide text-[#403B36] sm:text-4xl">
                 {draft.titleA} &amp; {draft.titleB}
-              </p>
+              </h1>
             ) : (
-              <p className="mb-1 text-3xl font-bold text-slate-400">
-                {t("tpl.namesFallback")}
+              <p className="inv-serif mt-4 text-3xl italic text-[#8B8176]">{t("tpl.namesFallback")}</p>
+            )}
+            {draft.message && (
+              <p className="inv-serif mx-auto mt-4 max-w-sm text-base italic leading-relaxed text-[#5D554D]">
+                {draft.message}
               </p>
-            )}
-            <p className="mb-4 text-sm uppercase tracking-widest text-slate-600">
-              {t("tpl.ourWedding")}
-            </p>
-
-            <p className="mx-auto mb-4 max-w-md text-sm leading-relaxed">
-              {draft.message || "…"}
-            </p>
-
-            {(draft.date || draft.time) && (
-              <p className="text-sm font-medium">
-                📅 {draft.date}
-                {draft.date && draft.time ? " · " : ""}
-                {draft.time && <>🕒 {draft.time}</>}
-              </p>
-            )}
-            {draft.venue && <p className="mt-1 text-sm">📍 {draft.venue}</p>}
-            {draft.dressCode && (
-              <p className="mt-1 text-sm">👔 {draft.dressCode}</p>
-            )}
-
-            {draft.bankAccount && (
-              <div className="mx-auto mt-5 max-w-sm rounded-lg bg-white/70 p-3 text-left">
-                <p className="text-xs font-semibold uppercase tracking-wide">
-                  {t("tpl.bankTransfer")}
-                </p>
-                <p className="mt-1 font-mono text-sm tracking-wide">
-                  {draft.bankAccount}
-                </p>
-              </div>
             )}
           </div>
+
+          <div className="mx-6 grid gap-3 rounded-2xl bg-[#F3EFE8] p-5 text-center text-sm text-[#5D554D] sm:grid-cols-2">
+            {draft.date ? <div><span className="font-semibold text-[#7A6A5A]">{t("inv.dateLabel")}: </span>{draft.date}</div> : null}
+            {draft.time ? <div><span className="font-semibold text-[#7A6A5A]">{t("inv.timeLabel")}: </span>{draft.time}</div> : null}
+            {draft.venue ? <div className="sm:col-span-2"><span className="font-semibold text-[#7A6A5A]">{t("inv.venueLabel")}: </span>{draft.venue}</div> : null}
+            {draft.dressCode ? <div className="sm:col-span-2"><span className="font-semibold text-[#7A6A5A]">{t("inv.dressCodeLabel")}: </span>{draft.dressCode}</div> : null}
+          </div>
+
+          {draft.schedule && (
+            <div className="mx-6 border-t border-[#D8D1C7] px-0 pb-2 pt-5 text-center">
+              <h2 className="inv-serif text-xl italic font-normal text-[#403B36]">{t("inv.scheduleTitle")}</h2>
+              <p className="mt-2 whitespace-pre-line text-sm leading-6 text-[#5D554D]">{draft.schedule}</p>
+            </div>
+          )}
+
+          {(draft.directions || draft.accommodation) && (
+            <div className="mx-6 grid gap-3 pb-5 sm:grid-cols-2">
+              {draft.directions ? (
+                <div className="rounded-2xl bg-[#F3EFE8] p-4 text-center">
+                  <h2 className="inv-serif text-lg italic font-normal text-[#403B36]">{t("inv.directionsTitle")}</h2>
+                  <p className="mt-2 whitespace-pre-line text-sm leading-6 text-[#5D554D]">{draft.directions}</p>
+                </div>
+              ) : null}
+              {draft.accommodation ? (
+                <div className="rounded-2xl bg-[#F3EFE8] p-4 text-center">
+                  <h2 className="inv-serif text-lg italic font-normal text-[#403B36]">{t("inv.accommodationTitle")}</h2>
+                  <p className="mt-2 whitespace-pre-line text-sm leading-6 text-[#5D554D]">{draft.accommodation}</p>
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {draft.bankAccount && (
+            <div className="mx-6 pb-6">
+              <div className="rounded-2xl border border-[#D8D1C7] bg-white/80 p-4 text-center">
+                <p className="text-sm font-semibold text-[#403B36]">{t("tpl.bankTransfer")}</p>
+                <p className="mt-2 font-mono text-sm tracking-wide text-[#5D554D]">{draft.bankAccount}</p>
+                <p className="mt-1 text-xs text-[#8B8176]">{t("tpl.bankHelp")}</p>
+              </div>
+            </div>
+          )}
         </div>
       </section>
     </div>

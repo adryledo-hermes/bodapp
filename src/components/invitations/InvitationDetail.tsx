@@ -157,32 +157,45 @@ export default function InvitationDetail({
             </div>
           </div>
 
-          {/* Right: live preview + QR + save */}
+          {/* Right: live preview — mirrors the real guest invitation layout */}
           <div className="flex flex-col gap-3">
-            {/* Live preview — mirrors the public invitation as the couple edits */}
-            <div className="overflow-hidden rounded-3xl border border-[#D8D1C7] bg-[#FCFAF6] shadow-sm">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-400">{t("invman.preview")}</p>
+            <div className="overflow-hidden rounded-[2rem] border border-[#D8D1C7] bg-[#FCFAF6] shadow-[0_12px_40px_rgba(93,79,63,0.10)]">
               {content.imageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={content.imageUrl} alt={t("invman.preview")} className="max-h-44 w-full object-cover" />
+                <img src={content.imageUrl} alt={t("invman.preview")} className="max-h-40 w-full object-cover" />
               )}
-              <div className="p-4 text-center">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-slate-400">{t("invman.preview")}</p>
-                <h3 className="mt-1 text-lg font-semibold break-words text-slate-900">
+              <div className="px-5 py-6 text-center">
+                <p className="text-[10px] uppercase tracking-[0.36em] text-[#7A6A5A]">{t("inv.invitation")}</p>
+                <div className="mx-auto mt-3 h-px w-10 bg-[#7A6A5A]" />
+                <h3 className="inv-serif mt-3 text-2xl font-normal italic tracking-wide text-[#403B36]">
                   {[content.titleA, content.titleB].filter(Boolean).join(" & ") || invitation.title}
                 </h3>
                 {content.message && (
-                  <p className="mt-2 line-clamp-3 text-xs whitespace-pre-line text-slate-600">{content.message}</p>
-                )}
-                {(content.date || content.venue) && (
-                  <p className="mt-2 text-xs text-slate-500">
-                    {[content.date, content.time].filter(Boolean).join(" · ")}
-                    {content.venue ? ` — ${content.venue}` : ""}
-                  </p>
-                )}
-                {content.dressCode && (
-                  <p className="mt-1 text-xs text-slate-400">{t("inv.dressCodeLabel")}: {content.dressCode}</p>
+                  <p className="inv-serif mt-3 text-sm italic leading-relaxed text-[#5D554D] line-clamp-2">{content.message}</p>
                 )}
               </div>
+
+              <div className="mx-5 grid gap-2 rounded-2xl bg-[#F3EFE8] p-4 text-center text-xs text-[#5D554D] sm:grid-cols-2">
+                {content.date && <div><span className="font-semibold text-[#7A6A5A]">{t("inv.dateLabel")}: </span>{content.date}</div>}
+                {content.time && <div><span className="font-semibold text-[#7A6A5A]">{t("inv.timeLabel")}: </span>{content.time}</div>}
+                {content.venue && <div className="sm:col-span-2"><span className="font-semibold text-[#7A6A5A]">{t("inv.venueLabel")}: </span>{content.venue}</div>}
+                {content.dressCode && <div className="sm:col-span-2"><span className="font-semibold text-[#7A6A5A]">{t("inv.dressCodeLabel")}: </span>{content.dressCode}</div>}
+              </div>
+
+              {content.schedule && (
+                <div className="mx-5 border-t border-[#D8D1C7] px-0 pb-2 pt-4 text-center">
+                  <p className="inv-serif text-sm italic font-normal text-[#403B36]">{t("inv.scheduleTitle")}</p>
+                  <p className="mt-1 whitespace-pre-line text-[11px] leading-5 text-[#5D554D]">{content.schedule}</p>
+                </div>
+              )}
+
+              {(content.directions || content.accommodation) && (
+                <div className="mx-5 grid gap-2 pb-5 sm:grid-cols-2">
+                  {content.directions && <div className="rounded-xl bg-[#F3EFE8] p-3 text-center"><p className="inv-serif text-xs italic text-[#403B36]">{t("inv.directionsTitle")}</p><p className="mt-1 text-[11px] text-[#5D554D] whitespace-pre-line line-clamp-2">{content.directions}</p></div>}
+                  {content.accommodation && <div className="rounded-xl bg-[#F3EFE8] p-3 text-center"><p className="inv-serif text-xs italic text-[#403B36]">{t("inv.accommodationTitle")}</p><p className="mt-1 text-[11px] text-[#5D554D] whitespace-pre-line line-clamp-2">{content.accommodation}</p></div>}
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
