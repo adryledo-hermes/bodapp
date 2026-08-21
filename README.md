@@ -43,7 +43,7 @@ npm run typecheck
 - **Decorations**: decorations **attach to a table when dropped on it** (rendered at the table's position) and **move together when the table moves**; drop on empty canvas to detach; every table auto-creates its centerpiece.
 - **Photos**: the **wedding gallery shows ONLY wedding photos** — guest profile photos and invitation images (same storage) are excluded from it. The invitation editor shows a **live preview** (frame + image + text) under the current data.
 - **Tasks**: Kanban + calendar views, pre-seeded Spanish wedding checklist.
-- **Public portal**: QR → phone → SMS OTP → personalised invitation + RSVP.
+- **Public portal**: QR → phone → SMS OTP → personalised invitation + RSVP. For private/testing deployments, set `REQUIRE_GUEST_OTP="false"` to open invitation links without sending SMS (explicit security trade-off; default remains OTP).
 
 ## Usage
 1. Open the app; at `/` choose **Log in** (existing couple) or **Create a new couple** (self-registration at `/setup`).

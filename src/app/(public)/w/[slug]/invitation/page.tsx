@@ -6,6 +6,8 @@ import { loadPublicInvitationView } from "@/lib/invitation-public-db";
 import InvitationPage from "@/components/invite/InvitationPage";
 import { getLocale } from "@/lib/locale-server";
 import { normalizeLocale } from "@/lib/i18n";
+import { guestOtpBypassEnabled } from "@/lib/guest-access";
+import { createInvitationAccess } from "@/lib/otp-session";
 
 export const dynamic = "force-dynamic";
 
@@ -45,15 +47,26 @@ export default async function InvitationRoute({
   // Public pages default to the wedding's configured locale.
   const locale = await getLocale(normalizeLocale(wedding.locale, "es"));
 
-  // The OTP cookie must be scoped to THIS invitation + wedding; otherwise send
-  // the guest back to the OTP entry to authenticate (or re-authenticate).
-  const access = await getInvitationAccess();
+  // The OTP cookie must be scoped to THIS invitation + wedding. In the explicit
+  // bypass mode, skip the challenge but still issue the same scoped short-lived
+  // access cookie so RSVP authorization remains unchanged.
+  const bypassOtp = guestOtpBypassEnabled();
+  const access = bypassOtp ? null : await getInvitationAccess();
   const hasAccess =
-    access !== null &&
-    access.invitationId === invitation.id &&
-    access.weddingId === invitation.weddingId;
+    bypassOtp ||
+    (access !== null &&
+      access.invitationId === invitation.id &&
+      access.weddingId === invitation.weddingId);
 
-  if (!hasAccess) {
+  if (bypassOtp) {
+    await createInvitationAccess({
+      invitationId: invitation.id,
+      weddingId: invitation.weddingId,
+      // Without OTP there is no verified phone identity; use the first
+      // allowlisted phone for RSVP scoping.
+      phone: invitation.acceptedPhones[0] ?? "otp-disabled",
+    });
+  } else if (!hasAccess) {
     redirect(`/w/${slug}/invite?g=${encodeURIComponent(invitation.id)}`);
   }
 

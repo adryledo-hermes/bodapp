@@ -7,6 +7,8 @@ import OtpChallenge from "@/components/invite/OtpChallenge";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { getLocale } from "@/lib/locale-server";
 import { normalizeLocale, translate } from "@/lib/i18n";
+import { guestOtpBypassEnabled } from "@/lib/guest-access";
+import { createInvitationAccess } from "@/lib/otp-session";
 
 export const dynamic = "force-dynamic";
 
@@ -50,11 +52,26 @@ export default async function InvitePage({
   const locale = await getLocale(normalizeLocale(wedding.locale, "es"));
   const t = (key: string) => translate(locale, key);
 
-  const access = await getInvitationAccess();
+  const bypassOtp = guestOtpBypassEnabled();
+  const access = bypassOtp ? null : await getInvitationAccess();
   const hasAccess =
-    access !== null &&
-    access.invitationId === invitation.id &&
-    access.weddingId === invitation.weddingId;
+    bypassOtp ||
+    (access !== null &&
+      access.invitationId === invitation.id &&
+      access.weddingId === invitation.weddingId);
+
+  // In bypass mode, issue the same scoped cookie without OTP so the following
+  // navigation to the invitation page uses the normal authenticated path.
+  if (bypassOtp) {
+    await createInvitationAccess({
+      invitationId: invitation.id,
+      weddingId: invitation.weddingId,
+      // No phone identity exists without OTP; default RSVP ownership to the
+      // first phone on the invitation allowlist (the couple can still review
+      // the group invitation).
+      phone: invitation.acceptedPhones[0] ?? "otp-disabled",
+    });
+  }
 
   const coupleNames = [wedding.coupleNameA, wedding.coupleNameB]
     .filter(Boolean)
