@@ -6,7 +6,6 @@ import {
   isValidHexColor,
   type TemplateContent,
 } from "@/lib/invitation";
-import { FRAME_OPTIONS } from "@/lib/invitation-inline";
 import { translate, type Locale } from "@/lib/i18n";
 
 interface TemplateEditorProps {
@@ -27,8 +26,10 @@ interface DraftState {
   primary: string;
   accent: string;
   bankAccount: string;
-  frame: string;
   imageUrl: string | null;
+  schedule: string;
+  directions: string;
+  accommodation: string;
 }
 
 function toDraft(content: TemplateContent, bankAccount: string): DraftState {
@@ -43,8 +44,10 @@ function toDraft(content: TemplateContent, bankAccount: string): DraftState {
     primary: content.colors?.primary ?? DEFAULT_TEMPLATE.colors.primary,
     accent: content.colors?.accent ?? DEFAULT_TEMPLATE.colors.accent,
     bankAccount: bankAccount ?? "",
-    frame: content.frame ?? DEFAULT_TEMPLATE.frame,
     imageUrl: content.imageUrl ?? null,
+    schedule: content.schedule ?? "",
+    directions: content.directions ?? "",
+    accommodation: content.accommodation ?? "",
   };
 }
 
@@ -117,8 +120,10 @@ export default function TemplateEditor({
             time: draft.time,
             venue: draft.venue,
             dressCode: draft.dressCode,
+            schedule: draft.schedule,
+            directions: draft.directions,
+            accommodation: draft.accommodation,
             colors: { primary: draft.primary, accent: draft.accent },
-            frame: draft.frame,
             imageUrl: draft.imageUrl,
           },
           bankAccount: draft.bankAccount,
@@ -255,26 +260,19 @@ export default function TemplateEditor({
             />
           </div>
 
-          <div>
-            <span className="mb-1 block text-sm font-medium text-slate-700">
-              {t("invman.frame")}
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {FRAME_OPTIONS.map((f) => (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => set("frame", f.id)}
-                  className={`tap-min rounded-lg border px-3 py-1.5 text-xs font-medium ${
-                    draft.frame === f.id
-                      ? "border-indigo-400 bg-indigo-50 text-indigo-700"
-                      : "border-slate-300 text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="block text-sm font-medium text-slate-700 sm:col-span-1">
+              {t("tpl.scheduleLabel")}
+              <textarea className={`mt-1 ${inputCls}`} rows={3} value={draft.schedule} onChange={(e) => set("schedule", e.target.value)} placeholder="16:00 · Ceremonia\n18:00 · Cóctel\n20:00 · Cena" />
+            </label>
+            <label className="block text-sm font-medium text-slate-700 sm:col-span-1">
+              {t("tpl.directionsLabel")}
+              <textarea className={`mt-1 ${inputCls}`} rows={3} value={draft.directions} onChange={(e) => set("directions", e.target.value)} placeholder="Carretera M-... / mapa" />
+            </label>
+            <label className="block text-sm font-medium text-slate-700 sm:col-span-1">
+              {t("tpl.accommodationLabel")}
+              <textarea className={`mt-1 ${inputCls}`} rows={3} value={draft.accommodation} onChange={(e) => set("accommodation", e.target.value)} placeholder="Hoteles cercanos y código" />
+            </label>
           </div>
 
           <div>
@@ -388,7 +386,7 @@ export default function TemplateEditor({
             fall back to the safe defaults — a non-hex value can never reach the
             `style=` attribute (see HEX_COLOR_RE in @/lib/invitation). */}
         <div
-          className={`inv-frame-${draft.frame} relative overflow-hidden rounded-lg border border-slate-200 shadow-sm`}
+          className="relative overflow-hidden rounded-lg border border-[#D8D1C7] bg-[#FCFAF6] shadow-sm"
           style={{
             background: isValidHexColor(draft.accent)
               ? draft.accent

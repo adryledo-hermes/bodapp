@@ -92,7 +92,9 @@ export async function POST(req: Request) {
     time: pick("time") || null,
     venue: pick("venue") || null,
     dressCode: pick("dressCode") || null,
-    frame: typeof raw.frame === "string" ? raw.frame : "clasica",
+    schedule: pick("schedule") || null,
+    directions: pick("directions") || null,
+    accommodation: pick("accommodation") || null,
     imageUrl: typeof raw.imageUrl === "string" ? raw.imageUrl : null,
   };
 

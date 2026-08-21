@@ -20,6 +20,10 @@ export const templateUpdateSchema = z.object({
   time: z.string().max(60).optional(),
   venue: z.string().max(300).optional(),
   dressCode: z.string().max(200).optional(),
+  schedule: z.string().max(3000).optional(),
+  directions: z.string().max(2000).optional(),
+  accommodation: z.string().max(2000).optional(),
+  imageUrl: z.string().max(500).nullable().optional(),
   sections: z.array(z.string().max(500)).optional(),
   colors: templateColorsSchema.optional(),
 });

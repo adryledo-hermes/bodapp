@@ -82,7 +82,7 @@ function sampleView(
     invitees,
     greeting: "¡Hola, Ana y Luis!",
     bankAccount: null,
-    inline: { frame: "clasica", imageUrl: null },
+    inline: { imageUrl: null }
   };
 }
 

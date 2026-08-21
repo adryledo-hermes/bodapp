@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f3efe8;
+  --foreground: #403b36;
 }
 
 @theme inline {
@@ -12,17 +12,27 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Editorial wedding invitation type: a quiet serif for names, a measured sans
+   for logistics and controls. Bundled local serif avoids a build-time network
+   fetch and keeps the public invitation feeling like fine paper stationery. */
+.inv-serif {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+:root {
+  --wedding-ivory: #f3efe8;
+  --wedding-paper: #fcfaf6;
+  --wedding-ink: #403b36;
+  --wedding-stone: #7a6a5a;
+  --wedding-sage: #aab0a0;
+  --wedding-terracotta: #a46d5b;
+  --wedding-line: #d8d1c7;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
 /* ---- Task 14: shared visual + accessibility layer ---- */
@@ -41,46 +51,3 @@ body {
   }
 }
 
-
-/* ---- Invitation frames (v1.2.2) — REAL floral frame images (public domain,
-   Wikimedia Commons) overlaid on the invitation card. The SVG frames have a
-   transparent center, so the card content shows through. The couple picks one
-   per template/invitation in the editor. "minima" stays a clean thin border. */
-.inv-frame-flores {
-  background-image: url("/frames/flores.svg");
-  background-size: 100% 100%;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-color: #fff;
-}
-.inv-frame-lino {
-  background-image: url("/frames/lino.svg");
-  background-size: 100% 100%;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-color: #fdfaf5;
-}
-.inv-frame-dorado {
-  background-image: url("/frames/dorado.svg");
-  background-size: 100% 100%;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-color: #fffdf4;
-}
-.inv-frame-clasica {
-  background-image: url("/frames/clasica.svg");
-  background-size: 100% 100%;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-color: #fff;
-}
-.inv-frame-boho {
-  background-image: url("/frames/boho.svg");
-  background-size: 100% 100%;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-color: #fdf8f0;
-}
-.inv-frame-minima {
-  box-shadow: 0 0 0 1px #e2e8f0 inset;
-}

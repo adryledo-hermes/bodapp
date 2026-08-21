@@ -21,11 +21,13 @@ export interface TemplateContent {
   time: string;
   venue: string;
   dressCode: string;
+  schedule: string;
+  directions: string;
+  accommodation: string;
   bankAccount: string;
   sections: string[];
   colors: TemplateColors;
-  /** Decorative frame (real floral SVG image) + optional header image. */
-  frame: string;
+  /** Optional hero image; no decorative frame is used. */
   imageUrl: string | null;
 }
 
@@ -38,10 +40,12 @@ export const DEFAULT_TEMPLATE: TemplateContent = {
   time: "",
   venue: "",
   dressCode: "",
+  schedule: "",
+  directions: "",
+  accommodation: "",
   bankAccount: "",
   sections: [],
-  colors: { primary: "#B76E79", accent: "#F7E7CE" },
-  frame: "clasica",
+  colors: { primary: "#7A6A5A", accent: "#F3EFE8" },
   imageUrl: null,
 };
 
@@ -76,6 +80,9 @@ export function normalizeTemplateContent(raw: unknown): TemplateContent {
     time: pickString("time", DEFAULT_TEMPLATE.time),
     venue: pickString("venue", DEFAULT_TEMPLATE.venue),
     dressCode: pickString("dressCode", DEFAULT_TEMPLATE.dressCode),
+    schedule: pickString("schedule", DEFAULT_TEMPLATE.schedule),
+    directions: pickString("directions", DEFAULT_TEMPLATE.directions),
+    accommodation: pickString("accommodation", DEFAULT_TEMPLATE.accommodation),
     bankAccount: pickString("bankAccount", DEFAULT_TEMPLATE.bankAccount),
     sections: Array.isArray(r.sections)
       ? r.sections.filter((s): s is string => typeof s === "string")
@@ -84,13 +91,6 @@ export function normalizeTemplateContent(raw: unknown): TemplateContent {
       primary: pickColor("primary", DEFAULT_TEMPLATE.colors.primary),
       accent: pickColor("accent", DEFAULT_TEMPLATE.colors.accent),
     },
-    // frame: accept any stored frame id; the UI only offers known options but
-    // unknown values degrade to the default frame (never inject CSS here —
-    // the frame id maps to a hard-coded CSS class in globals.css).
-    frame:
-      typeof r.frame === "string" && r.frame
-        ? r.frame
-        : DEFAULT_TEMPLATE.frame,
     imageUrl:
       typeof r.imageUrl === "string" && r.imageUrl.trim()
         ? r.imageUrl.trim()

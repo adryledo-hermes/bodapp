@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { isValidHexColor } from "@/lib/invitation";
 import { type RsvpStatus } from "@/lib/rsvp";
 import type { InvitationView } from "@/lib/invitation-public";
@@ -71,6 +71,26 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
     firstInvitee ? listToText(firstInvitee.musicPrefs) : ""
   );
   const [submitting, setSubmitting] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  // Update the countdown once per minute; no timer runs when the date is empty.
+  useEffect(() => {
+    if (!content.date) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, [content.date]);
+
+  const countdown = (() => {
+    if (!content.date) return null;
+    const target = new Date(`${content.date}T${content.time || "00:00"}`).getTime();
+    const diff = target - now;
+    if (!Number.isFinite(target) || diff <= 0) return null;
+    const days = Math.floor(diff / 86_400_000);
+    const hours = Math.floor((diff % 86_400_000) / 3_600_000);
+    const minutes = Math.floor((diff % 3_600_000) / 60_000);
+    return { days, hours, minutes };
+  })();
+
   const [message, setMessage] = useState<{
     kind: "success" | "error";
     text: string;
@@ -134,9 +154,9 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
 
   return (
     <main
-      className="min-h-screen px-4 py-10 sm:px-6"
+      className="min-h-screen bg-[#F3EFE8] px-4 py-10 text-[#403B36] sm:px-6"
       style={{
-        background: `linear-gradient(180deg, ${accent} 0%, #ffffff 40%)`,
+        background: `linear-gradient(180deg, ${accent} 0%, #F3EFE8 55%, #FCFAF6 100%)`,
       }}
     >
       <div className="mx-auto w-full max-w-2xl">
@@ -144,7 +164,7 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
           <LocaleSwitcher locale={locale} />
         </div>
         <div
-          className={`overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm inv-frame-${currentView.inline.frame}`}
+          className="overflow-hidden rounded-[2rem] border border-[#D8D1C7] bg-[#FCFAF6] shadow-[0_18px_60px_rgba(93,79,63,0.12)]"
           style={{ borderColor: `${primary}55` }}
         >
           {currentView.inline.imageUrl && (
@@ -156,33 +176,59 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
             />
           )}
           <div
-            className="bg-gradient-to-r px-6 py-10 text-center text-white sm:px-10"
-            style={{ backgroundColor: primary }}
+            className="relative px-6 py-12 text-center sm:px-10"
+            style={{ backgroundColor: `${accent}66` }}
           >
-            <p className="text-xs uppercase tracking-[0.3em] text-white/80">
+            <p className="text-[10px] uppercase tracking-[0.36em] text-[#7A6A5A]">
               {t("inv.invitation")}
             </p>
-            <h1 className="mt-3 text-3xl font-semibold break-words text-white sm:text-4xl">
+            <div className="mx-auto mt-5 h-px w-14" style={{ backgroundColor: primary }} />
+            <h1 className="inv-serif mt-5 text-4xl font-normal italic tracking-wide text-[#403B36] sm:text-5xl">
               {coupleTitle}
             </h1>
-            <p className="mt-4 text-lg font-medium text-white/95">
+            <p className="mt-5 text-base text-[#7A6A5A]">
               {greeting}
             </p>
           </div>
 
-          <div className="space-y-6 px-6 py-8 sm:px-10">
+          <div className="space-y-8 px-6 py-9 sm:px-10">
             {content.message ? (
-              <p className="whitespace-pre-line text-center text-slate-700">
+              <p className="inv-serif mx-auto max-w-xl text-center text-xl italic leading-relaxed text-[#5D554D]">
                 {content.message}
               </p>
             ) : null}
 
-            <div className="grid gap-3 rounded-2xl bg-slate-50 p-5 text-center sm:grid-cols-2">
+            {countdown && (
+              <section className="border-y border-[#D8D1C7] py-5 text-center" aria-label={t("inv.countdown")}>
+                <p className="text-[10px] uppercase tracking-[0.28em] text-[#8B8176]">{t("inv.countdown")}</p>
+                <div className="mt-3 flex justify-center gap-6 text-[#7A6A5A]">
+                  <div><strong className="inv-serif block text-3xl font-normal">{countdown.days}</strong><span className="text-[10px] uppercase tracking-wider">{t("inv.days")}</span></div>
+                  <div><strong className="inv-serif block text-3xl font-normal">{countdown.hours}</strong><span className="text-[10px] uppercase tracking-wider">{t("inv.hours")}</span></div>
+                  <div><strong className="inv-serif block text-3xl font-normal">{countdown.minutes}</strong><span className="text-[10px] uppercase tracking-wider">{t("inv.minutes")}</span></div>
+                </div>
+              </section>
+            )}
+
+            <div className="grid gap-3 rounded-2xl bg-[#F3EFE8] p-5 text-center sm:grid-cols-2"> 
               {detail(t("inv.dateLabel"), content.date)}
               {detail(t("inv.timeLabel"), content.time)}
               {detail(t("inv.venueLabel"), content.venue)}
               {detail(t("inv.dressCodeLabel"), content.dressCode)}
             </div>
+
+            {content.schedule ? (
+              <section className="border-t border-[#D8D1C7] pt-6">
+                <h2 className="inv-serif text-center text-2xl italic font-normal text-[#403B36]">{t("inv.scheduleTitle")}</h2>
+                <p className="mt-3 whitespace-pre-line text-center text-sm leading-7 text-[#5D554D]">{content.schedule}</p>
+              </section>
+            ) : null}
+
+            {(content.directions || content.accommodation) ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {content.directions ? <section className="rounded-2xl bg-[#F3EFE8] p-5 text-center"><h2 className="inv-serif text-xl italic font-normal">{t("inv.directionsTitle")}</h2><p className="mt-2 whitespace-pre-line text-sm leading-6 text-[#5D554D]">{content.directions}</p></section> : null}
+                {content.accommodation ? <section className="rounded-2xl bg-[#F3EFE8] p-5 text-center"><h2 className="inv-serif text-xl italic font-normal">{t("inv.accommodationTitle")}</h2><p className="mt-2 whitespace-pre-line text-sm leading-6 text-[#5D554D]">{content.accommodation}</p></section> : null}
+              </div>
+            ) : null}
 
             {bankAccount ? (
               <div className="rounded-2xl border border-slate-200 p-5">

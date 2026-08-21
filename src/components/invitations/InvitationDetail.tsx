@@ -2,12 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  FRAME_OPTIONS,
-  DEFAULT_FRAME,
-  normalizeInvitationContent,
-  type InvitationContent,
-} from "@/lib/invitation-inline";
+import { normalizeInvitationContent, type InvitationContent } from "@/lib/invitation-inline";
 import { translate, type Locale } from "@/lib/i18n";
 
 /** The base info the detail editor needs (title + guests for the QR card). */
@@ -21,9 +16,9 @@ const inputClassName =
   "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none";
 
 /**
- * Per-invitation editor: pick a decorative frame, set an image (upload via the
- * existing /api/photos), override the copy (names, message, date, venue…), and
- * see the live QR underneath. Saves via PATCH /api/invitations/[id].
+ * Per-invitation editor: set an image (upload via the existing /api/photos),
+ * override the copy (names, message, date, venue…), and see the live QR
+ * underneath. Saves via PATCH /api/invitations/[id]. No decorative frame is used.
  */
 export default function InvitationDetail({
   invitation,
@@ -114,26 +109,6 @@ export default function InvitationDetail({
           {/* Left: editor */}
           <div className="space-y-4">
             <div>
-              <p className="mb-1 text-sm font-medium text-slate-700">{t("invman.frame")}</p>
-              <div className="flex flex-wrap gap-2">
-                {FRAME_OPTIONS.map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() => set("frame", f.id)}
-                    className={`tap-min rounded-lg border px-3 py-1.5 text-xs font-medium ${
-                      content.frame === f.id
-                        ? "border-indigo-400 bg-indigo-50 text-indigo-700"
-                        : "border-slate-300 text-slate-600 hover:bg-slate-50"
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
               <p className="mb-1 text-sm font-medium text-slate-700">{t("invman.image")}</p>
               <div className="flex items-center gap-3">
                 {content.imageUrl && (
@@ -172,12 +147,20 @@ export default function InvitationDetail({
               <label className="block text-sm font-medium text-slate-700">{t("inv.dressCodeLabel")}
                 <input className={`mt-1 ${inputClassName}`} value={content.dressCode} onChange={(e) => set("dressCode", e.target.value)} /></label>
             </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <label className="block text-sm font-medium text-slate-700">{t("tpl.scheduleLabel")}
+                <textarea rows={3} className={`mt-1 ${inputClassName}`} value={content.schedule} onChange={(e) => set("schedule", e.target.value)} /></label>
+              <label className="block text-sm font-medium text-slate-700">{t("tpl.directionsLabel")}
+                <textarea rows={3} className={`mt-1 ${inputClassName}`} value={content.directions} onChange={(e) => set("directions", e.target.value)} /></label>
+              <label className="block text-sm font-medium text-slate-700">{t("tpl.accommodationLabel")}
+                <textarea rows={3} className={`mt-1 ${inputClassName}`} value={content.accommodation} onChange={(e) => set("accommodation", e.target.value)} /></label>
+            </div>
           </div>
 
           {/* Right: live preview + QR + save */}
           <div className="flex flex-col gap-3">
             {/* Live preview — mirrors the public invitation as the couple edits */}
-            <div className={`overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm inv-frame-${content.frame}`}>
+            <div className="overflow-hidden rounded-3xl border border-[#D8D1C7] bg-[#FCFAF6] shadow-sm">
               {content.imageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={content.imageUrl} alt={t("invman.preview")} className="max-h-44 w-full object-cover" />

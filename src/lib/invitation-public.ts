@@ -92,8 +92,8 @@ export interface InvitationView {
   invitees: PublicGuest[];
   greeting: string;
   bankAccount: string | null;
-  /** Per-invitation personalization (frame + image) applied over the template. */
-  inline: { frame: string; imageUrl: string | null };
+  /** Per-invitation personalization image (design inherited from template). */
+  inline: { imageUrl: string | null };
 }
 
 /** Build the "¡Hola, Ana y Luis!" greeting for the invitee(s). */
@@ -119,7 +119,7 @@ export function buildInvitationView(params: {
   wedding: { coupleNameA: string; coupleNameB: string; bankAccount: string | null };
   template: unknown;
   invitation: { id: string };
-  inline?: unknown; // per-invitation content (raw) — frame/image/text overrides
+  inline?: unknown; // per-invitation content (raw) — image/text overrides
   guests: InviteeGuest[];
 }): InvitationView {
   const base = normalizeTemplateContent(params.template);
@@ -134,6 +134,9 @@ export function buildInvitationView(params: {
     time: inline.time || base.time,
     venue: inline.venue || base.venue,
     dressCode: inline.dressCode || base.dressCode,
+    schedule: inline.schedule || base.schedule,
+    directions: inline.directions || base.directions,
+    accommodation: inline.accommodation || base.accommodation,
   };
   const invitees = params.guests.map(publicPlateOf);
   return {
@@ -146,11 +149,10 @@ export function buildInvitationView(params: {
     invitees,
     greeting: buildGreeting(invitees),
     bankAccount: params.wedding.bankAccount ?? null,
-    // An invitation with NO own content (pre-1.2.2 rows, or not yet saved)
-    // inherits the template's frame + image; otherwise it uses its own.
+    // The design is now template-only; invitations may override only their
+    // image. Older rows without content inherit the template image.
     inline: {
-      frame: params.inline ? inline.frame : base.frame,
       imageUrl: params.inline ? inline.imageUrl : base.imageUrl,
-    },
+    }
   };
 }
