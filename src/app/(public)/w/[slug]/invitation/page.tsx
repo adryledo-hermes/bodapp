@@ -6,7 +6,6 @@ import { loadPublicInvitationView } from "@/lib/invitation-public-db";
 import InvitationPage from "@/components/invite/InvitationPage";
 import { getLocale } from "@/lib/locale-server";
 import { normalizeLocale } from "@/lib/i18n";
-import { guestOtpBypassEnabled } from "@/lib/guest-access";
 
 export const dynamic = "force-dynamic";
 
@@ -20,10 +19,12 @@ interface InvitationRouteProps {
  * Task 9 invite page: `?g=` is the Invitation.id and must belong to this
  * wedding's slug or it 404s. On top of that it REQUIRES a valid guest access
  * cookie scoped to exactly this invitation — without one it bounces the guest
- * to the OTP entry (`/w/[slug]/invite`) to authenticate first. The view is
- * built server-side from the wedding's template + bank account + the invitee
- * Guest rows (matched by acceptedPhones), then rendered by the client
- * InvitationPage.
+ * to the OTP entry (`/w/[slug]/invite`) to authenticate first.
+ *
+ * NOTE: this page does NOT check REQUIRE_GUEST_OTP. When bypass is enabled the
+ * route handler (/api/guest/access) already set the cookie before redirecting
+ * here; if the cookie is somehow absent the redirect to /invite will handle
+ * it. Checking bypass here too would create a redirect loop.
  */
 export default async function InvitationRoute({
   params,
@@ -46,16 +47,7 @@ export default async function InvitationRoute({
   // Public pages default to the wedding's configured locale.
   const locale = await getLocale(normalizeLocale(wedding.locale, "es"));
 
-  // The OTP cookie must be scoped to THIS invitation + wedding. In bypass mode
-  // the guest needs a cookie set, but cookies().set() is unsafe during server
-  // component render — redirect to the route handler that does it.
-  const bypassOtp = guestOtpBypassEnabled();
-
-  if (bypassOtp) {
-    const dest = `/api/guest/access?token=${encodeURIComponent(invitation.id)}&slug=${encodeURIComponent(slug)}`;
-    return redirect(dest);
-  }
-
+  // The OTP cookie must be scoped to THIS invitation + wedding.
   const access = await getInvitationAccess();
   const hasAccess =
     access !== null &&
