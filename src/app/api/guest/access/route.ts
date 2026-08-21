@@ -10,12 +10,23 @@ const schema = z.object({
 });
 
 /**
+ * Public base URL: the external address guests use to reach the app.
+ * Required when inside Docker (the internal port is 0.0.0.0:3000).
+ * Falls back to the request's origin for development.
+ */
+function publicBaseUrl(req: Request): string {
+  const configured = process.env.PUBLIC_BASE_URL;
+  if (configured) return configured.replace(/\/+$/, "");
+  // Dev fallback: use the request origin (works for localhost, not for Docker).
+  const origin = new URL(req.url).origin;
+  return origin;
+}
+
+/**
  * GET /api/guest/access?token=...&slug=...
  *
  * Public route handler used ONLY when REQUIRE_GUEST_OTP=false. Sets the
- * invitation-access cookie and redirects to the invitation page. This is the
- * correct Next.js pattern for setting cookies — unlike calling
- * cookies().set() inside a server component during render.
+ * invitation-access cookie and redirects to the invitation page.
  */
 export async function GET(req: Request) {
   if (!guestOtpBypassEnabled()) {
@@ -43,8 +54,7 @@ export async function GET(req: Request) {
     phone: (invitation.acceptedPhones ?? [])[0] ?? "otp-disabled",
   });
 
-  return NextResponse.redirect(
-    new URL(`/w/${slug}/invitation?g=${encodeURIComponent(token)}`, req.url),
-    302
-  );
+  const base = publicBaseUrl(req);
+  const dest = `${base}/w/${slug}/invitation?g=${encodeURIComponent(token)}`;
+  return NextResponse.redirect(dest, 302);
 }
