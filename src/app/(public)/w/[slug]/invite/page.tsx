@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { findInvitationByToken } from "@/lib/otp-flow-db";
 import { getInvitationAccess } from "@/lib/otp-session";
@@ -8,7 +8,6 @@ import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { getLocale } from "@/lib/locale-server";
 import { normalizeLocale, translate } from "@/lib/i18n";
 import { guestOtpBypassEnabled } from "@/lib/guest-access";
-import { createInvitationAccess } from "@/lib/otp-session";
 
 export const dynamic = "force-dynamic";
 
@@ -53,25 +52,20 @@ export default async function InvitePage({
   const t = (key: string) => translate(locale, key);
 
   const bypassOtp = guestOtpBypassEnabled();
-  const access = bypassOtp ? null : await getInvitationAccess();
-  const hasAccess =
-    bypassOtp ||
-    (access !== null &&
-      access.invitationId === invitation.id &&
-      access.weddingId === invitation.weddingId);
 
-  // In bypass mode, issue the same scoped cookie without OTP so the following
-  // navigation to the invitation page uses the normal authenticated path.
+  // Bypass mode: redirect to the route handler that sets the cookie and
+  // bounces the guest to the invitation page — cookies().set() is safe only
+  // in route handlers, not during server component render.
   if (bypassOtp) {
-    await createInvitationAccess({
-      invitationId: invitation.id,
-      weddingId: invitation.weddingId,
-      // No phone identity exists without OTP; default RSVP ownership to the
-      // first phone on the invitation allowlist (the couple can still review
-      // the group invitation).
-      phone: invitation.acceptedPhones[0] ?? "otp-disabled",
-    });
+    const dest = `/api/guest/access?token=${encodeURIComponent(invitation.id)}&slug=${encodeURIComponent(slug)}`;
+    return redirect(dest);
   }
+
+  const access = await getInvitationAccess();
+  const hasAccess =
+    access !== null &&
+    access.invitationId === invitation.id &&
+    access.weddingId === invitation.weddingId;
 
   const coupleNames = [wedding.coupleNameA, wedding.coupleNameB]
     .filter(Boolean)

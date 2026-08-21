@@ -7,7 +7,6 @@ import InvitationPage from "@/components/invite/InvitationPage";
 import { getLocale } from "@/lib/locale-server";
 import { normalizeLocale } from "@/lib/i18n";
 import { guestOtpBypassEnabled } from "@/lib/guest-access";
-import { createInvitationAccess } from "@/lib/otp-session";
 
 export const dynamic = "force-dynamic";
 
@@ -47,26 +46,23 @@ export default async function InvitationRoute({
   // Public pages default to the wedding's configured locale.
   const locale = await getLocale(normalizeLocale(wedding.locale, "es"));
 
-  // The OTP cookie must be scoped to THIS invitation + wedding. In the explicit
-  // bypass mode, skip the challenge but still issue the same scoped short-lived
-  // access cookie so RSVP authorization remains unchanged.
+  // The OTP cookie must be scoped to THIS invitation + wedding. In bypass mode
+  // the guest needs a cookie set, but cookies().set() is unsafe during server
+  // component render — redirect to the route handler that does it.
   const bypassOtp = guestOtpBypassEnabled();
-  const access = bypassOtp ? null : await getInvitationAccess();
-  const hasAccess =
-    bypassOtp ||
-    (access !== null &&
-      access.invitationId === invitation.id &&
-      access.weddingId === invitation.weddingId);
 
   if (bypassOtp) {
-    await createInvitationAccess({
-      invitationId: invitation.id,
-      weddingId: invitation.weddingId,
-      // Without OTP there is no verified phone identity; use the first
-      // allowlisted phone for RSVP scoping.
-      phone: invitation.acceptedPhones[0] ?? "otp-disabled",
-    });
-  } else if (!hasAccess) {
+    const dest = `/api/guest/access?token=${encodeURIComponent(invitation.id)}&slug=${encodeURIComponent(slug)}`;
+    return redirect(dest);
+  }
+
+  const access = await getInvitationAccess();
+  const hasAccess =
+    access !== null &&
+    access.invitationId === invitation.id &&
+    access.weddingId === invitation.weddingId;
+
+  if (!hasAccess) {
     redirect(`/w/${slug}/invite?g=${encodeURIComponent(invitation.id)}`);
   }
 
