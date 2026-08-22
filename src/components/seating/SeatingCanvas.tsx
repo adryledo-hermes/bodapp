@@ -293,6 +293,17 @@ export default function SeatingCanvas({
         return t;
       })
     );
+    // Sync hero panel
+    setSelectedTable((prev) => {
+      if (!prev) return prev;
+      if (prev.id === targetTableId) {
+        return { ...prev, guests: [...prev.guests, { ...rel.guest, seatNumber: seatNumber ?? rel.guest.seatNumber }] };
+      }
+      if (rel.fromTableId && prev.id === rel.fromTableId) {
+        return { ...prev, guests: prev.guests.filter((g) => g.id !== guestId) };
+      }
+      return prev;
+    });
 
     let res: Response;
     try {
@@ -329,6 +340,12 @@ export default function SeatingCanvas({
       )
     );
     setUnassigned((prev) => [...prev, rel.guest]);
+    // Sync the hero panel if the removed guest was in the selected table
+    setSelectedTable((prev) =>
+      prev && prev.id === rel.fromTableId
+        ? { ...prev, guests: prev.guests.filter((g) => g.id !== guestId) }
+        : prev
+    );
 
     let res: Response;
     try {

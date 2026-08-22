@@ -264,6 +264,16 @@ export default function InvitationsManager({
           invitation={detail}
           locale={locale}
           onClose={() => setDetail(null)}
+          onSaved={(updated) => {
+            setInvitations((prev) =>
+              prev.map((inv) =>
+                inv.id === updated.id ? { ...inv, content: updated.content } : inv
+              )
+            );
+            setDetail((prev) =>
+              prev && prev.id === updated.id ? { ...prev, content: updated.content } : prev
+            );
+          }}
         />
       )}
     </div>

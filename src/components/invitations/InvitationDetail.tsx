@@ -28,6 +28,7 @@ export default function InvitationDetail({
   invitation: InvitationDetailBase;
   locale: Locale;
   onClose: () => void;
+  onSaved?: (updated: { id: string; content?: unknown }) => void;
 }) {
   const router = useRouter();
   const initial = normalizeInvitationContent(invitation.content);
@@ -87,6 +88,7 @@ export default function InvitationDetail({
         return;
       }
       setSuccess(t("invman.saved"));
+      onSaved?.({ id: invitation.id, content });
       router.refresh();
     } catch {
       setError(t("invman.errNetwork"));
