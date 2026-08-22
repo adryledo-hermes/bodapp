@@ -12,6 +12,7 @@ import {
   type SeatTable,
 } from "@/lib/seating";
 import { plural, translate, type Locale } from "@/lib/i18n";
+import TableHero from "./TableHero";
 
 type Feedback = { kind: "ok" | "err"; text: string } | null;
 
@@ -62,6 +63,7 @@ export default function SeatingCanvas({
   const [tables, setTables] = useState<SeatTable[]>(initialTables);
   const [unassigned, setUnassigned] = useState<SeatingGuest[]>(initialGuests);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const [selectedTable, setSelectedTable] = useState<SeatTable | null>(null);
 
   const t = (key: string, vars?: Record<string, string | number>) =>
     translate(locale, key, vars);
@@ -587,6 +589,7 @@ export default function SeatingCanvas({
                     onDragOver={onDragOver}
                     onDrop={(e) => onDrop(e, table.id)}
                     onPointerDown={(e) => onTablePointerDown(e, table)}
+                    onClick={() => setSelectedTable(table)}
                     title={t("seating.moveHint")}
                     className={`absolute flex touch-none cursor-grab flex-col items-center justify-between gap-2 p-3 shadow-lg transition-colors active:cursor-grabbing ${
                       drag && drag.tableId === table.id
@@ -699,51 +702,9 @@ export default function SeatingCanvas({
                         {t("seating.dropGuest")}
                       </span>
                     ) : (
-                      <div className="flex max-h-24 w-full flex-wrap content-start justify-center gap-1 overflow-y-auto">
-                        {table.guests.map((g) => {
-                  const seat = g.seatNumber ?? null;
-                  const duplicateSet = duplicatesByTable.get(table.id);
-                  const inUse =
-                    seat !== null &&
-                    duplicateSet !== undefined &&
-                    duplicateSet.has(seat);
-                  return (
-                    <span
-                      key={g.id}
-                      draggable
-                      onDragStart={(e) => onDragStart(e, g.id)}
-                      title={
-                        inUse
-                          ? `${g.fullName} — ${t("seating.seatInUse")}`
-                          : g.fullName
-                      }
-                      className={`group inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${
-                        inUse
-                          ? "bg-red-100 text-red-800 ring-2 ring-red-400"
-                          : "bg-indigo-100 text-indigo-800"
-                      }`}
-                    >
-                      <span
-                        className={`text-[10px] font-semibold ${
-                          inUse ? "text-red-700" : "text-indigo-600"
-                        }`}
-                      >
-                        {seat !== null ? seat : "–"}
+                      <span className="text-center text-[10px] font-semibold text-slate-500">
+                        {table.guests.length}/{table.capacity}
                       </span>
-                      {guestLabel(g)}
-                      <button
-                        onClick={() => void clearGuest(g.id)}
-                        aria-label={t("seating.removeGuestAria", {
-                          name: guestLabel(g),
-                        })}
-                        className="text-indigo-400 hover:text-red-600"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  );
-                })}
-                      </div>
                     )}
 
                     <button
@@ -768,25 +729,28 @@ export default function SeatingCanvas({
                       return (
                         <div
                           key={chair.seatNumber}
+                          draggable={!!occupant}
+                          onDragStart={(e) => {
+                            if (occupant) {
+                              onDragStart(e, occupant.id);
+                            }
+                          }}
                           onDragOver={onDragOver}
                           onDrop={(e) => {
                             e.preventDefault();
-                            // Stop bubbling — otherwise the table's generic
-                            // onDrop runs afterwards and re-assigns the guest
-                            // WITHOUT the seat number, wiping the chair.
                             e.stopPropagation();
                             const guestId = e.dataTransfer.getData("text/plain");
                             if (guestId) {
                               void assignToTable(guestId, table.id, chair.seatNumber);
                             }
                           }}
-                          title={t("seating.chairHint", {
-                            seat: chair.seatNumber,
-                          })}
+                          title={occupant ? occupant.fullName : t("seating.chairHint", { seat: chair.seatNumber })}
                           className={`absolute flex items-center justify-center rounded-full border text-[10px] font-semibold transition-colors ${
                             occupiedByOther
                               ? "border-indigo-300 bg-indigo-100 text-indigo-700 ring-2 ring-indigo-300"
-                              : "border-slate-300 bg-white text-slate-400 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-500"
+                              : occupant
+                                ? "border-slate-300 bg-white text-slate-400 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-500 cursor-grab active:cursor-grabbing"
+                                : "border-slate-300 bg-white text-slate-400 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-500"
                           }`}
                           style={{
                             width: 26,
@@ -830,6 +794,16 @@ export default function SeatingCanvas({
             )}
           </aside>
         </div>
+      )}
+    {selectedTable && (
+        <TableHero
+          table={selectedTable}
+          locale={locale}
+          onClose={() => setSelectedTable(null)}
+          onUpdate={(patch) => void patchTable(selectedTable.id, patch)}
+          onRemove={() => { setSelectedTable(null); void removeTable(selectedTable.id); }}
+          onReleaseGuest={(guestId) => void clearGuest(guestId)}
+        />
       )}
     </div>
   );
