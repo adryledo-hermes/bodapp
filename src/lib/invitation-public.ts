@@ -21,6 +21,7 @@ export interface InviteeGuest {
   fullName: string;
   alias: string | null;
   phone: string;
+  isChild: boolean;
   allergies: string[];
   musicPrefs: string[];
   paperInvitation: boolean;
@@ -36,6 +37,7 @@ export interface PublicGuest {
   id: string;
   fullName: string;
   alias: string | null;
+  isChild: boolean;
   allergies: string[];
   musicPrefs: string[];
   plusOneAllowed: boolean;
@@ -47,6 +49,7 @@ const SAFE_KEYS: (keyof PublicGuest)[] = [
   "id",
   "fullName",
   "alias",
+  "isChild",
   "allergies",
   "musicPrefs",
   "plusOneAllowed",
@@ -65,6 +68,7 @@ export function publicPlateOf(g: InviteeGuest): PublicGuest {
     id: g.id,
     fullName: g.fullName,
     alias: g.alias,
+    isChild: g.isChild ?? false,
     allergies: Array.isArray(g.allergies) ? g.allergies : [],
     musicPrefs: Array.isArray(g.musicPrefs) ? g.musicPrefs : [],
     plusOneAllowed: g.plusOneAllowed,

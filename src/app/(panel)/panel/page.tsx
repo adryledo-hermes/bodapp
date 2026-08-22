@@ -31,7 +31,7 @@ export default async function DashboardPage() {
   const [guestRows, tableRows, invitationRows, taskRows] = await Promise.all([
     prisma.guest.findMany({
       where,
-      select: { rsvpStatus: true },
+      select: { rsvpStatus: true, isChild: true },
     }),
     prisma.table.findMany({
       where,

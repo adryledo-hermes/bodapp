@@ -92,6 +92,7 @@ model Guest {
   paperInvitation     Boolean    @default(false)
   plusOneAllowed      Boolean    @default(false)
   plusOneName         String?
+  isChild             Boolean    @default(false)
   rsvpStatus          RSVPStatus @default(pending)
   tableId             String?
   seatNumber          Int? // concrete seat at their table (seating map); null when unassigned/not numbered

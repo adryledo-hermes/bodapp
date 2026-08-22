@@ -2,16 +2,18 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { findInvitationByToken } from "@/lib/otp-flow-db";
 import { getInvitationAccess } from "@/lib/otp-session";
-import { allowedRsvpTransitions, normalizeRsvpInput } from "@/lib/rsvp";
+import { normalizeRsvpBody } from "@/lib/rsvp";
 import { loadPublicInvitationView } from "@/lib/invitation-public-db";
 
 // POST /api/rsvp — PUBLIC but gated by the short-lived `invitation_access`
-// cookie (NOT the user panel session). The cookie's invitationId/weddingId/
-// phone are the ONLY source of authorization here: the request body never
-// carries a token, so a guest can never update another invitation even by
-// guessing URLs. Only the Guest row(s) whose phone matches the authenticated
-// phone are updated — a family/couple invitation does NOT clobber every
-// member's allergies/music with the first invitee's values (FIX I-1).
+// cookie (NOT the user panel session).
+//
+// New body format (v2 — per-guest):
+//   { guests: [{ id, rsvpStatus, allergies, musicPrefs }, ...] }
+//
+// Each entry updates its specific Guest row by id. The server validates that
+// every guest id belongs to the authenticated invitation, so a guest can never
+// modify another invitation's guests even by guessing IDs.
 export async function POST(req: Request) {
   const access = await getInvitationAccess();
   if (!access) {
@@ -25,41 +27,44 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
 
-  const rsvp = normalizeRsvpInput(body);
-
-  // Guard: a guest can set any known status, but never anything malformed.
-  if (!allowedRsvpTransitions(rsvp.rsvpStatus, rsvp.rsvpStatus)) {
-    return NextResponse.json(
-      { error: "invalid status" },
-      { status: 400 }
-    );
+  const rsvp = normalizeRsvpBody(body);
+  if (rsvp.guests.length === 0) {
+    return NextResponse.json({ error: "no valid guests" }, { status: 400 });
   }
 
   // Resolve the invitation from the cookie and confirm it belongs to the
-  // wedding the cookie was issued for. Never trust a body value for scope.
+  // wedding the cookie was issued for.
   const invitation = await findInvitationByToken(access.invitationId);
   if (!invitation || invitation.weddingId !== access.weddingId) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
-  // Update ONLY the authenticated phone's guest row(s). `access.phone` is the
-  // normalized phone cookie was issued for — never a body value. This prevents
-  // a family/couple invitation from overwriting every member's allergies/music
-  // with the submitting guest's values (FIX I-1).
-  await prisma.guest.updateMany({
-    where: {
-      weddingId: invitation.weddingId,
-      phone: access.phone,
-    },
-    data: {
-      rsvpStatus: rsvp.rsvpStatus,
-      allergies: rsvp.allergies,
-      musicPrefs: rsvp.musicPrefs,
-    },
-  });
+  // Fetch all guest IDs that belong to this invitation, so we can validate
+  // the submitted IDs belong to this invitation.
+  const validIds = new Set(
+    (await prisma.guest.findMany({
+      where: { invitationId: invitation.id },
+      select: { id: true },
+    })).map((g) => g.id)
+  );
 
-  // Return the updated view so the client can re-render the saved status and
-  // preferences without a full reload.
+  // Update each guest row individually. Only update guests whose ID is valid.
+  const updates = rsvp.guests
+    .filter((g) => validIds.has(g.id))
+    .map((g) =>
+      prisma.guest.update({
+        where: { id: g.id },
+        data: {
+          rsvpStatus: g.rsvpStatus,
+          allergies: g.allergies,
+          musicPrefs: g.musicPrefs,
+        },
+      })
+    );
+
+  await prisma.$transaction(updates);
+
+  // Return the updated view so the client can re-render saved state.
   const view = await loadPublicInvitationView(invitation.id);
   if (!view) {
     return NextResponse.json({ error: "not found" }, { status: 404 });

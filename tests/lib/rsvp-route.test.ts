@@ -1,12 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Stub the Prisma client + invitation resolver + access cookie so the route
-// can be exercised with full determinism and no database / network I/O.
-const { updateMany } = vi.hoisted(() => ({
-  updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+// Stub the Prisma client — now uses findMany + update (per-guest), not updateMany.
+const { findMany, update, $transaction } = vi.hoisted(() => ({
+  findMany: vi.fn(),
+  update: vi.fn(),
+  $transaction: vi.fn((updates: Promise<unknown>[]) => Promise.all(updates)),
 }));
 
-vi.mock("@/lib/db", () => ({ prisma: { guest: { updateMany } } }));
+vi.mock("@/lib/db", () => ({ prisma: { guest: { findMany, update }, $transaction } }));
 
 vi.mock("@/lib/otp-flow-db", () => ({
   findInvitationByToken: vi.fn(),
@@ -35,13 +36,14 @@ const INVITATION = {
   id: "inv-family",
   weddingId: "wed-1",
   acceptedPhones: ["+346****0001", "+346****0002"],
-  content: null, // no per-invitation personalization in these tests
+  content: null,
 };
 
 interface ViewGuest {
   id: string;
   fullName: string;
   alias: null;
+  isChild: boolean;
   allergies: string[];
   musicPrefs: string[];
   plusOneAllowed: boolean;
@@ -54,6 +56,7 @@ function guest(
 ): ViewGuest {
   return {
     alias: null,
+    isChild: false,
     allergies: [],
     musicPrefs: [],
     plusOneAllowed: false,
@@ -86,23 +89,35 @@ function sampleView(
   };
 }
 
+/** Build a request with the per-guest body format. */
 function makeRequest(overrides: Record<string, unknown> = {}) {
   return new Request("http://localhost/api/rsvp", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      rsvpStatus: "confirmed",
-      allergies: ["lácteos"],
-      musicPrefs: ["jazz"],
-      ...overrides,
+      guests: [
+        {
+          id: "g-luis",
+          rsvpStatus: "confirmed",
+          allergies: ["lácteos"],
+          musicPrefs: ["jazz"],
+          ...overrides,
+        },
+      ],
     }),
   });
 }
 
 describe("POST /api/rsvp", () => {
   beforeEach(() => {
-    updateMany.mockClear();
+    update.mockClear();
+    findMany.mockClear();
     mockedLoadView.mockResolvedValue(sampleView());
+    // By default, all guests in the invitation are valid
+    findMany.mockResolvedValue([
+      { id: "g-ana" },
+      { id: "g-luis" },
+    ]);
   });
 
   afterEach(() => {
@@ -113,64 +128,84 @@ describe("POST /api/rsvp", () => {
     mockedGetAccess.mockResolvedValue(null);
     const res = await POST(makeRequest());
     expect(res.status).toBe(401);
-    expect(updateMany).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
   });
 
   it("returns 404 when the invitation id or wedding does not match the cookie", async () => {
     mockedGetAccess.mockResolvedValue({
       invitationId: "inv-family",
       weddingId: "wed-1",
-      phone: "+34600000001",
+      phone: "+346****0001",
     });
     mockedFindInvitation.mockResolvedValue(null);
     const res = await POST(makeRequest());
     expect(res.status).toBe(404);
-    expect(updateMany).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
 
     mockedFindInvitation.mockResolvedValue({
       ...INVITATION,
-      weddingId: "wed-OTHER", // mismatch
+      weddingId: "wed-OTHER",
     });
     const res2 = await POST(makeRequest());
     expect(res2.status).toBe(404);
-    expect(updateMany).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
   });
 
-  it("FIX I-1: scopes the write to the authenticated phone's guest row, not every invitee", async () => {
+  it("returns 400 when the guest id is omitted or body is empty", async () => {
     mockedGetAccess.mockResolvedValue({
       invitationId: "inv-family",
       weddingId: "wed-1",
-      phone: "+34600000002", // Luis confirmed previously; Ana submitted
+      phone: "+346****0001",
     });
     mockedFindInvitation.mockResolvedValue(INVITATION);
 
-    const res = await POST(
-      makeRequest({
-        rsvpStatus: "confirmed",
-        allergies: ["lácteos"],
-        musicPrefs: ["jazz"],
-      })
-    );
+    // Empty guests array
+    const res = await POST(new Request("http://localhost/api/rsvp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ guests: [] }),
+    }));
+    expect(res.status).toBe(400);
 
+    // No guests key
+    const res2 = await POST(new Request("http://localhost/api/rsvp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    }));
+    expect(res2.status).toBe(400);
+  });
+
+  it("FIX I-1: scopes the write to the authenticated guest's ID, not every invitee", async () => {
+    mockedGetAccess.mockResolvedValue({
+      invitationId: "inv-family",
+      weddingId: "wed-1",
+      phone: "+346****0002",
+    });
+    mockedFindInvitation.mockResolvedValue(INVITATION);
+
+    const res = await POST(makeRequest());
     expect(res.status).toBe(200);
-    // Must scope the update to the authenticated phone only — NOT every guest
-    // whose phone is in the invitation's acceptedPhones. This preserves Ana's
-    // distinct allergies/music (["gluten"]/["rock"]) instead of clobbering them.
-    expect(updateMany).toHaveBeenCalledWith({
-      where: { weddingId: "wed-1", phone: "+34600000002" },
+
+    // Must update only the guest with id "g-luis" (the one in the body that
+    // belongs to this invitation). Ana's row is untouched.
+    expect(update).toHaveBeenCalledWith({
+      where: { id: "g-luis" },
       data: {
         rsvpStatus: "confirmed",
         allergies: ["lácteos"],
         musicPrefs: ["jazz"],
       },
     });
+    // Should only have called update once
+    expect(update).toHaveBeenCalledTimes(1);
   });
 
   it("returns the updated view in the response for immediate re-render", async () => {
     mockedGetAccess.mockResolvedValue({
       invitationId: "inv-family",
       weddingId: "wed-1",
-      phone: "+34600000002",
+      phone: "+346****0002",
     });
     mockedFindInvitation.mockResolvedValue(INVITATION);
     mockedLoadView.mockResolvedValue({
@@ -180,6 +215,7 @@ describe("POST /api/rsvp", () => {
           id: "g-ana",
           fullName: "Ana",
           alias: null,
+          isChild: false,
           allergies: ["gluten"],
           musicPrefs: ["rock"],
           plusOneAllowed: false,
@@ -190,6 +226,7 @@ describe("POST /api/rsvp", () => {
           id: "g-luis",
           fullName: "Luis",
           alias: null,
+          isChild: false,
           allergies: ["lácteos"],
           musicPrefs: ["jazz"],
           plusOneAllowed: false,

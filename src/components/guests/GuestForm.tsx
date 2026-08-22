@@ -24,6 +24,7 @@ export default function GuestForm({ locale }: { locale: Locale }) {
   const [phone, setPhone] = useState("");
   const [plusOneAllowed, setPlusOneAllowed] = useState(false);
   const [plusOneName, setPlusOneName] = useState("");
+  const [isChild, setIsChild] = useState(false);
   const [paperInvitation, setPaperInvitation] = useState(false);
   const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
   const [allergyOther, setAllergyOther] = useState("");
@@ -83,6 +84,7 @@ export default function GuestForm({ locale }: { locale: Locale }) {
           plusOneAllowed,
           plusOneName:
             plusOneAllowed && plusOneName.trim() ? plusOneName.trim() : null,
+          isChild,
           paperInvitation,
           allergies: mergeCustomTags(selectedAllergies, allergyOther),
           musicPrefs: mergeCustomTags(selectedGenres, genreOther),
@@ -271,6 +273,19 @@ export default function GuestForm({ locale }: { locale: Locale }) {
             />
           </div>
         )}
+
+        <div className="flex items-center gap-2">
+          <input
+            id="guestIsChild"
+            type="checkbox"
+            checked={isChild}
+            onChange={(e) => setIsChild(e.target.checked)}
+            className="h-4 w-4 rounded border-slate-300"
+          />
+          <label htmlFor="guestIsChild" className="text-sm font-medium text-slate-700">
+            {t("guest.isChild")}
+          </label>
+        </div>
 
         <div className="flex items-center gap-2">
           <input

@@ -21,11 +21,17 @@ export const RSVP_STATUSES: { value: RsvpStatus; label: string }[] = [
   { value: "pending", label: "Pendiente" },
 ];
 
-/** The cleaned, safe shape a guest submits for RSVP. */
+/** The cleaned, safe shape for ONE guest's RSVP submission. */
 export interface NormalizedRsvp {
+  id: string;
   rsvpStatus: RsvpStatus;
   allergies: string[];
   musicPrefs: string[];
+}
+
+/** The full RSVP POST body — an array of per-guest updates. */
+export interface NormalizedRsvpBody {
+  guests: NormalizedRsvp[];
 }
 
 export function isRsvpStatus(v: unknown): v is RsvpStatus {
@@ -55,18 +61,39 @@ function toStringList(raw: unknown): string[] {
 }
 
 /**
- * Validate and clean raw RSVP input into a safe shape. An unknown/absent
- * status falls back to "pending"; allergies and musicPrefs default to [] and
- * are coerced from strings or arrays. Does not mutate the input.
+ * Validate and clean a single guest's RSVP entry. Falls back to "pending"
+ * for unknown statuses.
  */
-export function normalizeRsvpInput(raw: unknown): NormalizedRsvp {
+export function normalizeRsvpEntry(raw: unknown): NormalizedRsvp {
   const r = (raw ?? {}) as Record<string, unknown>;
+  const id = typeof r.id === "string" ? r.id : "";
   const status = isRsvpStatus(r.rsvpStatus) ? r.rsvpStatus : "pending";
   return {
+    id,
     rsvpStatus: status,
     allergies: toStringList(r.allergies),
     musicPrefs: toStringList(r.musicPrefs),
   };
+}
+
+/**
+ * Validate and clean the full RSVP POST body (array of per-guest updates).
+ */
+export function normalizeRsvpBody(raw: unknown): NormalizedRsvpBody {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const rawGuests = Array.isArray(r.guests) ? r.guests : [];
+  return {
+    guests: rawGuests.map(normalizeRsvpEntry).filter((g) => g.id),
+  };
+}
+
+/**
+ * Legacy wrapper — normalizes { rsvpStatus, allergies, musicPrefs } without id.
+ * Kept for backwards compatibility during migration.
+ * @deprecated Use normalizeRsvpEntry or normalizeRsvpBody.
+ */
+export function normalizeRsvpInput(raw: unknown): NormalizedRsvp {
+  return { id: "", ...normalizeRsvpEntry(raw) };
 }
 
 /**

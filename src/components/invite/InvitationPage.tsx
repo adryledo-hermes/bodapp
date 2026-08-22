@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { isValidHexColor } from "@/lib/invitation";
 import { type RsvpStatus } from "@/lib/rsvp";
 import type { InvitationView } from "@/lib/invitation-public";
@@ -22,17 +22,32 @@ const STATUS_KEY: Record<string, string> = {
   pending: "guest.status.pending",
 };
 
-/**
- * The personalized public invitation (Task 10). Rendered as a client
- * component so RSVP submission can POST /api/rsvp and reflect the saved state
- * without a full page reload. Colours from the template are only applied when
- * they pass isValidHexColor; otherwise the wedding's fallback palette is used
- * so arbitrary DB content can never inject CSS.
- */
+/** Per-guest RSVP draft state for the form. */
+interface GuestDraft {
+  rsvpStatus: RsvpStatus;
+  selectedAllergies: string[];
+  allergyOther: string;
+  selectedGenres: string[];
+  genreOther: string;
+}
+
+function initDraft(g: InvitationView["invitees"][number]): GuestDraft {
+  return {
+    rsvpStatus: g.rsvpStatus !== "pending" ? g.rsvpStatus : "pending",
+    selectedAllergies: (ALLERGY_OPTIONS as readonly string[]).filter((a) =>
+      g.allergies.includes(a)
+    ),
+    allergyOther:
+      g.allergies.find((a) => !(ALLERGY_OPTIONS as readonly string[]).includes(a)) ?? "",
+    selectedGenres: (MUSIC_GENRES as readonly string[]).filter((m) =>
+      g.musicPrefs.includes(m)
+    ),
+    genreOther:
+      g.musicPrefs.find((m) => !(MUSIC_GENRES as readonly string[]).includes(m)) ?? "",
+  };
+}
+
 export default function InvitationPage({ view, locale }: InvitationPageProps) {
-  // FIX I-2: keep a local copy of the view so the saved status + preferences
-  // update immediately after submit using the POST response, without a full
-  // reload. Seeded from server props; refreshed from the returned `view`.
   const [currentView, setCurrentView] = useState<InvitationView>(view);
   const { content, wedding, invitees, greeting, bankAccount } = currentView;
 
@@ -46,37 +61,19 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
     ? content.colors.accent
     : FALLBACK_ACCENT;
 
-  const firstInvitee = invitees[0];
-  const [status, setStatus] = useState<RsvpStatus>(
-    firstInvitee && firstInvitee.rsvpStatus !== "pending"
-      ? firstInvitee.rsvpStatus
-      : "pending"
-  );
-  // Multiselect state for allergies + music on the public invitation page
-  const [selectedAllergies, setSelectedAllergies] = useState<string[]>(
-    firstInvitee ? firstInvitee.allergies.filter((a) =>
-      (ALLERGY_OPTIONS as readonly string[]).includes(a)
-    ) : []
-  );
-  const [allergyOther, setAllergyOther] = useState(
-    firstInvitee ? firstInvitee.allergies.find(
-      (a) => !(ALLERGY_OPTIONS as readonly string[]).includes(a)
-    ) ?? "" : ""
-  );
-  const [selectedGenres, setSelectedGenres] = useState<string[]>(
-    firstInvitee ? firstInvitee.musicPrefs.filter((g) =>
-      (MUSIC_GENRES as readonly string[]).includes(g)
-    ) : []
-  );
-  const [genreOther, setGenreOther] = useState(
-    firstInvitee ? firstInvitee.musicPrefs.find(
-      (g) => !(MUSIC_GENRES as readonly string[]).includes(g)
-    ) ?? "" : ""
-  );
+  // Per-guest draft state
+  const [drafts, setDrafts] = useState<Record<string, GuestDraft>>(() => {
+    const map: Record<string, GuestDraft> = {};
+    for (const g of invitees) {
+      map[g.id] = initDraft(g);
+    }
+    return map;
+  });
+
   const [submitting, setSubmitting] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
-  // Update the countdown every 30 seconds for near-real-time accuracy.
+  // Update the countdown every 30 seconds.
   useEffect(() => {
     if (!content.date) return;
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
@@ -104,21 +101,38 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
     [wedding.coupleNameA, wedding.coupleNameB].filter(Boolean).join(" & ") ||
     t("inv.ours");
 
-  const hasPlusOne = firstInvitee?.plusOneAllowed;
+  // Split invitees into adults and children for the form sections
+  const adults = invitees.filter((g) => !g.isChild);
+  const children = invitees.filter((g) => g.isChild);
+
+  const updateGuest = useCallback(
+    (id: string, patch: Partial<GuestDraft>) => {
+      setDrafts((prev) => ({
+        ...prev,
+        [id]: { ...prev[id], ...patch },
+      }));
+    },
+    []
+  );
+
+  const hasPending = Object.values(drafts).some((d) => d.rsvpStatus === "pending");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (hasPending) return;
     setSubmitting(true);
     setMessage(null);
     try {
+      const guests = Object.entries(drafts).map(([id, d]) => ({
+        id,
+        rsvpStatus: d.rsvpStatus,
+        allergies: mergeCustomTags(d.selectedAllergies, d.allergyOther),
+        musicPrefs: mergeCustomTags(d.selectedGenres, d.genreOther),
+      }));
       const res = await fetch("/api/rsvp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          rsvpStatus: status,
-          allergies: mergeCustomTags(selectedAllergies, allergyOther),
-          musicPrefs: mergeCustomTags(selectedGenres, genreOther),
-        }),
+        body: JSON.stringify({ guests }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -128,8 +142,6 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
         });
         return;
       }
-      // FIX I-2: reflect the saved status + preferences immediately using the
-      // updated view returned by the API (no full reload / stale props).
       if (data.view) {
         setCurrentView(data.view);
       }
@@ -154,6 +166,143 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
         {value}
       </p>
     ) : null;
+
+  /** Render one guest's RSVP card with status + allergies + music. */
+  function GuestCard({ g, draft }: { g: InvitationView["invitees"][number]; draft: GuestDraft }) {
+    const declined = draft.rsvpStatus === "declined";
+    return (
+      <div
+        className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+        style={{ borderColor: declined ? "#E5E7EB" : `${primary}33` }}
+      >
+        {/* Guest header + status toggle */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-slate-900 truncate">
+              {g.fullName}
+              {(g as unknown as { isChild?: boolean }).isChild ? (
+                <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                  {t("inv.child")}
+                </span>
+              ) : null}
+            </p>
+            {draft.rsvpStatus !== "pending" && (
+              <p className="mt-0.5 text-[11px] text-slate-500">
+                {t("inv.currentResponse")}{" "}
+                <span className="font-medium">{t(STATUS_KEY[draft.rsvpStatus])}</span>
+              </p>
+            )}
+          </div>
+          <div className="flex shrink-0 gap-1.5">
+            <button
+              type="button"
+              onClick={() => updateGuest(g.id, { rsvpStatus: "confirmed" })}
+              className={`tap-min rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
+                draft.rsvpStatus === "confirmed"
+                  ? "border-transparent text-white"
+                  : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+              style={draft.rsvpStatus === "confirmed" ? { backgroundColor: primary } : undefined}
+            >
+              {t("inv.optConfirmed")}
+            </button>
+            <button
+              type="button"
+              onClick={() => updateGuest(g.id, { rsvpStatus: "declined" })}
+              className={`tap-min rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
+                draft.rsvpStatus === "declined"
+                  ? "border-transparent bg-red-500 text-white"
+                  : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              {t("inv.optDeclined")}
+            </button>
+          </div>
+        </div>
+
+        {/* Allergies & music — only show when confirmed */}
+        {!declined && (
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <fieldset>
+              <legend className="mb-1 text-[11px] font-medium text-slate-600">
+                {t("inv.allergiesLabel")}
+              </legend>
+              <div className="flex flex-wrap gap-1">
+                {(ALLERGY_OPTIONS as readonly string[]).map((opt) => {
+                  const active = draft.selectedAllergies.includes(opt);
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() =>
+                        updateGuest(g.id, {
+                          selectedAllergies: active
+                            ? draft.selectedAllergies.filter((a) => a !== opt)
+                            : [...draft.selectedAllergies, opt],
+                        })
+                      }
+                      className={`tap-min rounded-full border px-2 py-0.5 text-[11px] font-medium transition ${
+                        active
+                          ? "border-indigo-400 bg-indigo-50 text-indigo-700"
+                          : "border-slate-300 text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+              <input
+                type="text"
+                value={draft.allergyOther}
+                onChange={(e) => updateGuest(g.id, { allergyOther: e.target.value })}
+                placeholder={t("inv.allergiesPlaceholder")}
+                className="mt-1.5 w-full rounded-lg border border-slate-300 px-2.5 py-1 text-xs focus:border-indigo-400 focus:outline-none"
+              />
+            </fieldset>
+
+            <fieldset>
+              <legend className="mb-1 text-[11px] font-medium text-slate-600">
+                {t("inv.musicLabel")}
+              </legend>
+              <div className="flex flex-wrap gap-1">
+                {(MUSIC_GENRES as readonly string[]).map((opt) => {
+                  const active = draft.selectedGenres.includes(opt);
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() =>
+                        updateGuest(g.id, {
+                          selectedGenres: active
+                            ? draft.selectedGenres.filter((m) => m !== opt)
+                            : [...draft.selectedGenres, opt],
+                        })
+                      }
+                      className={`tap-min rounded-full border px-2 py-0.5 text-[11px] font-medium transition ${
+                        active
+                          ? "border-indigo-400 bg-indigo-50 text-indigo-700"
+                          : "border-slate-300 text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+              <input
+                type="text"
+                value={draft.genreOther}
+                onChange={(e) => updateGuest(g.id, { genreOther: e.target.value })}
+                placeholder={t("inv.musicPlaceholder")}
+                className="mt-1.5 w-full rounded-lg border border-slate-300 px-2.5 py-1 text-xs focus:border-indigo-400 focus:outline-none"
+              />
+            </fieldset>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <main
@@ -250,112 +399,43 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
               </div>
             ) : null}
 
-            {content.sections.length > 0 ? (
-              <div className="space-y-3">
-                {content.sections.map((s, i) => (
-                  <p
-                    key={i}
-                    className="whitespace-pre-line text-sm text-slate-600"
-                  >
-                    {s}
-                  </p>
-                ))}
-              </div>
-            ) : null}
-
-            {hasPlusOne && firstInvitee?.plusOneName ? (
-              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
-                {t("inv.yourPlusOne")}{" "}
-                <span className="font-medium">{firstInvitee.plusOneName}</span>
-              </div>
-            ) : null}
-
-            <form
-              onSubmit={handleSubmit}
-              className="rounded-2xl border border-slate-200 p-5"
-            >
+            {/* RSVP Form — per-guest cards */}
+            <form onSubmit={handleSubmit} className="space-y-5">
               <h2 className="text-lg font-semibold text-slate-900">
                 {t("inv.confirmTitle")}
               </h2>
-              {firstInvitee && firstInvitee.rsvpStatus !== "pending" && (
-                <p className="mt-1 text-sm text-slate-500">
-                  {t("inv.currentResponse")}{" "}
-                  <span className="font-medium">{t(STATUS_KEY[firstInvitee.rsvpStatus])}</span>
-                </p>
+
+              {/* Adults section */}
+              {adults.length > 0 && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    {t("inv.adultsSection")}
+                  </p>
+                  <div className="space-y-3">
+                    {adults.map((g) => (
+                      <GuestCard key={g.id} g={g} draft={drafts[g.id] ?? initDraft(g)} />
+                    ))}
+                  </div>
+                </div>
               )}
 
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                {[
-                  { value: "confirmed", label: t("inv.optConfirmed") },
-                  { value: "declined", label: t("inv.optDeclined") },
-                ].map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setStatus(opt.value as RsvpStatus)}
-                    className={`tap-min rounded-xl border px-3 py-2.5 text-sm font-medium transition ${
-                      status === opt.value
-                        ? "border-transparent text-white"
-                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                    }`}
-                    style={
-                      status === opt.value
-                        ? { backgroundColor: primary }
-                        : undefined
-                    }
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-5 grid gap-6 sm:grid-cols-2">
-                {/* Allergies — multiselect + free text */}
-                <fieldset>
-                  <legend className="mb-2 text-sm font-medium text-slate-700">{t("inv.allergiesLabel")}</legend>
-                  <div className="flex flex-wrap gap-1.5">
-                    {(ALLERGY_OPTIONS as readonly string[]).map((opt) => {
-                      const active = selectedAllergies.includes(opt);
-                      return (
-                        <button key={opt} type="button"
-                          onClick={() => setSelectedAllergies((p) => active ? p.filter((a) => a !== opt) : [...p, opt])}
-                          className={`tap-min rounded-full border px-2.5 py-1 text-xs font-medium transition ${
-                            active ? "border-indigo-400 bg-indigo-50 text-indigo-700" : "border-slate-300 text-slate-600 hover:bg-slate-50"
-                          }`}
-                        >{opt}</button>
-                      );
-                    })}
+              {/* Children section */}
+              {children.length > 0 && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    {t("inv.childrenSection")}
+                  </p>
+                  <div className="space-y-3">
+                    {children.map((g) => (
+                      <GuestCard key={g.id} g={g} draft={drafts[g.id] ?? initDraft(g)} />
+                    ))}
                   </div>
-                  <input type="text" value={allergyOther} onChange={(e) => setAllergyOther(e.target.value)}
-                    placeholder={t("inv.allergiesPlaceholder")}
-                    className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-indigo-400 focus:outline-none" />
-                </fieldset>
-
-                {/* Music — multiselect + free text + favourite song */}
-                <fieldset>
-                  <legend className="mb-2 text-sm font-medium text-slate-700">{t("inv.musicLabel")}</legend>
-                  <div className="flex flex-wrap gap-1.5">
-                    {(MUSIC_GENRES as readonly string[]).map((opt) => {
-                      const active = selectedGenres.includes(opt);
-                      return (
-                        <button key={opt} type="button"
-                          onClick={() => setSelectedGenres((p) => active ? p.filter((g) => g !== opt) : [...p, opt])}
-                          className={`tap-min rounded-full border px-2.5 py-1 text-xs font-medium transition ${
-                            active ? "border-indigo-400 bg-indigo-50 text-indigo-700" : "border-slate-300 text-slate-600 hover:bg-slate-50"
-                          }`}
-                        >{opt}</button>
-                      );
-                    })}
-                  </div>
-                  <input type="text" value={genreOther} onChange={(e) => setGenreOther(e.target.value)}
-                    placeholder={t("inv.musicPlaceholder")}
-                    className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-indigo-400 focus:outline-none" />
-                </fieldset>
-              </div>
+                </div>
+              )}
 
               {message && (
                 <p
-                  className={`mt-4 text-sm ${
+                  className={`text-sm ${
                     message.kind === "success"
                       ? "text-green-700"
                       : "text-red-600"
@@ -367,14 +447,14 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
 
               <button
                 type="submit"
-                disabled={submitting || status === "pending"}
-                className="tap-min mt-5 w-full rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                disabled={submitting || hasPending}
+                className="tap-min w-full rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                 style={{ backgroundColor: primary }}
               >
                 {submitting ? t("inv.saving") : t("inv.saveResponse")}
               </button>
-              {status === "pending" && (
-                <p className="mt-2 text-center text-xs text-slate-500">
+              {hasPending && (
+                <p className="text-center text-xs text-slate-500">
                   {t("inv.pendingHint")}
                 </p>
               )}

@@ -17,6 +17,7 @@ const GUEST_SELECT = {
   id: true,
   fullName: true,
   alias: true,
+  isChild: true,
   phone: true,
   allergies: true,
   musicPrefs: true,

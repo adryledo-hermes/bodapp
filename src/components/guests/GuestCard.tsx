@@ -61,6 +61,11 @@ export default function GuestCard({
             )}
             <h3 className="max-w-full text-center text-base font-bold break-words text-slate-900 sm:text-lg">
               {guest.fullName}
+              {guest.isChild && (
+                <span className="ml-1.5 inline-block rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 align-middle">
+                  {t("guest.childBadge")}
+                </span>
+              )}
             </h3>
             {guest.alias && (
               <p className="mt-0.5 text-sm text-slate-500">

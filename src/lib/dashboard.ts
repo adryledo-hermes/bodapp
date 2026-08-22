@@ -15,6 +15,7 @@ export type TaskPriority = "low" | "medium" | "high";
 /** Minimum fields the helper needs from each hydrated guest row. */
 export interface DashboardGuest {
   rsvpStatus: RSVPStatus | string;
+  isChild: boolean;
 }
 
 /** Minimum fields the helper needs from each hydrated table row. */
@@ -54,6 +55,8 @@ export interface DashboardCounts {
     pending: number;
     confirmed: number;
     declined: number;
+    adults: number;
+    children: number;
   };
   tables: { total: number };
   invitations: { total: number; sent: number; pending: number };
@@ -91,10 +94,14 @@ export function computeDashboardCounts(
     confirmed: 0,
     declined: 0,
   } as Record<RSVPStatus, number>;
+  let adults = 0;
+  let children = 0;
 
   for (const g of guestRows) {
     const status = g.rsvpStatus as RSVPStatus;
     if (status in counts) counts[status] += 1;
+    if (g.isChild) children += 1;
+    else adults += 1;
   }
 
   const sent = invitationRows.filter((i) => i.otpCodeCount > 0).length;
@@ -118,6 +125,8 @@ export function computeDashboardCounts(
       pending: counts.pending,
       confirmed: counts.confirmed,
       declined: counts.declined,
+      adults,
+      children,
     },
     tables: { total: tableRows.length },
     invitations: {

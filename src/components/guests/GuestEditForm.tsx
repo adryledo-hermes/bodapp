@@ -58,6 +58,7 @@ export default function GuestEditForm({ guest, locale, onClose }: GuestEditFormP
   const [paperInvitation, setPaperInvitation] = useState(guest.paperInvitation);
   const [plusOneAllowed, setPlusOneAllowed] = useState(guest.plusOneAllowed);
   const [plusOneName, setPlusOneName] = useState(guest.plusOneName ?? "");
+  const [isChild, setIsChild] = useState(guest.isChild ?? false);
   const [notes, setNotes] = useState(guest.notes ?? "");
   const [photoUrl, setPhotoUrl] = useState<string | null>(guest.photoUrl);
 
@@ -121,6 +122,7 @@ export default function GuestEditForm({ guest, locale, onClose }: GuestEditFormP
       paperInvitation,
       plusOneAllowed,
       plusOneName: plusOneAllowed && plusOneName.trim() ? plusOneName.trim() : null,
+      isChild,
       notes: notes.trim() || null,
       photoUrl: photoUrl,
     };
@@ -399,6 +401,16 @@ export default function GuestEditForm({ guest, locale, onClose }: GuestEditFormP
             className={`mb-4 ${inputClassName}`}
           />
         )}
+
+        <label className="mb-3 flex items-center gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            checked={isChild}
+            onChange={(e) => setIsChild(e.target.checked)}
+            className="h-4 w-4"
+          />
+          {t("guest.isChild")}
+        </label>
 
         {error && (
           <p role="alert" className="mb-3 text-sm text-red-600">

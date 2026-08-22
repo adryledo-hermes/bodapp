@@ -45,6 +45,7 @@ export type GuestMinAggregateOutputType = {
   paperInvitation: boolean | null
   plusOneAllowed: boolean | null
   plusOneName: string | null
+  isChild: boolean | null
   rsvpStatus: $Enums.RSVPStatus | null
   tableId: string | null
   seatNumber: number | null
@@ -67,6 +68,7 @@ export type GuestMaxAggregateOutputType = {
   paperInvitation: boolean | null
   plusOneAllowed: boolean | null
   plusOneName: string | null
+  isChild: boolean | null
   rsvpStatus: $Enums.RSVPStatus | null
   tableId: string | null
   seatNumber: number | null
@@ -91,6 +93,7 @@ export type GuestCountAggregateOutputType = {
   paperInvitation: number
   plusOneAllowed: number
   plusOneName: number
+  isChild: number
   rsvpStatus: number
   tableId: number
   seatNumber: number
@@ -123,6 +126,7 @@ export type GuestMinAggregateInputType = {
   paperInvitation?: true
   plusOneAllowed?: true
   plusOneName?: true
+  isChild?: true
   rsvpStatus?: true
   tableId?: true
   seatNumber?: true
@@ -145,6 +149,7 @@ export type GuestMaxAggregateInputType = {
   paperInvitation?: true
   plusOneAllowed?: true
   plusOneName?: true
+  isChild?: true
   rsvpStatus?: true
   tableId?: true
   seatNumber?: true
@@ -169,6 +174,7 @@ export type GuestCountAggregateInputType = {
   paperInvitation?: true
   plusOneAllowed?: true
   plusOneName?: true
+  isChild?: true
   rsvpStatus?: true
   tableId?: true
   seatNumber?: true
@@ -280,6 +286,7 @@ export type GuestGroupByOutputType = {
   paperInvitation: boolean
   plusOneAllowed: boolean
   plusOneName: string | null
+  isChild: boolean
   rsvpStatus: $Enums.RSVPStatus
   tableId: string | null
   seatNumber: number | null
@@ -327,6 +334,7 @@ export type GuestWhereInput = {
   paperInvitation?: Prisma.BoolFilter<"Guest"> | boolean
   plusOneAllowed?: Prisma.BoolFilter<"Guest"> | boolean
   plusOneName?: Prisma.StringNullableFilter<"Guest"> | string | null
+  isChild?: Prisma.BoolFilter<"Guest"> | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFilter<"Guest"> | $Enums.RSVPStatus
   tableId?: Prisma.StringNullableFilter<"Guest"> | string | null
   seatNumber?: Prisma.IntNullableFilter<"Guest"> | number | null
@@ -356,6 +364,7 @@ export type GuestOrderByWithRelationInput = {
   paperInvitation?: Prisma.SortOrder
   plusOneAllowed?: Prisma.SortOrder
   plusOneName?: Prisma.SortOrderInput | Prisma.SortOrder
+  isChild?: Prisma.SortOrder
   rsvpStatus?: Prisma.SortOrder
   tableId?: Prisma.SortOrderInput | Prisma.SortOrder
   seatNumber?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -389,6 +398,7 @@ export type GuestWhereUniqueInput = Prisma.AtLeast<{
   paperInvitation?: Prisma.BoolFilter<"Guest"> | boolean
   plusOneAllowed?: Prisma.BoolFilter<"Guest"> | boolean
   plusOneName?: Prisma.StringNullableFilter<"Guest"> | string | null
+  isChild?: Prisma.BoolFilter<"Guest"> | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFilter<"Guest"> | $Enums.RSVPStatus
   tableId?: Prisma.StringNullableFilter<"Guest"> | string | null
   seatNumber?: Prisma.IntNullableFilter<"Guest"> | number | null
@@ -417,6 +427,7 @@ export type GuestOrderByWithAggregationInput = {
   paperInvitation?: Prisma.SortOrder
   plusOneAllowed?: Prisma.SortOrder
   plusOneName?: Prisma.SortOrderInput | Prisma.SortOrder
+  isChild?: Prisma.SortOrder
   rsvpStatus?: Prisma.SortOrder
   tableId?: Prisma.SortOrderInput | Prisma.SortOrder
   seatNumber?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -449,6 +460,7 @@ export type GuestScalarWhereWithAggregatesInput = {
   paperInvitation?: Prisma.BoolWithAggregatesFilter<"Guest"> | boolean
   plusOneAllowed?: Prisma.BoolWithAggregatesFilter<"Guest"> | boolean
   plusOneName?: Prisma.StringNullableWithAggregatesFilter<"Guest"> | string | null
+  isChild?: Prisma.BoolWithAggregatesFilter<"Guest"> | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusWithAggregatesFilter<"Guest"> | $Enums.RSVPStatus
   tableId?: Prisma.StringNullableWithAggregatesFilter<"Guest"> | string | null
   seatNumber?: Prisma.IntNullableWithAggregatesFilter<"Guest"> | number | null
@@ -472,6 +484,7 @@ export type GuestCreateInput = {
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
+  isChild?: boolean
   rsvpStatus?: $Enums.RSVPStatus
   seatNumber?: number | null
   photoUrl?: string | null
@@ -499,6 +512,7 @@ export type GuestUncheckedCreateInput = {
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
+  isChild?: boolean
   rsvpStatus?: $Enums.RSVPStatus
   tableId?: string | null
   seatNumber?: number | null
@@ -524,6 +538,7 @@ export type GuestUpdateInput = {
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isChild?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -551,6 +566,7 @@ export type GuestUncheckedUpdateInput = {
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isChild?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   tableId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -577,6 +593,7 @@ export type GuestCreateManyInput = {
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
+  isChild?: boolean
   rsvpStatus?: $Enums.RSVPStatus
   tableId?: string | null
   seatNumber?: number | null
@@ -600,6 +617,7 @@ export type GuestUpdateManyMutationInput = {
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isChild?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -622,6 +640,7 @@ export type GuestUncheckedUpdateManyInput = {
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isChild?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   tableId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -664,6 +683,7 @@ export type GuestCountOrderByAggregateInput = {
   paperInvitation?: Prisma.SortOrder
   plusOneAllowed?: Prisma.SortOrder
   plusOneName?: Prisma.SortOrder
+  isChild?: Prisma.SortOrder
   rsvpStatus?: Prisma.SortOrder
   tableId?: Prisma.SortOrder
   seatNumber?: Prisma.SortOrder
@@ -690,6 +710,7 @@ export type GuestMaxOrderByAggregateInput = {
   paperInvitation?: Prisma.SortOrder
   plusOneAllowed?: Prisma.SortOrder
   plusOneName?: Prisma.SortOrder
+  isChild?: Prisma.SortOrder
   rsvpStatus?: Prisma.SortOrder
   tableId?: Prisma.SortOrder
   seatNumber?: Prisma.SortOrder
@@ -712,6 +733,7 @@ export type GuestMinOrderByAggregateInput = {
   paperInvitation?: Prisma.SortOrder
   plusOneAllowed?: Prisma.SortOrder
   plusOneName?: Prisma.SortOrder
+  isChild?: Prisma.SortOrder
   rsvpStatus?: Prisma.SortOrder
   tableId?: Prisma.SortOrder
   seatNumber?: Prisma.SortOrder
@@ -932,6 +954,7 @@ export type GuestCreateWithoutWeddingInput = {
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
+  isChild?: boolean
   rsvpStatus?: $Enums.RSVPStatus
   seatNumber?: number | null
   photoUrl?: string | null
@@ -957,6 +980,7 @@ export type GuestUncheckedCreateWithoutWeddingInput = {
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
+  isChild?: boolean
   rsvpStatus?: $Enums.RSVPStatus
   tableId?: string | null
   seatNumber?: number | null
@@ -1012,6 +1036,7 @@ export type GuestScalarWhereInput = {
   paperInvitation?: Prisma.BoolFilter<"Guest"> | boolean
   plusOneAllowed?: Prisma.BoolFilter<"Guest"> | boolean
   plusOneName?: Prisma.StringNullableFilter<"Guest"> | string | null
+  isChild?: Prisma.BoolFilter<"Guest"> | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFilter<"Guest"> | $Enums.RSVPStatus
   tableId?: Prisma.StringNullableFilter<"Guest"> | string | null
   seatNumber?: Prisma.IntNullableFilter<"Guest"> | number | null
@@ -1035,6 +1060,7 @@ export type GuestCreateWithoutFromInput = {
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
+  isChild?: boolean
   rsvpStatus?: $Enums.RSVPStatus
   seatNumber?: number | null
   photoUrl?: string | null
@@ -1061,6 +1087,7 @@ export type GuestUncheckedCreateWithoutFromInput = {
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
+  isChild?: boolean
   rsvpStatus?: $Enums.RSVPStatus
   tableId?: string | null
   seatNumber?: number | null
@@ -1090,6 +1117,7 @@ export type GuestCreateWithoutToInput = {
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
+  isChild?: boolean
   rsvpStatus?: $Enums.RSVPStatus
   seatNumber?: number | null
   photoUrl?: string | null
@@ -1116,6 +1144,7 @@ export type GuestUncheckedCreateWithoutToInput = {
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
+  isChild?: boolean
   rsvpStatus?: $Enums.RSVPStatus
   tableId?: string | null
   seatNumber?: number | null
@@ -1156,6 +1185,7 @@ export type GuestUpdateWithoutFromInput = {
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isChild?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1182,6 +1212,7 @@ export type GuestUncheckedUpdateWithoutFromInput = {
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isChild?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   tableId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1217,6 +1248,7 @@ export type GuestUpdateWithoutToInput = {
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isChild?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1243,6 +1275,7 @@ export type GuestUncheckedUpdateWithoutToInput = {
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isChild?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   tableId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1267,6 +1300,7 @@ export type GuestCreateWithoutInvitationInput = {
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
+  isChild?: boolean
   rsvpStatus?: $Enums.RSVPStatus
   seatNumber?: number | null
   photoUrl?: string | null
@@ -1293,6 +1327,7 @@ export type GuestUncheckedCreateWithoutInvitationInput = {
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
+  isChild?: boolean
   rsvpStatus?: $Enums.RSVPStatus
   tableId?: string | null
   seatNumber?: number | null
@@ -1343,6 +1378,7 @@ export type GuestCreateWithoutTableInput = {
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
+  isChild?: boolean
   rsvpStatus?: $Enums.RSVPStatus
   seatNumber?: number | null
   photoUrl?: string | null
@@ -1369,6 +1405,7 @@ export type GuestUncheckedCreateWithoutTableInput = {
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
+  isChild?: boolean
   rsvpStatus?: $Enums.RSVPStatus
   seatNumber?: number | null
   photoUrl?: string | null
@@ -1419,6 +1456,7 @@ export type GuestCreateManyWeddingInput = {
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
+  isChild?: boolean
   rsvpStatus?: $Enums.RSVPStatus
   tableId?: string | null
   seatNumber?: number | null
@@ -1442,6 +1480,7 @@ export type GuestUpdateWithoutWeddingInput = {
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isChild?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1467,6 +1506,7 @@ export type GuestUncheckedUpdateWithoutWeddingInput = {
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isChild?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   tableId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1492,6 +1532,7 @@ export type GuestUncheckedUpdateManyWithoutWeddingInput = {
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isChild?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   tableId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1516,6 +1557,7 @@ export type GuestCreateManyInvitationInput = {
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
+  isChild?: boolean
   rsvpStatus?: $Enums.RSVPStatus
   tableId?: string | null
   seatNumber?: number | null
@@ -1538,6 +1580,7 @@ export type GuestUpdateWithoutInvitationInput = {
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isChild?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1564,6 +1607,7 @@ export type GuestUncheckedUpdateWithoutInvitationInput = {
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isChild?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   tableId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1589,6 +1633,7 @@ export type GuestUncheckedUpdateManyWithoutInvitationInput = {
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isChild?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   tableId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1612,6 +1657,7 @@ export type GuestCreateManyTableInput = {
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: string | null
+  isChild?: boolean
   rsvpStatus?: $Enums.RSVPStatus
   seatNumber?: number | null
   photoUrl?: string | null
@@ -1634,6 +1680,7 @@ export type GuestUpdateWithoutTableInput = {
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isChild?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1660,6 +1707,7 @@ export type GuestUncheckedUpdateWithoutTableInput = {
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isChild?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1685,6 +1733,7 @@ export type GuestUncheckedUpdateManyWithoutTableInput = {
   paperInvitation?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneAllowed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   plusOneName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isChild?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rsvpStatus?: Prisma.EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
   seatNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1748,6 +1797,7 @@ export type GuestSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: boolean
+  isChild?: boolean
   rsvpStatus?: boolean
   tableId?: boolean
   seatNumber?: boolean
@@ -1778,6 +1828,7 @@ export type GuestSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: boolean
+  isChild?: boolean
   rsvpStatus?: boolean
   tableId?: boolean
   seatNumber?: boolean
@@ -1805,6 +1856,7 @@ export type GuestSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: boolean
+  isChild?: boolean
   rsvpStatus?: boolean
   tableId?: boolean
   seatNumber?: boolean
@@ -1832,6 +1884,7 @@ export type GuestSelectScalar = {
   paperInvitation?: boolean
   plusOneAllowed?: boolean
   plusOneName?: boolean
+  isChild?: boolean
   rsvpStatus?: boolean
   tableId?: boolean
   seatNumber?: boolean
@@ -1843,7 +1896,7 @@ export type GuestSelectScalar = {
   invitationId?: boolean
 }
 
-export type GuestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "weddingId" | "fullName" | "alias" | "relationshipContext" | "phone" | "allergies" | "musicPrefs" | "favoriteSong" | "paperInvitation" | "plusOneAllowed" | "plusOneName" | "rsvpStatus" | "tableId" | "seatNumber" | "photoUrl" | "notes" | "invitationToken" | "createdAt" | "updatedAt" | "invitationId", ExtArgs["result"]["guest"]>
+export type GuestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "weddingId" | "fullName" | "alias" | "relationshipContext" | "phone" | "allergies" | "musicPrefs" | "favoriteSong" | "paperInvitation" | "plusOneAllowed" | "plusOneName" | "isChild" | "rsvpStatus" | "tableId" | "seatNumber" | "photoUrl" | "notes" | "invitationToken" | "createdAt" | "updatedAt" | "invitationId", ExtArgs["result"]["guest"]>
 export type GuestInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   table?: boolean | Prisma.Guest$tableArgs<ExtArgs>
   wedding?: boolean | Prisma.WeddingDefaultArgs<ExtArgs>
@@ -1885,6 +1938,7 @@ export type $GuestPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     paperInvitation: boolean
     plusOneAllowed: boolean
     plusOneName: string | null
+    isChild: boolean
     rsvpStatus: $Enums.RSVPStatus
     tableId: string | null
     seatNumber: number | null
@@ -2334,6 +2388,7 @@ export interface GuestFieldRefs {
   readonly paperInvitation: Prisma.FieldRef<"Guest", 'Boolean'>
   readonly plusOneAllowed: Prisma.FieldRef<"Guest", 'Boolean'>
   readonly plusOneName: Prisma.FieldRef<"Guest", 'String'>
+  readonly isChild: Prisma.FieldRef<"Guest", 'Boolean'>
   readonly rsvpStatus: Prisma.FieldRef<"Guest", 'RSVPStatus'>
   readonly tableId: Prisma.FieldRef<"Guest", 'String'>
   readonly seatNumber: Prisma.FieldRef<"Guest", 'Int'>

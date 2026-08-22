@@ -121,6 +121,7 @@ export const GuestScalarFieldEnum = {
   paperInvitation: 'paperInvitation',
   plusOneAllowed: 'plusOneAllowed',
   plusOneName: 'plusOneName',
+  isChild: 'isChild',
   rsvpStatus: 'rsvpStatus',
   tableId: 'tableId',
   seatNumber: 'seatNumber',

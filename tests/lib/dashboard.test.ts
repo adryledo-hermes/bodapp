@@ -9,9 +9,9 @@ import {
 } from "../../src/lib/dashboard";
 
 const guests = (
-  rows: Array<Partial<DashboardGuest> & { rsvpStatus: string }>
+  rows: Array<Partial<DashboardGuest> & { rsvpStatus: string; isChild?: boolean }>
 ): DashboardGuest[] =>
-  rows.map((g) => ({ rsvpStatus: g.rsvpStatus }));
+  rows.map((g) => ({ rsvpStatus: g.rsvpStatus, isChild: g.isChild ?? false }));
 
 const tables = (n: number): DashboardTable[] =>
   Array.from({ length: n }, (_, i) => ({ id: `t${i}` }));
@@ -56,11 +56,13 @@ describe("computeDashboardCounts — guests", () => {
     expect(res.pending).toBe(4);
     expect(res.confirmed).toBe(2);
     expect(res.declined).toBe(1);
+    expect(res.adults).toBe(7);
+    expect(res.children).toBe(0);
   });
 
   it("returns zeroed counts for an empty guest list", () => {
     const { guests: res } = computeDashboardCounts([], [], [], []);
-    expect(res).toEqual({ total: 0, pending: 0, confirmed: 0, declined: 0 });
+    expect(res).toEqual({ total: 0, pending: 0, confirmed: 0, declined: 0, adults: 0, children: 0 });
   });
 });
 

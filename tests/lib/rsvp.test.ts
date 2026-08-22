@@ -30,11 +30,13 @@ describe("RSVP_STATUSES", () => {
 describe("normalizeRsvpInput", () => {
   it("defaults to pending + empty arrays for empty input", () => {
     expect(normalizeRsvpInput({})).toEqual({
+      id: "",
       rsvpStatus: "pending",
       allergies: [],
       musicPrefs: [],
     });
     expect(normalizeRsvpInput(undefined)).toEqual({
+      id: "",
       rsvpStatus: "pending",
       allergies: [],
       musicPrefs: [],

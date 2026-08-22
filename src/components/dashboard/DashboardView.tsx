@@ -109,6 +109,8 @@ export default function DashboardView({
         <StatRow stat={{ label: t("dash.guestsPending"), value: guests.pending }} />
         <StatRow stat={{ label: t("dash.guestsConfirmed"), value: guests.confirmed }} />
         <StatRow stat={{ label: t("dash.guestsDeclined"), value: guests.declined }} />
+        <StatRow stat={{ label: t("dash.guestsAdults"), value: guests.adults }} />
+        <StatRow stat={{ label: t("dash.guestsChildren"), value: guests.children }} />
       </Card>
 
       {/* Tables */}

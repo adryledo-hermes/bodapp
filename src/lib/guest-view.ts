@@ -16,6 +16,7 @@ export interface GuestCardData {
   id: string;
   fullName: string;
   alias: string | null;
+  isChild: boolean;
   relationshipContext: string | null;
   phone: string;
   allergies: string[];
