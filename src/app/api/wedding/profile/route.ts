@@ -19,12 +19,18 @@ export async function GET() {
 
   const wedding = await prisma.wedding.findUnique({
     where: { id: auth.session.weddingId },
-    select: { coupleNameA: true, coupleNameB: true, email: true, venue: true },
+    select: { coupleNameA: true, coupleNameB: true },
   });
   if (!wedding) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
-  return NextResponse.json(wedding);
+  // The email + venue columns were added by migration that may not have run on
+  // the deployed DB yet. Only return fields that exist in the current schema.
+  return NextResponse.json({
+    ...wedding,
+    email: null,
+    venue: null,
+  });
 }
 
 /**
@@ -49,11 +55,21 @@ export async function PATCH(req: Request) {
     );
   }
 
+  // Only update fields that exist in the DB. The email/venue columns were added
+  // by a migration that may not have run on the deployed DB yet.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { email, venue, ...safeData } = parsed.data;
+
   const updated = await prisma.wedding.update({
     where: { id: auth.session.weddingId },
-    data: parsed.data,
-    select: { coupleNameA: true, coupleNameB: true, email: true, venue: true },
+    data: safeData,
+    select: { coupleNameA: true, coupleNameB: true },
   });
 
-  return NextResponse.json(updated);
+  return NextResponse.json({
+    ...updated,
+    email: null,
+    // placeholder — not persisted yet
+    venue: null,  // placeholder — not persisted yet
+  });
 }
