@@ -16,10 +16,9 @@ interface InvitationPageProps {
 const FALLBACK_PRIMARY = "#B76E79";
 const FALLBACK_ACCENT = "#F7E7CE";
 
-const STATUS_KEY: Record<RsvpStatus, string> = {
+const STATUS_KEY: Record<string, string> = {
   confirmed: "guest.status.confirmed",
   declined: "guest.status.declined",
-  maybe: "guest.status.maybe",
   pending: "guest.status.pending",
 };
 
@@ -285,11 +284,10 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
                 </p>
               )}
 
-              <div className="mt-4 grid gap-2 sm:grid-cols-3">
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 {[
                   { value: "confirmed", label: t("inv.optConfirmed") },
                   { value: "declined", label: t("inv.optDeclined") },
-                  { value: "maybe", label: t("inv.optMaybe") },
                 ].map((opt) => (
                   <button
                     key={opt.value}
