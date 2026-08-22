@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** Per-invitation text/image overrides; visual design comes from the template. */
+/** Per-invitation text/image overrides; venue comes from the Wedding row (Profile). */
 export interface InvitationContent {
   imageUrl: string | null;
   titleA: string;
@@ -8,7 +8,6 @@ export interface InvitationContent {
   message: string;
   date: string;
   time: string;
-  venue: string;
   dressCode: string;
   schedule: string;
   directions: string;
@@ -21,7 +20,7 @@ export function normalizeInvitationContent(raw: unknown): InvitationContent {
   return {
     imageUrl: typeof r.imageUrl === "string" && r.imageUrl.trim() ? r.imageUrl.trim() : null,
     titleA: text("titleA"), titleB: text("titleB"), message: text("message"),
-    date: text("date"), time: text("time"), venue: text("venue"),
+    date: text("date"), time: text("time"),
     dressCode: text("dressCode"), schedule: text("schedule"),
     directions: text("directions"), accommodation: text("accommodation"),
   };
@@ -31,7 +30,7 @@ export const invitationContentSchema = z.object({
   imageUrl: z.string().max(500).nullable().optional(),
   titleA: z.string().max(200).optional(), titleB: z.string().max(200).optional(),
   message: z.string().max(2000).optional(), date: z.string().max(100).optional(),
-  time: z.string().max(100).optional(), venue: z.string().max(300).optional(),
+  time: z.string().max(100).optional(),
   dressCode: z.string().max(200).optional(), schedule: z.string().max(3000).optional(),
   directions: z.string().max(2000).optional(), accommodation: z.string().max(2000).optional(),
 });

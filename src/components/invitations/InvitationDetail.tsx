@@ -151,8 +151,6 @@ export default function InvitationDetail({
                 <input type="time" className={`mt-1 ${inputClassName}`} value={content.time} onChange={(e) => set("time", e.target.value)} /></label>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="block text-sm font-medium text-slate-700">{t("inv.venueLabel")}
-                <input className={`mt-1 ${inputClassName}`} value={content.venue} onChange={(e) => set("venue", e.target.value)} /></label>
               <label className="block text-sm font-medium text-slate-700">{t("inv.dressCodeLabel")}
                 <input className={`mt-1 ${inputClassName}`} value={content.dressCode} onChange={(e) => set("dressCode", e.target.value)} /></label>
             </div>
@@ -188,7 +186,6 @@ export default function InvitationDetail({
               <div className="mx-5 grid gap-2 rounded-2xl bg-[#F3EFE8] p-4 text-center text-xs text-[#5D554D] sm:grid-cols-2">
                 {content.date && <div><span className="font-semibold text-[#7A6A5A]">{t("inv.dateLabel")}: </span>{content.date}</div>}
                 {content.time && <div><span className="font-semibold text-[#7A6A5A]">{t("inv.timeLabel")}: </span>{content.time}</div>}
-                {content.venue && <div className="sm:col-span-2"><span className="font-semibold text-[#7A6A5A]">{t("inv.venueLabel")}: </span>{content.venue}</div>}
                 {content.dressCode && <div className="sm:col-span-2"><span className="font-semibold text-[#7A6A5A]">{t("inv.dressCodeLabel")}: </span>{content.dressCode}</div>}
               </div>
 

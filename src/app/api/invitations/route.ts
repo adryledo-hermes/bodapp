@@ -90,7 +90,6 @@ export async function POST(req: Request) {
     message: pick("message") || null,
     date: pick("date") || null,
     time: pick("time") || null,
-    venue: pick("venue") || null,
     dressCode: pick("dressCode") || null,
     schedule: pick("schedule") || null,
     directions: pick("directions") || null,

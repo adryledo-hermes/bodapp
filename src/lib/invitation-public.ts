@@ -124,12 +124,11 @@ export function buildInvitationView(params: {
 }): InvitationView {
   const base = normalizeTemplateContent(params.template);
   const inline = normalizeInvitationContent(params.inline);
-  // TitleA/B now come from the Wedding row (set in Profile) and inline per-invitation
-  // overrides. Venue also comes from Wedding primarily, with inline fallback for
-  // per-invitation overrides.
+  // TitleA/B come from the Wedding row (set in Profile) with inline overrides.
+  // Venue comes ONLY from Wedding (Profile) — it's no longer in InvitationContent.
   const titleA = inline.titleA || params.wedding.coupleNameA;
   const titleB = inline.titleB || params.wedding.coupleNameB;
-  const venue = params.wedding.venue || inline.venue || "";
+  const venue = params.wedding.venue || "";
   const content = {
     ...base,
     titleA,

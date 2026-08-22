@@ -1,20 +1,38 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth-guard";
+import { getInvitationAccess } from "@/lib/otp-session";
 import { readPhoto } from "@/lib/storage";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-// GET /api/photos/[id]/file
-// Serves the on-disk photo bytes to the browser. Panel-authorized and
-// tenant-scoped: returns 404 unless the photo belongs to the session wedding.
+/**
+ * GET /api/photos/[id]/file
+ * Serves the on-disk photo bytes to the browser.
+ * Authorized either by the panel session OR the guest invitation-access cookie,
+ * so both the panel and the public invitation page can display images.
+ */
 export async function GET(_req: Request, { params }: Ctx) {
-  const auth = await requireSession();
-  if (auth.error) return auth.error;
   const { id } = await params;
 
+  // Try panel session first, then guest invitation access.
+  let weddingId: string | null = null;
+  const auth = await requireSession();
+  if (!auth.error) {
+    weddingId = auth.session.weddingId;
+  } else {
+    const access = await getInvitationAccess();
+    if (access) {
+      weddingId = access.weddingId;
+    }
+  }
+
+  if (!weddingId) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   const photo = await prisma.photo.findFirst({
-    where: { id, weddingId: auth.session.weddingId },
+    where: { id, weddingId },
   });
   if (!photo) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
