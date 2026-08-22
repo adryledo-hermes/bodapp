@@ -24,6 +24,7 @@ export default function InvitationDetail({
   invitation,
   locale,
   onClose,
+  onSaved,
 }: {
   invitation: InvitationDetailBase;
   locale: Locale;
