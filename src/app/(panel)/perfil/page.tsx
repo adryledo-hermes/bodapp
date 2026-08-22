@@ -1,3 +1,4 @@
+import { notFound, redirect } from "next/navigation";
 import { requireSession } from "@/lib/auth-guard";
 import { getLocale } from "@/lib/locale-server";
 import { translate } from "@/lib/i18n";
@@ -7,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function PerfilPage() {
   const auth = await requireSession();
-  if (auth.error) return auth.error;
+  if (auth.error) redirect("/login");
 
   const locale = await getLocale();
   const t = (key: string) => translate(locale, key);
