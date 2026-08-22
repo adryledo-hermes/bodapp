@@ -13,18 +13,17 @@ export default async function InvitacionesPage() {
 
   const locale = await getLocale();
 
-  const [invitations, guests] = await Promise.all([
+  const [invitations, guests, wedding] = await Promise.all([
     prisma.invitation.findMany({
       where: tenantWhere(auth.session),
       select: {
         id: true,
         title: true,
         content: true,
-        guests: { select: { id: true, fullName: true, phone: true } },
+        guests: { select: { id: true, fullName: true, phone: true, plusOneAllowed: true, plusOneName: true } },
       },
       orderBy: { createdAt: "desc" },
     }),
-    // All guests, so the couple can hand-pick who goes into each invitation.
     prisma.guest.findMany({
       where: tenantWhere(auth.session),
       select: {
@@ -32,9 +31,13 @@ export default async function InvitacionesPage() {
         fullName: true,
         alias: true,
         phone: true,
-        invitationId: true, // disables already-invited guests in the picker
+        invitationId: true,
       },
       orderBy: { fullName: "asc" },
+    }),
+    prisma.wedding.findUnique({
+      where: { id: auth.session.weddingId },
+      select: { venue: true },
     }),
   ]);
 
@@ -55,6 +58,7 @@ export default async function InvitacionesPage() {
           content: inv.content,
           guests: inv.guests,
         }))}
+        venue={wedding?.venue ?? ""}
         guests={guests}
         locale={locale}
       />

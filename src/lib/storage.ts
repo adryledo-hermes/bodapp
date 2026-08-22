@@ -1,5 +1,6 @@
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
+import { existsSync } from "node:fs";
 
 /**
  * Local-disk photo storage helpers (Task 12).
@@ -9,16 +10,32 @@ import { basename, join, resolve } from "node:path";
  * `PHOTO_STORAGE_DIR` env var so deployments can point it at a writable volume;
  * it defaults to `<project>/storage/photos`.
  *
- * These helpers are pure-ish (fs only, no Prisma) so they are unit-testable
- * against a temp directory.
+ * IMPORTANT: In Next.js `standalone` output mode, `process.cwd()` points to
+ * `.next/standalone/`, not the project root. If PHOTO_STORAGE_DIR is unset, the
+ * default resolves relative to the project root using the marker file approach
+ * (looks for `package.json` upward) — but the safest option is to set
+ * PHOTO_STORAGE_DIR explicitly to a persistent path.
  */
 
 const DEFAULT_PHOTO_DIR = resolve(process.cwd(), "storage", "photos");
 
-/** Resolve the photo storage directory (env override or project default). */
+/** Resolve the photo storage directory (env override or sensible default). */
 export function getPhotoDir(): string {
   const env = process.env.PHOTO_STORAGE_DIR;
-  return env ? resolve(env) : DEFAULT_PHOTO_DIR;
+  if (env) return resolve(env);
+  // In standalone mode, cwd is .next/standalone — walk up to find the project
+  // root and use storage/photos/ relative to it.
+  let dir = process.cwd();
+  // Walk up at most 5 levels looking for a sentinel (package.json).
+  for (let i = 0; i < 5; i++) {
+    if (existsSync(join(dir, "package.json"))) {
+      return join(dir, "storage", "photos");
+    }
+    const parent = resolve(dir, "..");
+    if (parent === dir) break; // filesystem root
+    dir = parent;
+  }
+  return join(dir, "storage", "photos");
 }
 
 /**

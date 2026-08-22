@@ -5,45 +5,42 @@ import { useRouter } from "next/navigation";
 import { normalizeInvitationContent, type InvitationContent } from "@/lib/invitation-inline";
 import { translate, type Locale } from "@/lib/i18n";
 
-/** The base info the detail editor needs (title + guests for the QR card). */
 export interface InvitationDetailBase {
   id: string;
   title: string;
-  content?: unknown; // raw per-invitation content (nullable)
+  content?: unknown;
+  guests: Array<{ id: string; fullName: string; phone: string; plusOneAllowed: boolean; plusOneName: string | null }>;
 }
 
 const inputClassName =
   "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none";
 
-/**
- * Per-invitation editor: set an image (upload via the existing /api/photos),
- * override the copy (names, message, date, venue…), and see the live QR
- * underneath. Saves via PATCH /api/invitations/[id]. No decorative frame is used.
- */
 export default function InvitationDetail({
   invitation,
+  venue,
   locale,
   onClose,
   onSaved,
 }: {
   invitation: InvitationDetailBase;
+  venue: string;
   locale: Locale;
   onClose: () => void;
-  onSaved?: (updated: { id: string; content?: unknown }) => void;
+  onSaved?: (updated: { id: string; content?: unknown; guests?: InvitationDetailBase["guests"] }) => void;
 }) {
   const router = useRouter();
   const initial = normalizeInvitationContent(invitation.content);
   const [content, setContent] = useState<InvitationContent>(initial);
+  const [guestList, setGuestList] = useState(invitation.guests);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // Re-sync internal state when the invitation changes (e.g. after save from
-  // the parent's onSaved callback updates the detail prop).
   useEffect(() => {
     setContent(normalizeInvitationContent(invitation.content));
-  }, [invitation.id, invitation.content]);
+    setGuestList(invitation.guests);
+  }, [invitation.id, invitation.content, invitation.guests]);
 
   const t = (key: string, vars?: Record<string, string | number>) =>
     translate(locale, key, vars);
@@ -51,6 +48,12 @@ export default function InvitationDetail({
 
   function set<K extends keyof InvitationContent>(key: K, value: InvitationContent[K]) {
     setContent((c) => ({ ...c, [key]: value }));
+  }
+
+  function updatePlusOne(guestId: string, name: string) {
+    setGuestList((prev) =>
+      prev.map((g) => (g.id === guestId ? { ...g, plusOneName: name || null } : g))
+    );
   }
 
   async function uploadImage(file: File) {
@@ -85,6 +88,7 @@ export default function InvitationDetail({
     setSuccess("");
     setLoading(true);
     try {
+      // Save invitation content (image, message, date, etc.)
       const res = await fetch(`/api/invitations/${invitation.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -92,10 +96,24 @@ export default function InvitationDetail({
       });
       if (!res.ok) {
         setError(t("invman.errSave"));
+        setLoading(false);
         return;
       }
+
+      // Save plusOneName for each guest that has plusOneAllowed
+      const updatePromises = guestList
+        .filter((g) => g.plusOneAllowed)
+        .map((g) =>
+          fetch(`/api/guests/${g.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ plusOneName: g.plusOneName || null }),
+          })
+        );
+      await Promise.all(updatePromises);
+
       setSuccess(t("invman.saved"));
-      onSaved?.({ id: invitation.id, content });
+      onSaved?.({ id: invitation.id, content, guests: guestList });
       router.refresh();
     } catch {
       setError(t("invman.errNetwork"));
@@ -111,12 +129,13 @@ export default function InvitationDetail({
           <h2 className="text-lg font-semibold text-slate-900">
             {invitation.title} — {t("invman.personalize")}
           </h2>
-          <button type="button" onClick={onClose} aria-label={t("guest.cancel")} className="tap-min rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100">✕</button>
+          <button type="button" onClick={onClose} className="tap-min rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100">✕</button>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1fr_260px]">
           {/* Left: editor */}
           <div className="space-y-4">
+            {/* Image */}
             <div>
               <p className="mb-1 text-sm font-medium text-slate-700">{t("invman.image")}</p>
               <div className="flex items-center gap-3">
@@ -134,26 +153,23 @@ export default function InvitationDetail({
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="block text-sm font-medium text-slate-700">{t("invman.titleA")}
-                <input className={`mt-1 ${inputClassName}`} value={content.titleA} onChange={(e) => set("titleA", e.target.value)} /></label>
-              <label className="block text-sm font-medium text-slate-700">{t("invman.titleB")}
-                <input className={`mt-1 ${inputClassName}`} value={content.titleB} onChange={(e) => set("titleB", e.target.value)} /></label>
-            </div>
-
+            {/* Message */}
             <label className="block text-sm font-medium text-slate-700">{t("invman.message")}
               <textarea className={`mt-1 ${inputClassName}`} rows={3} value={content.message} onChange={(e) => set("message", e.target.value)} /></label>
 
+            {/* Date, Time */}
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="block text-sm font-medium text-slate-700">{t("inv.dateLabel")}
                 <input type="date" className={`mt-1 ${inputClassName}`} value={content.date} onChange={(e) => set("date", e.target.value)} /></label>
               <label className="block text-sm font-medium text-slate-700">{t("inv.timeLabel")}
                 <input type="time" className={`mt-1 ${inputClassName}`} value={content.time} onChange={(e) => set("time", e.target.value)} /></label>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="block text-sm font-medium text-slate-700">{t("inv.dressCodeLabel")}
-                <input className={`mt-1 ${inputClassName}`} value={content.dressCode} onChange={(e) => set("dressCode", e.target.value)} /></label>
-            </div>
+
+            {/* Dress code */}
+            <label className="block text-sm font-medium text-slate-700">{t("inv.dressCodeLabel")}
+              <input className={`mt-1 ${inputClassName}`} value={content.dressCode} onChange={(e) => set("dressCode", e.target.value)} /></label>
+
+            {/* Schedule, Directions, Accommodation */}
             <div className="grid gap-3 sm:grid-cols-3">
               <label className="block text-sm font-medium text-slate-700">{t("tpl.scheduleLabel")}
                 <textarea rows={3} className={`mt-1 ${inputClassName}`} value={content.schedule} onChange={(e) => set("schedule", e.target.value)} /></label>
@@ -162,9 +178,29 @@ export default function InvitationDetail({
               <label className="block text-sm font-medium text-slate-700">{t("tpl.accommodationLabel")}
                 <textarea rows={3} className={`mt-1 ${inputClassName}`} value={content.accommodation} onChange={(e) => set("accommodation", e.target.value)} /></label>
             </div>
+
+            {/* Plus1 names per guest */}
+            {guestList.filter((g) => g.plusOneAllowed).length > 0 && (
+              <div>
+                <p className="mb-2 text-sm font-medium text-slate-700">{t("invman.plusOneTitle")}</p>
+                <div className="space-y-2 rounded-xl border border-slate-200 p-3">
+                  {guestList.filter((g) => g.plusOneAllowed).map((g) => (
+                    <label key={g.id} className="flex items-center gap-2 text-sm">
+                      <span className="min-w-0 flex-1 text-slate-600">{g.fullName}</span>
+                      <input
+                        value={g.plusOneName ?? ""}
+                        onChange={(e) => updatePlusOne(g.id, e.target.value)}
+                        placeholder={t("invman.plusOnePlaceholder")}
+                        className={`flex-1 ${inputClassName}`}
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Right: live preview — mirrors the real guest invitation layout */}
+          {/* Right: live preview */}
           <div className="flex flex-col gap-3">
             <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-400">{t("invman.preview")}</p>
             <div className="overflow-hidden rounded-[2rem] border border-[#D8D1C7] bg-[#FCFAF6] shadow-[0_12px_40px_rgba(93,79,63,0.10)]">
@@ -176,7 +212,7 @@ export default function InvitationDetail({
                 <p className="text-[10px] uppercase tracking-[0.36em] text-[#7A6A5A]">{t("inv.invitation")}</p>
                 <div className="mx-auto mt-3 h-px w-10 bg-[#7A6A5A]" />
                 <h3 className="inv-serif mt-3 text-2xl font-normal italic tracking-wide text-[#403B36]">
-                  {[content.titleA, content.titleB].filter(Boolean).join(" & ") || invitation.title}
+                  {invitation.title}
                 </h3>
                 {content.message && (
                   <p className="inv-serif mt-3 text-sm italic leading-relaxed text-[#5D554D] line-clamp-2">{content.message}</p>
@@ -186,6 +222,7 @@ export default function InvitationDetail({
               <div className="mx-5 grid gap-2 rounded-2xl bg-[#F3EFE8] p-4 text-center text-xs text-[#5D554D] sm:grid-cols-2">
                 {content.date && <div><span className="font-semibold text-[#7A6A5A]">{t("inv.dateLabel")}: </span>{content.date}</div>}
                 {content.time && <div><span className="font-semibold text-[#7A6A5A]">{t("inv.timeLabel")}: </span>{content.time}</div>}
+                {venue && <div className="sm:col-span-2"><span className="font-semibold text-[#7A6A5A]">{t("inv.venueLabel")}: </span>{venue}</div>}
                 {content.dressCode && <div className="sm:col-span-2"><span className="font-semibold text-[#7A6A5A]">{t("inv.dressCodeLabel")}: </span>{content.dressCode}</div>}
               </div>
 
@@ -204,6 +241,7 @@ export default function InvitationDetail({
               )}
             </div>
 
+            {/* QR */}
             <div className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-sm font-semibold text-slate-800">{t("invman.qr")}</p>
               {/* eslint-disable-next-line @next/next/no-img-element */}

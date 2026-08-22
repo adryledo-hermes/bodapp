@@ -18,8 +18,8 @@ export interface InviteeOption {
 export interface ManagerInvitation {
   id: string;
   title: string;
-  content?: unknown; // per-invitation personalization (frame/image/text)
-  guests: Array<{ id: string; fullName: string; phone: string }>;
+  content?: unknown;
+  guests: Array<{ id: string; fullName: string; phone: string; plusOneAllowed: boolean; plusOneName: string | null }>;
 }
 
 /**
@@ -31,10 +31,12 @@ export interface ManagerInvitation {
 export default function InvitationsManager({
   invitations: initial,
   guests,
+  venue,
   locale,
 }: {
   invitations: ManagerInvitation[];
   guests: InviteeOption[];
+  venue: string;
   locale: Locale;
 }) {
   const router = useRouter();
@@ -91,7 +93,7 @@ export default function InvitationsManager({
       setSelected(new Set());
       setShowForm(false);
       setInvitations((prev) => [
-        { id: data.invitation.id, title: data.invitation.title, content: data.invitation.content, guests: data.invitation.guests },
+        { id: data.invitation.id, title: data.invitation.title, content: data.invitation.content, guests: data.invitation.guests.map((g: Record<string, unknown>) => ({ id: g.id as string, fullName: g.fullName as string, phone: g.phone as string, plusOneAllowed: g.plusOneAllowed as boolean, plusOneName: (g.plusOneName as string | null) ?? null })) },
         ...prev,
       ]);
       router.refresh();
@@ -262,16 +264,17 @@ export default function InvitationsManager({
       {detail && (
         <InvitationDetail
           invitation={detail}
+          venue={venue}
           locale={locale}
           onClose={() => setDetail(null)}
           onSaved={(updated) => {
             setInvitations((prev) =>
               prev.map((inv) =>
-                inv.id === updated.id ? { ...inv, content: updated.content } : inv
+                inv.id === updated.id ? { ...inv, content: updated.content, guests: updated.guests ?? inv.guests } : inv
               )
             );
             setDetail((prev) =>
-              prev && prev.id === updated.id ? { ...prev, content: updated.content } : prev
+              prev && prev.id === updated.id ? { ...prev, content: updated.content, guests: updated.guests ?? prev.guests } : prev
             );
           }}
         />

@@ -106,7 +106,7 @@ export async function POST(req: Request) {
         guests: { connect: guests.map((g) => ({ id: g.id })) },
         content: baseContent,
       },
-      include: { guests: { select: { id: true, fullName: true, phone: true } } },
+      include: { guests: { select: { id: true, fullName: true, phone: true, plusOneAllowed: true, plusOneName: true } } },
     });
     return created;
   });
