@@ -33,7 +33,6 @@ export default function GuestBoard({
     { value: "pending", key: "guest.status.pending" },
     { value: "confirmed", key: "guest.status.confirmed" },
     { value: "declined", key: "guest.status.declined" },
-    { value: "maybe", key: "guest.status.maybe" },
   ];
 
   return (

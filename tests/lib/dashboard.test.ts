@@ -47,21 +47,20 @@ describe("computeDashboardCounts — guests", () => {
     { rsvpStatus: "pending" },
     { rsvpStatus: "pending" },
     { rsvpStatus: "declined" },
-    { rsvpStatus: "maybe" },
+    { rsvpStatus: "pending" }, // was 'maybe', migrated to 'pending'
   ]);
 
   it("counts guests by rsvpStatus and total", () => {
     const { guests: res } = computeDashboardCounts(g, [], [], []);
     expect(res.total).toBe(7);
-    expect(res.pending).toBe(3);
+    expect(res.pending).toBe(4);
     expect(res.confirmed).toBe(2);
     expect(res.declined).toBe(1);
-    expect(res.maybe).toBe(1);
   });
 
   it("returns zeroed counts for an empty guest list", () => {
     const { guests: res } = computeDashboardCounts([], [], [], []);
-    expect(res).toEqual({ total: 0, pending: 0, confirmed: 0, declined: 0, maybe: 0 });
+    expect(res).toEqual({ total: 0, pending: 0, confirmed: 0, declined: 0 });
   });
 });
 

@@ -8,7 +8,6 @@ const rsvpStyles: Record<string, { key: string; className: string }> = {
   pending: { key: "guest.status.pending", className: "bg-slate-200 text-slate-700" },
   confirmed: { key: "guest.status.confirmed", className: "bg-green-100 text-green-800" },
   declined: { key: "guest.status.declined", className: "bg-red-100 text-red-800" },
-  maybe: { key: "guest.status.maybe", className: "bg-amber-100 text-amber-800" },
 };
 
 function rsvpChip(status: string, locale: Locale) {

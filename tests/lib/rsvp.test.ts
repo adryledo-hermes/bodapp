@@ -7,11 +7,10 @@ import {
 } from "../../src/lib/rsvp";
 
 describe("RSVP_STATUS_VALUES", () => {
-  it("exposes exactly the 4 known statuses", () => {
+  it("exposes exactly the 3 known statuses", () => {
     expect(RSVP_STATUS_VALUES).toEqual([
       "confirmed",
       "declined",
-      "maybe",
       "pending",
     ]);
   });
@@ -24,7 +23,6 @@ describe("RSVP_STATUSES", () => {
     );
     expect(labels.confirmed).toContain("Confirmo");
     expect(labels.declined).toContain("No podré");
-    expect(labels.maybe).toContain("Quizás");
     expect(labels.pending.toLowerCase()).toContain("pendiente");
   });
 });
@@ -56,9 +54,6 @@ describe("normalizeRsvpInput", () => {
     );
     expect(normalizeRsvpInput({ rsvpStatus: "declined" }).rsvpStatus).toBe(
       "declined"
-    );
-    expect(normalizeRsvpInput({ rsvpStatus: "maybe" }).rsvpStatus).toBe(
-      "maybe"
     );
   });
 
@@ -96,7 +91,7 @@ describe("allowedRsvpTransitions", () => {
   it("permits any valid next status from any current status (guests may correct)", () => {
     expect(allowedRsvpTransitions("pending", "confirmed")).toBe(true);
     expect(allowedRsvpTransitions("confirmed", "declined")).toBe(true);
-    expect(allowedRsvpTransitions("declined", "maybe")).toBe(true);
+    expect(allowedRsvpTransitions("declined", "confirmed")).toBe(true);
   });
 
   it("rejects an invalid next status", () => {

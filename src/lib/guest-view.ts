@@ -3,7 +3,7 @@
  * this module is unit-testable and free of server/client concerns.
  */
 
-export type RsvpStatus = "pending" | "confirmed" | "declined" | "maybe";
+export type RsvpStatus = "pending" | "confirmed" | "declined";
 
 /** Minimal table shape surfaced on a guest card. */
 export interface GuestTable {

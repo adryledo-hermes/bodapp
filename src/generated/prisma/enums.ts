@@ -12,8 +12,7 @@
 export const RSVPStatus = {
   pending: 'pending',
   confirmed: 'confirmed',
-  declined: 'declined',
-  maybe: 'maybe'
+  declined: 'declined'
 } as const
 
 export type RSVPStatus = (typeof RSVPStatus)[keyof typeof RSVPStatus]

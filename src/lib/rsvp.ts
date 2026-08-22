@@ -4,14 +4,13 @@
  * src/lib/invitation.ts and src/lib/guest-view.ts).
  */
 
-/** The 4 possible RSVP states, mirroring the Prisma RSVPStatus enum. */
-export type RsvpStatus = "confirmed" | "declined" | "maybe" | "pending";
+/** The 3 possible RSVP states, mirroring the Prisma RSVPStatus enum. */
+export type RsvpStatus = "confirmed" | "declined" | "pending";
 
 /** All known statuses, kept in display order. */
 export const RSVP_STATUS_VALUES: RsvpStatus[] = [
   "confirmed",
   "declined",
-  "maybe",
   "pending",
 ];
 
@@ -19,7 +18,6 @@ export const RSVP_STATUS_VALUES: RsvpStatus[] = [
 export const RSVP_STATUSES: { value: RsvpStatus; label: string }[] = [
   { value: "confirmed", label: "Confirmo asistencia" },
   { value: "declined", label: "No podré asistir" },
-  { value: "maybe", label: "Quizás" },
   { value: "pending", label: "Pendiente" },
 ];
 

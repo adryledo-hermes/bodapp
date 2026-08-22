@@ -8,7 +8,7 @@
  */
 import { sortTasks, type TaskCategory } from "./tasks";
 
-export type RSVPStatus = "pending" | "confirmed" | "declined" | "maybe";
+export type RSVPStatus = "pending" | "confirmed" | "declined";
 export type TaskStatus = "todo" | "in_progress" | "done" | "blocked";
 export type TaskPriority = "low" | "medium" | "high";
 
@@ -54,7 +54,6 @@ export interface DashboardCounts {
     pending: number;
     confirmed: number;
     declined: number;
-    maybe: number;
   };
   tables: { total: number };
   invitations: { total: number; sent: number; pending: number };
@@ -72,7 +71,7 @@ export interface DashboardCounts {
  * and returns a plain summary object.
  *
  * Interpretations (documented):
- * - guests   : counted by rsvpStatus (pending/confirmed/declined/maybe).
+ * - guests   : counted by rsvpStatus (pending/confirmed/declined).
  * - tables   : total count.
  * - invitations: `sent` = invitation with ≥1 OTP code issued (engagement
  *   proxy; there is no explicit sends-tracking column), `pending` = the rest.
@@ -91,7 +90,6 @@ export function computeDashboardCounts(
     pending: 0,
     confirmed: 0,
     declined: 0,
-    maybe: 0,
   } as Record<RSVPStatus, number>;
 
   for (const g of guestRows) {
@@ -120,7 +118,6 @@ export function computeDashboardCounts(
       pending: counts.pending,
       confirmed: counts.confirmed,
       declined: counts.declined,
-      maybe: counts.maybe,
     },
     tables: { total: tableRows.length },
     invitations: {
