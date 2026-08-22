@@ -91,7 +91,7 @@ export default function InvitationsManager({
       setSelected(new Set());
       setShowForm(false);
       setInvitations((prev) => [
-        { id: data.invitation.id, title: data.invitation.title, guests: data.invitation.guests },
+        { id: data.invitation.id, title: data.invitation.title, content: data.invitation.content, guests: data.invitation.guests },
         ...prev,
       ]);
       router.refresh();
