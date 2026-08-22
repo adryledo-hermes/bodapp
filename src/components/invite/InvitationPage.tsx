@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { isValidHexColor } from "@/lib/invitation";
 import { type RsvpStatus } from "@/lib/rsvp";
 import type { InvitationView } from "@/lib/invitation-public";
+import { ALLERGY_OPTIONS, MUSIC_GENRES, mergeCustomTags } from "@/lib/guests";
 import { translate, type Locale } from "@/lib/i18n";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 
@@ -21,18 +22,6 @@ const STATUS_KEY: Record<RsvpStatus, string> = {
   maybe: "guest.status.maybe",
   pending: "guest.status.pending",
 };
-
-function listToText(values: string[]): string {
-  return values.join(", ");
-}
-
-function textToList(text: string): string[] {
-  return text
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .filter((v, i, arr) => arr.indexOf(v) === i);
-}
 
 /**
  * The personalized public invitation (Task 10). Rendered as a client
@@ -64,19 +53,34 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
       ? firstInvitee.rsvpStatus
       : "pending"
   );
-  const [allergiesText, setAllergiesText] = useState(
-    firstInvitee ? listToText(firstInvitee.allergies) : ""
+  // Multiselect state for allergies + music on the public invitation page
+  const [selectedAllergies, setSelectedAllergies] = useState<string[]>(
+    firstInvitee ? firstInvitee.allergies.filter((a) =>
+      (ALLERGY_OPTIONS as readonly string[]).includes(a)
+    ) : []
   );
-  const [musicText, setMusicText] = useState(
-    firstInvitee ? listToText(firstInvitee.musicPrefs) : ""
+  const [allergyOther, setAllergyOther] = useState(
+    firstInvitee ? firstInvitee.allergies.find(
+      (a) => !(ALLERGY_OPTIONS as readonly string[]).includes(a)
+    ) ?? "" : ""
+  );
+  const [selectedGenres, setSelectedGenres] = useState<string[]>(
+    firstInvitee ? firstInvitee.musicPrefs.filter((g) =>
+      (MUSIC_GENRES as readonly string[]).includes(g)
+    ) : []
+  );
+  const [genreOther, setGenreOther] = useState(
+    firstInvitee ? firstInvitee.musicPrefs.find(
+      (g) => !(MUSIC_GENRES as readonly string[]).includes(g)
+    ) ?? "" : ""
   );
   const [submitting, setSubmitting] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
-  // Update the countdown once per minute; no timer runs when the date is empty.
+  // Update the countdown every 30 seconds for near-real-time accuracy.
   useEffect(() => {
     if (!content.date) return;
-    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(timer);
   }, [content.date]);
 
@@ -113,8 +117,8 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           rsvpStatus: status,
-          allergies: textToList(allergiesText),
-          musicPrefs: textToList(musicText),
+          allergies: mergeCustomTags(selectedAllergies, allergyOther),
+          musicPrefs: mergeCustomTags(selectedGenres, genreOther),
         }),
       });
       const data = await res.json();
@@ -189,6 +193,11 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
             <p className="mt-5 text-base text-[#7A6A5A]">
               {greeting}
             </p>
+            {invitees.length > 0 && (
+              <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[#8B8176]">
+                {t("inv.forLabel")} {invitees.map((g) => g.fullName).join(", ")}
+              </p>
+            )}
           </div>
 
           <div className="space-y-8 px-6 py-9 sm:px-10">
@@ -302,27 +311,48 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
                 ))}
               </div>
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm font-medium text-slate-700">
-                  {t("inv.allergiesLabel")}
-                  <input
-                    type="text"
-                    value={allergiesText}
-                    onChange={(e) => setAllergiesText(e.target.value)}
+              <div className="mt-5 grid gap-6 sm:grid-cols-2">
+                {/* Allergies — multiselect + free text */}
+                <fieldset>
+                  <legend className="mb-2 text-sm font-medium text-slate-700">{t("inv.allergiesLabel")}</legend>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(ALLERGY_OPTIONS as readonly string[]).map((opt) => {
+                      const active = selectedAllergies.includes(opt);
+                      return (
+                        <button key={opt} type="button"
+                          onClick={() => setSelectedAllergies((p) => active ? p.filter((a) => a !== opt) : [...p, opt])}
+                          className={`tap-min rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+                            active ? "border-indigo-400 bg-indigo-50 text-indigo-700" : "border-slate-300 text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >{opt}</button>
+                      );
+                    })}
+                  </div>
+                  <input type="text" value={allergyOther} onChange={(e) => setAllergyOther(e.target.value)}
                     placeholder={t("inv.allergiesPlaceholder")}
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
-                  />
-                </label>
-                <label className="block text-sm font-medium text-slate-700">
-                  {t("inv.musicLabel")}
-                  <input
-                    type="text"
-                    value={musicText}
-                    onChange={(e) => setMusicText(e.target.value)}
+                    className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-indigo-400 focus:outline-none" />
+                </fieldset>
+
+                {/* Music — multiselect + free text + favourite song */}
+                <fieldset>
+                  <legend className="mb-2 text-sm font-medium text-slate-700">{t("inv.musicLabel")}</legend>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(MUSIC_GENRES as readonly string[]).map((opt) => {
+                      const active = selectedGenres.includes(opt);
+                      return (
+                        <button key={opt} type="button"
+                          onClick={() => setSelectedGenres((p) => active ? p.filter((g) => g !== opt) : [...p, opt])}
+                          className={`tap-min rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+                            active ? "border-indigo-400 bg-indigo-50 text-indigo-700" : "border-slate-300 text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >{opt}</button>
+                      );
+                    })}
+                  </div>
+                  <input type="text" value={genreOther} onChange={(e) => setGenreOther(e.target.value)}
                     placeholder={t("inv.musicPlaceholder")}
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
-                  />
-                </label>
+                    className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-indigo-400 focus:outline-none" />
+                </fieldset>
               </div>
 
               {message && (

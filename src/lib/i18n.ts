@@ -418,6 +418,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "inv.accommodationTitle": "Alojamiento",
     "inv.venueLabel": "Lugar",
     "inv.dressCodeLabel": "Código de vestimenta",
+    "inv.forLabel": "Para",
     "inv.bankTransfer": "🎁 Transferencia bancaria",
     "inv.bankHelp":
       "Si prefieres hacernos un regalo en metálico, puedes transferirlo a esta cuenta. ¡Gracias!",
@@ -864,6 +865,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "inv.accommodationTitle": "Accommodation",
     "inv.venueLabel": "Venue",
     "inv.dressCodeLabel": "Dress code",
+    "inv.forLabel": "For",
     "inv.bankTransfer": "🎁 Bank transfer",
     "inv.bankHelp":
       "If you'd prefer to give us a cash gift, you can transfer it to this account. Thank you!",
