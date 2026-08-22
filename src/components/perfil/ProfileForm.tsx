@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { translate, type Locale } from "@/lib/i18n";
 
 interface ProfileData {
@@ -15,8 +14,13 @@ const inputCls =
   "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none";
 
 export default function ProfileForm({ locale }: { locale: Locale }) {
-  const t = (key: string) => translate(locale, key);
-  const router = useRouter();
+  // Stable t function (ref, not closure) so the useEffect below runs only on
+  // mount, not on every render — otherwise a re-render re-fetches server data
+  // and overwrites any edits the user just made.
+  const tRef = useRef((key: string, vars?: Record<string, string | number>) =>
+    translate(locale, key, vars)
+  );
+  const t = tRef.current;
 
   const [draft, setDraft] = useState<ProfileData>({
     coupleNameA: "",
@@ -28,6 +32,7 @@ export default function ProfileForm({ locale }: { locale: Locale }) {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
+  // Fetch profile from server ONCE (mount). Empty deps = never re-run.
   useEffect(() => {
     fetch("/api/wedding/profile")
       .then((r) => r.json())
@@ -39,7 +44,7 @@ export default function ProfileForm({ locale }: { locale: Locale }) {
         setMsg({ kind: "error", text: t("common.error") });
         setLoading(false);
       });
-  }, [t]);
+  }, []); // eslint-disable-line
 
   async function handleSave() {
     setSaving(true);
@@ -56,7 +61,6 @@ export default function ProfileForm({ locale }: { locale: Locale }) {
         }),
       });
       if (!res.ok) throw new Error();
-      router.refresh();
       setMsg({ kind: "success", text: t("common.saved") });
     } catch {
       setMsg({ kind: "error", text: t("common.error") });

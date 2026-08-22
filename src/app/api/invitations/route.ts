@@ -83,10 +83,10 @@ export async function POST(req: Request) {
   const raw = (template?.content ?? {}) as Record<string, unknown>;
   const pick = (key: string): string =>
     typeof raw[key] === "string" ? (raw[key] as string) : "";
-  const [first, second] = guests.map((g) => g.fullName.trim());
   const baseContent: Record<string, string | null> = {
-    titleA: first ?? "",
-    titleB: second ?? "",
+    // Do NOT set titleA/titleB — they come from the Wedding row (couple names)
+    // and the per-invitation editor. Setting them to guest names here would
+    // replace the groom/bride on the public invitation page.
     message: pick("message") || null,
     date: pick("date") || null,
     time: pick("time") || null,

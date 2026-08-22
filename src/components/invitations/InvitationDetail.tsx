@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { normalizeInvitationContent, type InvitationContent } from "@/lib/invitation-inline";
 import { translate, type Locale } from "@/lib/i18n";
@@ -38,6 +38,12 @@ export default function InvitationDetail({
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  // Re-sync internal state when the invitation changes (e.g. after save from
+  // the parent's onSaved callback updates the detail prop).
+  useEffect(() => {
+    setContent(normalizeInvitationContent(invitation.content));
+  }, [invitation.id, invitation.content]);
 
   const t = (key: string, vars?: Record<string, string | number>) =>
     translate(locale, key, vars);
