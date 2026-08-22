@@ -27,7 +27,7 @@ export interface TemplateContent {
   bankAccount: string;
   sections: string[];
   colors: TemplateColors;
-  /** Optional hero image; no decorative frame is used. */
+  /** Optional hero image. */
   imageUrl: string | null;
 }
 
@@ -35,7 +35,7 @@ export interface TemplateContent {
 export const DEFAULT_TEMPLATE: TemplateContent = {
   titleA: "",
   titleB: "",
-  message: "Os invitamos a celebrar nuestro enlace con nosotros.",
+  message: "",
   date: "",
   time: "",
   venue: "",

@@ -36,6 +36,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "nav.invitacion": "Plantilla de invitación",
     "nav.invitaciones": "Invitaciones",
     "nav.fotos": "Fotos",
+    "nav.perfil": "Perfil",
     "nav.logout": "Salir",
     "nav.loggingOut": "Saliendo...",
     "nav.openMenu": "Abrir menú",
@@ -85,6 +86,15 @@ export const messages: Record<Locale, Record<string, string>> = {
     "common.save": "Guardar",
     "common.add": "Añadir",
     "common.saving": "Guardando…",
+    "common.error": "Error",
+    "common.loading": "Cargando…",
+    "common.saved": "Guardado",
+
+    // ---- Profile ----
+    "profile.coupleNameA": "Tu nombre",
+    "profile.coupleNameB": "Nombre de tu pareja",
+    "profile.email": "Email de contacto",
+    "profile.venue": "Lugar de la boda",
     "common.networkError": "Error de red: no se pudo guardar",
 
     // ---- Guests (personalized cards) ----
@@ -317,6 +327,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "tpl.accommodationLabel": "Alojamiento",
     "tpl.preview": "Vista previa",
     "tpl.namesFallback": "Vuestros nombres",
+    "tpl.namesFromProfile": "Vuestros nombres (desde Perfil)",
     "tpl.ourWedding": "Nuestra boda",
     "tpl.bankTransfer": "🎁 Transferencia bancaria",
     "tpl.savePublish": "Guardar y publicar",
@@ -369,6 +380,9 @@ export const messages: Record<Locale, Record<string, string>> = {
     "p.qr.title": "Códigos QR",
     "p.qr.subtitle":
       "Genera un código QR por invitación. Al escanearlo, los invitados llegarán a la página de entrada con su teléfono.",
+    "p.perfil.title": "Perfil de la pareja",
+    "p.perfil.subtitle":
+      "Tus nombres, email de contacto y el lugar de la boda. Los invitados verán el lugar en su invitación.",
     "p.invitaciones.title": "Invitaciones",
     "p.invitaciones.subtitle":
       "Crea una invitación personalizada para cada invitado, pareja o grupo: elige quiénes la reciben y su QR se generará al instante.",
@@ -469,6 +483,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "nav.invitacion": "Invitation template",
     "nav.invitaciones": "Invitations",
     "nav.fotos": "Photos",
+    "nav.perfil": "Profile",
     "nav.logout": "Log out",
     "nav.loggingOut": "Signing out...",
     "nav.openMenu": "Open menu",
@@ -518,6 +533,15 @@ export const messages: Record<Locale, Record<string, string>> = {
     "common.save": "Save",
     "common.add": "Add",
     "common.saving": "Saving…",
+    "common.error": "Error",
+    "common.loading": "Loading…",
+    "common.saved": "Saved",
+
+    // ---- Profile ----
+    "profile.coupleNameA": "Your name",
+    "profile.coupleNameB": "Partner's name",
+    "profile.email": "Contact email",
+    "profile.venue": "Wedding venue",
     "common.networkError": "Network error: could not save",
 
     // ---- Guests ----
@@ -749,6 +773,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "tpl.accommodationLabel": "Accommodation",
     "tpl.preview": "Preview",
     "tpl.namesFallback": "Your names",
+    "tpl.namesFromProfile": "Your names (from Profile)",
     "tpl.ourWedding": "Our wedding",
     "tpl.bankTransfer": "🎁 Bank transfer",
     "tpl.savePublish": "Save and publish",
@@ -801,6 +826,9 @@ export const messages: Record<Locale, Record<string, string>> = {
     "p.qr.title": "QR codes",
     "p.qr.subtitle":
       "Generate a QR code per invitation. On scanning it, guests will reach the entry page with their phone.",
+    "p.perfil.title": "Couple profile",
+    "p.perfil.subtitle":
+      "Your names, contact email and wedding venue. Guests will see the venue in their invitation.",
     "p.invitaciones.title": "Invitations",
     "p.invitaciones.subtitle":
       "Create a personalised invitation for each guest, couple or group: pick who receives it and its QR code is generated on the spot.",

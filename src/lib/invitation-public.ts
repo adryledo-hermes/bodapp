@@ -116,23 +116,28 @@ function buildGreeting(guests: PublicGuest[]): string {
  * - Surfaces the couple's bank account for the "🎁 Transferencia" section.
  */
 export function buildInvitationView(params: {
-  wedding: { coupleNameA: string; coupleNameB: string; bankAccount: string | null };
+  wedding: { coupleNameA: string; coupleNameB: string; bankAccount: string | null; venue: string | null };
   template: unknown;
   invitation: { id: string };
-  inline?: unknown; // per-invitation content (raw) — image/text overrides
+  inline?: unknown;
   guests: InviteeGuest[];
 }): InvitationView {
   const base = normalizeTemplateContent(params.template);
   const inline = normalizeInvitationContent(params.inline);
-  // Per-invitation text overrides win over the wedding template when present.
+  // TitleA/B now come from the Wedding row (set in Profile) and inline per-invitation
+  // overrides. Venue also comes from Wedding primarily, with inline fallback for
+  // per-invitation overrides.
+  const titleA = inline.titleA || params.wedding.coupleNameA;
+  const titleB = inline.titleB || params.wedding.coupleNameB;
+  const venue = params.wedding.venue || inline.venue || "";
   const content = {
     ...base,
-    titleA: inline.titleA || base.titleA,
-    titleB: inline.titleB || base.titleB,
+    titleA,
+    titleB,
     message: inline.message || base.message,
     date: inline.date || base.date,
     time: inline.time || base.time,
-    venue: inline.venue || base.venue,
+    venue,
     dressCode: inline.dressCode || base.dressCode,
     schedule: inline.schedule || base.schedule,
     directions: inline.directions || base.directions,

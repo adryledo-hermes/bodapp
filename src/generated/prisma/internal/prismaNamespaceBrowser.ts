@@ -86,6 +86,8 @@ export const WeddingScalarFieldEnum = {
   coupleNameA: 'coupleNameA',
   coupleNameB: 'coupleNameB',
   bankAccount: 'bankAccount',
+  email: 'email',
+  venue: 'venue',
   date: 'date',
   locale: 'locale',
   createdAt: 'createdAt'

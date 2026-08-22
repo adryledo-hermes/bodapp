@@ -49,6 +49,8 @@ model Wedding {
   coupleNameA String
   coupleNameB String
   bankAccount String? // couple's IBAN, shown on invitations
+  email       String? // couple contact email
+  venue       String? // wedding venue
   date        DateTime?
   locale      String                @default("es")
   createdAt   DateTime              @default(now())

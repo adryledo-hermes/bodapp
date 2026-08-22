@@ -4,7 +4,6 @@ import {
   publicPlateOf,
   type InviteeGuest,
 } from "../../src/lib/invitation-public";
-import { DEFAULT_TEMPLATE } from "../../src/lib/invitation";
 
 const baseGuest: InviteeGuest = {
   id: "guest-1",
@@ -25,6 +24,7 @@ const wedding = {
   coupleNameA: "María",
   coupleNameB: "Pedro",
   bankAccount: "ES00",
+  venue: "Finca El Paraíso",
 };
 const invitation = { id: "inv-1" };
 const sampleGuest = (overrides: Partial<InviteeGuest> = {}): InviteeGuest => ({
@@ -41,21 +41,23 @@ describe("publicPlateOf", () => {
 describe("buildInvitationView", () => {
   it("fills new template defaults", () => {
     const view = buildInvitationView({ wedding, template: {}, invitation, guests: [baseGuest] });
-    expect(view.content).toEqual(DEFAULT_TEMPLATE);
+    // titleA/B and venue come from Wedding, not the template
+    expect(view.content.titleA).toBe(wedding.coupleNameA);
+    expect(view.content.titleB).toBe(wedding.coupleNameB);
+    expect(view.content.venue).toBe(wedding.venue);
     expect(view.inline.imageUrl).toBeNull();
   });
 
-  it("uses template event content and invitee names", () => {
+  it("uses wedding names as default and inline can override", () => {
     const view = buildInvitationView({
       wedding,
-      template: {
-        titleA: "Ana", titleB: "Luis", date: "2026-09-12", time: "13:00",
-        schedule: "16:00 · Ceremonia", directions: "M-30", accommodation: "Hotel",
-      },
+      template: { date: "2026-09-12", time: "13:00", schedule: "16:00 · Ceremonia", directions: "M-30", accommodation: "Hotel" },
       invitation,
       guests: [sampleGuest({ fullName: "Ana" }), sampleGuest({ id: "g2", fullName: "Luis" })],
     });
-    expect(view.content.titleA).toBe("Ana");
+    // titleA/B come from Wedding.coupleNameA/B (not the template)
+    expect(view.content.titleA).toBe(wedding.coupleNameA);
+    expect(view.content.venue).toBe(wedding.venue);
     expect(view.content.schedule).toContain("Ceremonia");
     expect(view.greeting).toContain("Ana y Luis");
   });

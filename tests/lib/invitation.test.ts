@@ -26,8 +26,8 @@ describe("DEFAULT_TEMPLATE", () => {
     expect(typeof DEFAULT_TEMPLATE.colors.accent).toBe("string");
   });
 
-  it("starts with a canonical Spanish invitation message", () => {
-    expect(DEFAULT_TEMPLATE.message).toContain("invitamos");
+  it("message defaults to empty (names/venue come from Wedding row)", () => {
+    expect(DEFAULT_TEMPLATE.message).toBe("");
   });
 });
 

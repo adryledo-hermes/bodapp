@@ -44,7 +44,7 @@ export async function loadPublicInvitationView(
   const [wedding, template, guests] = await Promise.all([
     prisma.wedding.findUnique({
       where: { id: invitation.weddingId },
-      select: { coupleNameA: true, coupleNameB: true, bankAccount: true },
+      select: { coupleNameA: true, coupleNameB: true, bankAccount: true, venue: true },
     }),
     prisma.invitationTemplate.findFirst({
       where: { weddingId: invitation.weddingId },

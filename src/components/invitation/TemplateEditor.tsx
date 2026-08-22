@@ -15,12 +15,9 @@ interface TemplateEditorProps {
 }
 
 interface DraftState {
-  titleA: string;
-  titleB: string;
   message: string;
   date: string;
   time: string;
-  venue: string;
   dressCode: string;
   primary: string;
   accent: string;
@@ -33,12 +30,9 @@ interface DraftState {
 
 function toDraft(content: TemplateContent, bankAccount: string): DraftState {
   return {
-    titleA: content.titleA ?? "",
-    titleB: content.titleB ?? "",
     message: content.message ?? "",
     date: content.date ?? "",
     time: content.time ?? "",
-    venue: content.venue ?? "",
     dressCode: content.dressCode ?? "",
     primary: content.colors?.primary ?? DEFAULT_TEMPLATE.colors.primary,
     accent: content.colors?.accent ?? DEFAULT_TEMPLATE.colors.accent,
@@ -112,12 +106,9 @@ export default function TemplateEditor({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           content: {
-            titleA: draft.titleA,
-            titleB: draft.titleB,
             message: draft.message,
             date: draft.date,
             time: draft.time,
-            venue: draft.venue,
             dressCode: draft.dressCode,
             schedule: draft.schedule,
             directions: draft.directions,
@@ -166,33 +157,6 @@ export default function TemplateEditor({
         </div>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls} htmlFor="titleA">
-                {t("tpl.titleA")}
-              </label>
-              <input
-                id="titleA"
-                className={inputCls}
-                value={draft.titleA}
-                onChange={(e) => set("titleA", e.target.value)}
-                placeholder="Ana"
-              />
-            </div>
-            <div>
-              <label className={labelCls} htmlFor="titleB">
-                {t("tpl.titleB")}
-              </label>
-              <input
-                id="titleB"
-                className={inputCls}
-                value={draft.titleB}
-                onChange={(e) => set("titleB", e.target.value)}
-                placeholder="Luis"
-              />
-            </div>
-          </div>
-
           <div>
             <label className={labelCls} htmlFor="message">
               {t("tpl.messageLabel")}
@@ -231,19 +195,6 @@ export default function TemplateEditor({
                 onChange={(e) => set("time", e.target.value)}
               />
             </div>
-          </div>
-
-          <div>
-            <label className={labelCls} htmlFor="venue">
-              {t("tpl.venueLabel")}
-            </label>
-            <input
-              id="venue"
-              className={inputCls}
-              value={draft.venue}
-              onChange={(e) => set("venue", e.target.value)}
-              placeholder="Finca El Roble, Madrid"
-            />
           </div>
 
           <div>
@@ -389,13 +340,9 @@ export default function TemplateEditor({
           <div className="px-8 py-10 text-center">
             <p className="text-[10px] uppercase tracking-[0.36em] text-[#7A6A5A]">{t("inv.invitation")}</p>
             <div className="mx-auto mt-4 h-px w-12 bg-[#7A6A5A]" />
-            {draft.titleA || draft.titleB ? (
-              <h1 className="inv-serif mt-4 text-3xl font-normal italic tracking-wide text-[#403B36] sm:text-4xl">
-                {draft.titleA} &amp; {draft.titleB}
-              </h1>
-            ) : (
-              <p className="inv-serif mt-4 text-3xl italic text-[#8B8176]">{t("tpl.namesFallback")}</p>
-            )}
+            <h1 className="inv-serif mt-4 text-3xl font-normal italic tracking-wide text-[#403B36] sm:text-4xl">
+              {t("tpl.namesFromProfile")}
+            </h1>
             {draft.message && (
               <p className="inv-serif mx-auto mt-4 max-w-sm text-base italic leading-relaxed text-[#5D554D]">
                 {draft.message}
@@ -406,7 +353,6 @@ export default function TemplateEditor({
           <div className="mx-6 grid gap-3 rounded-2xl bg-[#F3EFE8] p-5 text-center text-sm text-[#5D554D] sm:grid-cols-2">
             {draft.date ? <div><span className="font-semibold text-[#7A6A5A]">{t("inv.dateLabel")}: </span>{draft.date}</div> : null}
             {draft.time ? <div><span className="font-semibold text-[#7A6A5A]">{t("inv.timeLabel")}: </span>{draft.time}</div> : null}
-            {draft.venue ? <div className="sm:col-span-2"><span className="font-semibold text-[#7A6A5A]">{t("inv.venueLabel")}: </span>{draft.venue}</div> : null}
             {draft.dressCode ? <div className="sm:col-span-2"><span className="font-semibold text-[#7A6A5A]">{t("inv.dressCodeLabel")}: </span>{draft.dressCode}</div> : null}
           </div>
 

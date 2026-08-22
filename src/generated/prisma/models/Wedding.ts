@@ -30,6 +30,8 @@ export type WeddingMinAggregateOutputType = {
   coupleNameA: string | null
   coupleNameB: string | null
   bankAccount: string | null
+  email: string | null
+  venue: string | null
   date: Date | null
   locale: string | null
   createdAt: Date | null
@@ -41,6 +43,8 @@ export type WeddingMaxAggregateOutputType = {
   coupleNameA: string | null
   coupleNameB: string | null
   bankAccount: string | null
+  email: string | null
+  venue: string | null
   date: Date | null
   locale: string | null
   createdAt: Date | null
@@ -52,6 +56,8 @@ export type WeddingCountAggregateOutputType = {
   coupleNameA: number
   coupleNameB: number
   bankAccount: number
+  email: number
+  venue: number
   date: number
   locale: number
   createdAt: number
@@ -65,6 +71,8 @@ export type WeddingMinAggregateInputType = {
   coupleNameA?: true
   coupleNameB?: true
   bankAccount?: true
+  email?: true
+  venue?: true
   date?: true
   locale?: true
   createdAt?: true
@@ -76,6 +84,8 @@ export type WeddingMaxAggregateInputType = {
   coupleNameA?: true
   coupleNameB?: true
   bankAccount?: true
+  email?: true
+  venue?: true
   date?: true
   locale?: true
   createdAt?: true
@@ -87,6 +97,8 @@ export type WeddingCountAggregateInputType = {
   coupleNameA?: true
   coupleNameB?: true
   bankAccount?: true
+  email?: true
+  venue?: true
   date?: true
   locale?: true
   createdAt?: true
@@ -171,6 +183,8 @@ export type WeddingGroupByOutputType = {
   coupleNameA: string
   coupleNameB: string
   bankAccount: string | null
+  email: string | null
+  venue: string | null
   date: Date | null
   locale: string
   createdAt: Date
@@ -203,6 +217,8 @@ export type WeddingWhereInput = {
   coupleNameA?: Prisma.StringFilter<"Wedding"> | string
   coupleNameB?: Prisma.StringFilter<"Wedding"> | string
   bankAccount?: Prisma.StringNullableFilter<"Wedding"> | string | null
+  email?: Prisma.StringNullableFilter<"Wedding"> | string | null
+  venue?: Prisma.StringNullableFilter<"Wedding"> | string | null
   date?: Prisma.DateTimeNullableFilter<"Wedding"> | Date | string | null
   locale?: Prisma.StringFilter<"Wedding"> | string
   createdAt?: Prisma.DateTimeFilter<"Wedding"> | Date | string
@@ -222,6 +238,8 @@ export type WeddingOrderByWithRelationInput = {
   coupleNameA?: Prisma.SortOrder
   coupleNameB?: Prisma.SortOrder
   bankAccount?: Prisma.SortOrderInput | Prisma.SortOrder
+  email?: Prisma.SortOrderInput | Prisma.SortOrder
+  venue?: Prisma.SortOrderInput | Prisma.SortOrder
   date?: Prisma.SortOrderInput | Prisma.SortOrder
   locale?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -244,6 +262,8 @@ export type WeddingWhereUniqueInput = Prisma.AtLeast<{
   coupleNameA?: Prisma.StringFilter<"Wedding"> | string
   coupleNameB?: Prisma.StringFilter<"Wedding"> | string
   bankAccount?: Prisma.StringNullableFilter<"Wedding"> | string | null
+  email?: Prisma.StringNullableFilter<"Wedding"> | string | null
+  venue?: Prisma.StringNullableFilter<"Wedding"> | string | null
   date?: Prisma.DateTimeNullableFilter<"Wedding"> | Date | string | null
   locale?: Prisma.StringFilter<"Wedding"> | string
   createdAt?: Prisma.DateTimeFilter<"Wedding"> | Date | string
@@ -263,6 +283,8 @@ export type WeddingOrderByWithAggregationInput = {
   coupleNameA?: Prisma.SortOrder
   coupleNameB?: Prisma.SortOrder
   bankAccount?: Prisma.SortOrderInput | Prisma.SortOrder
+  email?: Prisma.SortOrderInput | Prisma.SortOrder
+  venue?: Prisma.SortOrderInput | Prisma.SortOrder
   date?: Prisma.SortOrderInput | Prisma.SortOrder
   locale?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -280,6 +302,8 @@ export type WeddingScalarWhereWithAggregatesInput = {
   coupleNameA?: Prisma.StringWithAggregatesFilter<"Wedding"> | string
   coupleNameB?: Prisma.StringWithAggregatesFilter<"Wedding"> | string
   bankAccount?: Prisma.StringNullableWithAggregatesFilter<"Wedding"> | string | null
+  email?: Prisma.StringNullableWithAggregatesFilter<"Wedding"> | string | null
+  venue?: Prisma.StringNullableWithAggregatesFilter<"Wedding"> | string | null
   date?: Prisma.DateTimeNullableWithAggregatesFilter<"Wedding"> | Date | string | null
   locale?: Prisma.StringWithAggregatesFilter<"Wedding"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Wedding"> | Date | string
@@ -291,6 +315,8 @@ export type WeddingCreateInput = {
   coupleNameA: string
   coupleNameB: string
   bankAccount?: string | null
+  email?: string | null
+  venue?: string | null
   date?: Date | string | null
   locale?: string
   createdAt?: Date | string
@@ -310,6 +336,8 @@ export type WeddingUncheckedCreateInput = {
   coupleNameA: string
   coupleNameB: string
   bankAccount?: string | null
+  email?: string | null
+  venue?: string | null
   date?: Date | string | null
   locale?: string
   createdAt?: Date | string
@@ -329,6 +357,8 @@ export type WeddingUpdateInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -348,6 +378,8 @@ export type WeddingUncheckedUpdateInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -367,6 +399,8 @@ export type WeddingCreateManyInput = {
   coupleNameA: string
   coupleNameB: string
   bankAccount?: string | null
+  email?: string | null
+  venue?: string | null
   date?: Date | string | null
   locale?: string
   createdAt?: Date | string
@@ -378,6 +412,8 @@ export type WeddingUpdateManyMutationInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -389,6 +425,8 @@ export type WeddingUncheckedUpdateManyInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -400,6 +438,8 @@ export type WeddingCountOrderByAggregateInput = {
   coupleNameA?: Prisma.SortOrder
   coupleNameB?: Prisma.SortOrder
   bankAccount?: Prisma.SortOrder
+  email?: Prisma.SortOrder
+  venue?: Prisma.SortOrder
   date?: Prisma.SortOrder
   locale?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -411,6 +451,8 @@ export type WeddingMaxOrderByAggregateInput = {
   coupleNameA?: Prisma.SortOrder
   coupleNameB?: Prisma.SortOrder
   bankAccount?: Prisma.SortOrder
+  email?: Prisma.SortOrder
+  venue?: Prisma.SortOrder
   date?: Prisma.SortOrder
   locale?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -422,6 +464,8 @@ export type WeddingMinOrderByAggregateInput = {
   coupleNameA?: Prisma.SortOrder
   coupleNameB?: Prisma.SortOrder
   bankAccount?: Prisma.SortOrder
+  email?: Prisma.SortOrder
+  venue?: Prisma.SortOrder
   date?: Prisma.SortOrder
   locale?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -566,6 +610,8 @@ export type WeddingCreateWithoutUsersInput = {
   coupleNameA: string
   coupleNameB: string
   bankAccount?: string | null
+  email?: string | null
+  venue?: string | null
   date?: Date | string | null
   locale?: string
   createdAt?: Date | string
@@ -584,6 +630,8 @@ export type WeddingUncheckedCreateWithoutUsersInput = {
   coupleNameA: string
   coupleNameB: string
   bankAccount?: string | null
+  email?: string | null
+  venue?: string | null
   date?: Date | string | null
   locale?: string
   createdAt?: Date | string
@@ -618,6 +666,8 @@ export type WeddingUpdateWithoutUsersInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -636,6 +686,8 @@ export type WeddingUncheckedUpdateWithoutUsersInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -654,6 +706,8 @@ export type WeddingCreateWithoutGuestsInput = {
   coupleNameA: string
   coupleNameB: string
   bankAccount?: string | null
+  email?: string | null
+  venue?: string | null
   date?: Date | string | null
   locale?: string
   createdAt?: Date | string
@@ -672,6 +726,8 @@ export type WeddingUncheckedCreateWithoutGuestsInput = {
   coupleNameA: string
   coupleNameB: string
   bankAccount?: string | null
+  email?: string | null
+  venue?: string | null
   date?: Date | string | null
   locale?: string
   createdAt?: Date | string
@@ -706,6 +762,8 @@ export type WeddingUpdateWithoutGuestsInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -724,6 +782,8 @@ export type WeddingUncheckedUpdateWithoutGuestsInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -742,6 +802,8 @@ export type WeddingCreateWithoutInvitationsInput = {
   coupleNameA: string
   coupleNameB: string
   bankAccount?: string | null
+  email?: string | null
+  venue?: string | null
   date?: Date | string | null
   locale?: string
   createdAt?: Date | string
@@ -760,6 +822,8 @@ export type WeddingUncheckedCreateWithoutInvitationsInput = {
   coupleNameA: string
   coupleNameB: string
   bankAccount?: string | null
+  email?: string | null
+  venue?: string | null
   date?: Date | string | null
   locale?: string
   createdAt?: Date | string
@@ -794,6 +858,8 @@ export type WeddingUpdateWithoutInvitationsInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -812,6 +878,8 @@ export type WeddingUncheckedUpdateWithoutInvitationsInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -830,6 +898,8 @@ export type WeddingCreateWithoutTablesInput = {
   coupleNameA: string
   coupleNameB: string
   bankAccount?: string | null
+  email?: string | null
+  venue?: string | null
   date?: Date | string | null
   locale?: string
   createdAt?: Date | string
@@ -848,6 +918,8 @@ export type WeddingUncheckedCreateWithoutTablesInput = {
   coupleNameA: string
   coupleNameB: string
   bankAccount?: string | null
+  email?: string | null
+  venue?: string | null
   date?: Date | string | null
   locale?: string
   createdAt?: Date | string
@@ -882,6 +954,8 @@ export type WeddingUpdateWithoutTablesInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -900,6 +974,8 @@ export type WeddingUncheckedUpdateWithoutTablesInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -918,6 +994,8 @@ export type WeddingCreateWithoutDecorationsInput = {
   coupleNameA: string
   coupleNameB: string
   bankAccount?: string | null
+  email?: string | null
+  venue?: string | null
   date?: Date | string | null
   locale?: string
   createdAt?: Date | string
@@ -936,6 +1014,8 @@ export type WeddingUncheckedCreateWithoutDecorationsInput = {
   coupleNameA: string
   coupleNameB: string
   bankAccount?: string | null
+  email?: string | null
+  venue?: string | null
   date?: Date | string | null
   locale?: string
   createdAt?: Date | string
@@ -970,6 +1050,8 @@ export type WeddingUpdateWithoutDecorationsInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -988,6 +1070,8 @@ export type WeddingUncheckedUpdateWithoutDecorationsInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1006,6 +1090,8 @@ export type WeddingCreateWithoutTasksInput = {
   coupleNameA: string
   coupleNameB: string
   bankAccount?: string | null
+  email?: string | null
+  venue?: string | null
   date?: Date | string | null
   locale?: string
   createdAt?: Date | string
@@ -1024,6 +1110,8 @@ export type WeddingUncheckedCreateWithoutTasksInput = {
   coupleNameA: string
   coupleNameB: string
   bankAccount?: string | null
+  email?: string | null
+  venue?: string | null
   date?: Date | string | null
   locale?: string
   createdAt?: Date | string
@@ -1058,6 +1146,8 @@ export type WeddingUpdateWithoutTasksInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1076,6 +1166,8 @@ export type WeddingUncheckedUpdateWithoutTasksInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1094,6 +1186,8 @@ export type WeddingCreateWithoutTemplatesInput = {
   coupleNameA: string
   coupleNameB: string
   bankAccount?: string | null
+  email?: string | null
+  venue?: string | null
   date?: Date | string | null
   locale?: string
   createdAt?: Date | string
@@ -1112,6 +1206,8 @@ export type WeddingUncheckedCreateWithoutTemplatesInput = {
   coupleNameA: string
   coupleNameB: string
   bankAccount?: string | null
+  email?: string | null
+  venue?: string | null
   date?: Date | string | null
   locale?: string
   createdAt?: Date | string
@@ -1146,6 +1242,8 @@ export type WeddingUpdateWithoutTemplatesInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1164,6 +1262,8 @@ export type WeddingUncheckedUpdateWithoutTemplatesInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1182,6 +1282,8 @@ export type WeddingCreateWithoutPhotosInput = {
   coupleNameA: string
   coupleNameB: string
   bankAccount?: string | null
+  email?: string | null
+  venue?: string | null
   date?: Date | string | null
   locale?: string
   createdAt?: Date | string
@@ -1200,6 +1302,8 @@ export type WeddingUncheckedCreateWithoutPhotosInput = {
   coupleNameA: string
   coupleNameB: string
   bankAccount?: string | null
+  email?: string | null
+  venue?: string | null
   date?: Date | string | null
   locale?: string
   createdAt?: Date | string
@@ -1234,6 +1338,8 @@ export type WeddingUpdateWithoutPhotosInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1252,6 +1358,8 @@ export type WeddingUncheckedUpdateWithoutPhotosInput = {
   coupleNameA?: Prisma.StringFieldUpdateOperationsInput | string
   coupleNameB?: Prisma.StringFieldUpdateOperationsInput | string
   bankAccount?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  venue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   date?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   locale?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1364,6 +1472,8 @@ export type WeddingSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   coupleNameA?: boolean
   coupleNameB?: boolean
   bankAccount?: boolean
+  email?: boolean
+  venue?: boolean
   date?: boolean
   locale?: boolean
   createdAt?: boolean
@@ -1384,6 +1494,8 @@ export type WeddingSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   coupleNameA?: boolean
   coupleNameB?: boolean
   bankAccount?: boolean
+  email?: boolean
+  venue?: boolean
   date?: boolean
   locale?: boolean
   createdAt?: boolean
@@ -1395,6 +1507,8 @@ export type WeddingSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   coupleNameA?: boolean
   coupleNameB?: boolean
   bankAccount?: boolean
+  email?: boolean
+  venue?: boolean
   date?: boolean
   locale?: boolean
   createdAt?: boolean
@@ -1406,12 +1520,14 @@ export type WeddingSelectScalar = {
   coupleNameA?: boolean
   coupleNameB?: boolean
   bankAccount?: boolean
+  email?: boolean
+  venue?: boolean
   date?: boolean
   locale?: boolean
   createdAt?: boolean
 }
 
-export type WeddingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "slug" | "coupleNameA" | "coupleNameB" | "bankAccount" | "date" | "locale" | "createdAt", ExtArgs["result"]["wedding"]>
+export type WeddingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "slug" | "coupleNameA" | "coupleNameB" | "bankAccount" | "email" | "venue" | "date" | "locale" | "createdAt", ExtArgs["result"]["wedding"]>
 export type WeddingInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   users?: boolean | Prisma.Wedding$usersArgs<ExtArgs>
   guests?: boolean | Prisma.Wedding$guestsArgs<ExtArgs>
@@ -1444,6 +1560,8 @@ export type $WeddingPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     coupleNameA: string
     coupleNameB: string
     bankAccount: string | null
+    email: string | null
+    venue: string | null
     date: Date | null
     locale: string
     createdAt: Date
@@ -1883,6 +2001,8 @@ export interface WeddingFieldRefs {
   readonly coupleNameA: Prisma.FieldRef<"Wedding", 'String'>
   readonly coupleNameB: Prisma.FieldRef<"Wedding", 'String'>
   readonly bankAccount: Prisma.FieldRef<"Wedding", 'String'>
+  readonly email: Prisma.FieldRef<"Wedding", 'String'>
+  readonly venue: Prisma.FieldRef<"Wedding", 'String'>
   readonly date: Prisma.FieldRef<"Wedding", 'DateTime'>
   readonly locale: Prisma.FieldRef<"Wedding", 'String'>
   readonly createdAt: Prisma.FieldRef<"Wedding", 'DateTime'>

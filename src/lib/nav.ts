@@ -11,6 +11,7 @@ export function navLinks(locale: Locale) {
     { href: "/invitacion", label: translate(locale, "nav.invitacion") },
     { href: "/invitaciones", label: translate(locale, "nav.invitaciones") },
     { href: "/fotos", label: translate(locale, "nav.fotos") },
+    { href: "/perfil", label: translate(locale, "nav.perfil") },
   ];
 }
 
