@@ -7,6 +7,7 @@ import type { InvitationView } from "@/lib/invitation-public";
 import { ALLERGY_OPTIONS, MUSIC_GENRES, mergeCustomTags } from "@/lib/guests";
 import { translate, type Locale } from "@/lib/i18n";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
+import GuestCard from "./GuestCard";
 
 interface InvitationPageProps {
   view: InvitationView;
@@ -23,7 +24,7 @@ const STATUS_KEY: Record<string, string> = {
 };
 
 /** Per-guest RSVP draft state for the form. */
-interface GuestDraft {
+export interface GuestDraft {
   rsvpStatus: RsvpStatus;
   plusOneName: string;
   bringsPlusOne: boolean;
@@ -55,8 +56,11 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
   const [currentView, setCurrentView] = useState<InvitationView>(view);
   const { content, wedding, invitees, bankAccount } = currentView;
 
-  const t = (key: string, vars?: Record<string, string | number>) =>
-    translate(locale, key, vars);
+  const t = useCallback(
+    (key: string, vars?: Record<string, string | number>) =>
+      translate(locale, key, vars),
+    [locale]
+  );
 
   const primary = isValidHexColor(content.colors.primary)
     ? content.colors.primary
@@ -182,239 +186,6 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
       </p>
     ) : null;
 
-  function GuestCard({
-    g,
-    draft,
-  }: {
-    g: InvitationView["invitees"][number];
-    draft: GuestDraft;
-  }) {
-    const isChild = !!(g as unknown as { isChild?: boolean }).isChild;
-    const hasPlusOne = g.plusOneAllowed && !isChild;
-    const declined = draft.rsvpStatus === "declined";
-    const isExpanded = expandedGuests.has(g.id);
-    const showDetails = isExpanded && !declined;
-
-    return (
-      <div className="overflow-hidden rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
-        <button
-          type="button"
-          onClick={() => toggleExpand(g.id)}
-          className="w-full px-4 py-3 text-left transition hover:bg-slate-50 active:bg-slate-100"
-        >
-          <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
-            {/* Name — always full width, wraps properly */}
-            <div className="min-w-0 sm:flex-1">
-              <p className="text-sm font-semibold text-slate-900 break-words">
-                {g.fullName}
-                {isChild && (
-                  <span className="ml-1.5 inline-block rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 leading-tight">
-                    {t("inv.child")}
-                  </span>
-                )}
-              </p>
-              {draft.rsvpStatus !== "pending" && (
-                <p className="mt-0.5 text-[11px] text-slate-500">
-                  {t("inv.currentResponse")}{" "}
-                  <span className="font-medium">{t(STATUS_KEY[draft.rsvpStatus])}</span>
-                </p>
-              )}
-            </div>
-
-            {/* Buttons + chevron row — wraps under name on mobile */}
-            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-              <button
-                type="button"
-                onClick={() => setStatusAndExpand(g.id, "confirmed")}
-                className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
-                  draft.rsvpStatus === "confirmed"
-                    ? "border-transparent text-white"
-                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                }`}
-                style={
-                  draft.rsvpStatus === "confirmed"
-                    ? { backgroundColor: primary }
-                    : undefined
-                }
-              >
-                {t("inv.optConfirmed")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatusAndExpand(g.id, "declined")}
-                className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
-                  draft.rsvpStatus === "declined"
-                    ? "border-transparent bg-red-500 text-white"
-                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                {t("inv.optDeclined")}
-              </button>
-              <svg
-                className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${
-                  isExpanded ? "rotate-180" : ""
-                }`}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path d="M6 9l6 6 6-6" />
-              </svg>
-            </div>
-          </div>
-        </button>
-
-        {/* Collapsible detail panel */}
-        <div
-          className={`overflow-hidden transition-all duration-200 ${
-            isExpanded ? "max-h-[999px] opacity-100" : "max-h-0 opacity-0"
-          }`}
-        >
-          {showDetails && (
-            <div className="border-t border-slate-100 px-4 py-3 space-y-3">
-              {/* Allergies */}
-              <fieldset>
-                <legend className="mb-1.5 text-[11px] font-medium text-slate-600">
-                  {t("inv.allergiesLabel")}
-                </legend>
-                <div className="flex flex-wrap gap-1.5">
-                  {(ALLERGY_OPTIONS as readonly string[]).map((opt) => {
-                    const active = draft.selectedAllergies.includes(opt);
-                    return (
-                      <button
-                        key={opt}
-                        type="button"
-                        onClick={() =>
-                          updateGuest(g.id, {
-                            selectedAllergies: active
-                              ? draft.selectedAllergies.filter((a) => a !== opt)
-                              : [...draft.selectedAllergies, opt],
-                          })
-                        }
-                        className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
-                          active
-                            ? "border-indigo-400 bg-indigo-50 text-indigo-700 shadow-sm"
-                            : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50"
-                        }`}
-                      >
-                        {opt}
-                      </button>
-                    );
-                  })}
-                </div>
-                <input
-                  type="text"
-                  value={draft.allergyOther}
-                  onChange={(e) => updateGuest(g.id, { allergyOther: e.target.value })}
-                  placeholder={t("inv.allergiesPlaceholder")}
-                  className="mt-2 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs focus:border-indigo-400 focus:outline-none"
-                />
-              </fieldset>
-
-              {/* Music — only for adults, wrapped for mobile */}
-              {!isChild && (
-                <fieldset>
-                  <legend className="mb-1.5 text-[11px] font-medium text-slate-600">
-                    {t("inv.musicLabel")}
-                  </legend>
-                  <div className="flex flex-wrap gap-1">
-                    {(MUSIC_GENRES as readonly string[]).map((opt) => {
-                      const active = draft.selectedGenres.includes(opt);
-                      return (
-                        <button
-                          key={opt}
-                          type="button"
-                          onClick={() =>
-                            updateGuest(g.id, {
-                              selectedGenres: active
-                                ? draft.selectedGenres.filter((m) => m !== opt)
-                                : [...draft.selectedGenres, opt],
-                            })
-                          }
-                          className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
-                            active
-                              ? "border-indigo-400 bg-indigo-50 text-indigo-700 shadow-sm"
-                              : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50"
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <input
-                    type="text"
-                    value={draft.genreOther}
-                    onChange={(e) => updateGuest(g.id, { genreOther: e.target.value })}
-                    placeholder={t("inv.musicPlaceholder")}
-                    className="mt-2 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs focus:border-indigo-400 focus:outline-none"
-                  />
-                </fieldset>
-              )}
-
-              {/* Plus one — only for adults with plusOneAllowed */}
-                            {hasPlusOne && (
-                              <div>
-                                {/* Toggle: bringing a plus one or not */}
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      updateGuest(g.id, {
-                                        bringsPlusOne: true,
-                                      })
-                                    }
-                                    className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
-                                      draft.bringsPlusOne
-                                        ? "border-transparent text-white"
-                                        : "border-slate-200 bg-white text-slate-500"
-                                    }`}
-                                    style={
-                                      draft.bringsPlusOne
-                                        ? { backgroundColor: primary }
-                                        : undefined
-                                    }
-                                  >
-                                    {t("inv.plusOneBring")}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => updateGuest(g.id, { bringsPlusOne: false, plusOneName: "" })}
-                                    className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
-                                      !draft.bringsPlusOne
-                                        ? "border-transparent bg-red-500 text-white"
-                                        : "border-slate-200 bg-white text-slate-500"
-                                    }`}
-                                  >
-                                    {t("inv.plusOneNoBring")}
-                                  </button>
-                                </div>
-
-                                {/* Name input — only when bringing a plus one */}
-                                {draft.bringsPlusOne && (
-                                  <div className="mt-2">
-                                    <label className="mb-1 text-[11px] font-medium text-slate-600 block">
-                                      {t("inv.yourPlusOne")}
-                                    </label>
-                                    <input
-                                      type="text"
-                                      value={draft.plusOneName}
-                                      onChange={(e) => updateGuest(g.id, { plusOneName: e.target.value })}
-                                      placeholder={t("invman.plusOnePlaceholder")}
-                                      className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs focus:border-indigo-400 focus:outline-none"
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                            )}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <main
       className="min-h-screen bg-[#F3EFE8] px-4 py-10 text-[#403B36] sm:px-6"
@@ -516,7 +287,17 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
                   </p>
                   <div className="space-y-2">
                     {adults.map((g) => (
-                      <GuestCard key={g.id} g={g} draft={drafts[g.id] ?? initDraft(g)} />
+                      <GuestCard
+                        key={g.id}
+                        g={g}
+                        draft={drafts[g.id] ?? initDraft(g)}
+                        primary={primary}
+                        isExpanded={expandedGuests.has(g.id)}
+                        onToggle={toggleExpand}
+                        onStatusChange={setStatusAndExpand}
+                        onUpdate={updateGuest}
+                        t={t}
+                      />
                     ))}
                   </div>
                 </div>
@@ -529,7 +310,17 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
                   </p>
                   <div className="space-y-2">
                     {children.map((g) => (
-                      <GuestCard key={g.id} g={g} draft={drafts[g.id] ?? initDraft(g)} />
+                      <GuestCard
+                        key={g.id}
+                        g={g}
+                        draft={drafts[g.id] ?? initDraft(g)}
+                        primary={primary}
+                        isExpanded={expandedGuests.has(g.id)}
+                        onToggle={toggleExpand}
+                        onStatusChange={setStatusAndExpand}
+                        onUpdate={updateGuest}
+                        t={t}
+                      />
                     ))}
                   </div>
                 </div>
