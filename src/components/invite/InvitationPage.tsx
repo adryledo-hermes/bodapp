@@ -26,6 +26,7 @@ const STATUS_KEY: Record<string, string> = {
 interface GuestDraft {
   rsvpStatus: RsvpStatus;
   plusOneName: string;
+  bringsPlusOne: boolean;
   selectedAllergies: string[];
   allergyOther: string;
   selectedGenres: string[];
@@ -36,6 +37,7 @@ function initDraft(g: InvitationView["invitees"][number]): GuestDraft {
   return {
     rsvpStatus: g.rsvpStatus !== "pending" ? g.rsvpStatus : "pending",
     plusOneName: g.plusOneName ?? "",
+    bringsPlusOne: !!g.plusOneName,
     selectedAllergies: (ALLERGY_OPTIONS as readonly string[]).filter((a) =>
       g.allergies.includes(a)
     ),
@@ -149,7 +151,7 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
       const gs = Object.entries(drafts).map(([id, d]) => ({
         id,
         rsvpStatus: d.rsvpStatus,
-        plusOneName: d.plusOneName.trim() || null,
+        plusOneName: d.bringsPlusOne ? (d.plusOneName.trim() || null) : null,
         allergies: mergeCustomTags(d.selectedAllergies, d.allergyOther),
         musicPrefs: mergeCustomTags(d.selectedGenres, d.genreOther),
       }));
@@ -360,16 +362,16 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
                                     type="button"
                                     onClick={() =>
                                       updateGuest(g.id, {
-                                        plusOneName: draft.plusOneName ? draft.plusOneName : "",
+                                        bringsPlusOne: true,
                                       })
                                     }
                                     className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
-                                      draft.plusOneName !== ""
+                                      draft.bringsPlusOne
                                         ? "border-transparent text-white"
                                         : "border-slate-200 bg-white text-slate-500"
                                     }`}
                                     style={
-                                      draft.plusOneName !== ""
+                                      draft.bringsPlusOne
                                         ? { backgroundColor: primary }
                                         : undefined
                                     }
@@ -378,9 +380,9 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => updateGuest(g.id, { plusOneName: "" })}
+                                    onClick={() => updateGuest(g.id, { bringsPlusOne: false, plusOneName: "" })}
                                     className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
-                                      draft.plusOneName === ""
+                                      !draft.bringsPlusOne
                                         ? "border-transparent bg-red-500 text-white"
                                         : "border-slate-200 bg-white text-slate-500"
                                     }`}
@@ -390,7 +392,7 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
                                 </div>
 
                                 {/* Name input — only when bringing a plus one */}
-                                {draft.plusOneName !== "" && (
+                                {draft.bringsPlusOne && (
                                   <div className="mt-2">
                                     <label className="mb-1 text-[11px] font-medium text-slate-600 block">
                                       {t("inv.yourPlusOne")}
