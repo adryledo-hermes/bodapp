@@ -62,6 +62,7 @@ const SAFE_KEYS: (keyof PublicGuest)[] = [
  * internal/panel-only fields, and coerce the stored status to a known RSVP
  * status (unknown stored values fall back to "pending"). Never leaks a field a
  * guest shouldn't see — only the whitelisted keys are copied.
+ * Children always have plusOneAllowed=false (cannot bring a plus one).
  */
 export function publicPlateOf(g: InviteeGuest): PublicGuest {
   const plate: PublicGuest = {
@@ -71,8 +72,8 @@ export function publicPlateOf(g: InviteeGuest): PublicGuest {
     isChild: g.isChild ?? false,
     allergies: Array.isArray(g.allergies) ? g.allergies : [],
     musicPrefs: Array.isArray(g.musicPrefs) ? g.musicPrefs : [],
-    plusOneAllowed: g.plusOneAllowed,
-    plusOneName: g.plusOneName,
+    plusOneAllowed: g.isChild ? false : g.plusOneAllowed,
+    plusOneName: g.isChild ? null : g.plusOneName,
     rsvpStatus: isRsvpStatus(g.rsvpStatus) ? g.rsvpStatus : "pending",
   };
   // Safety net: never let an unexpected key slip through.
@@ -100,15 +101,9 @@ export interface InvitationView {
   inline: { imageUrl: string | null };
 }
 
-/** Build the "¡Hola, Ana y Luis!" greeting for the invitee(s). */
-function buildGreeting(guests: PublicGuest[]): string {
-  const names = guests.map((g) => g.fullName.trim()).filter(Boolean);
-  if (names.length === 0) return "¡Hola!";
-  // Two-list joins: "A y B" (and "A, B y C" for more than two).
-  if (names.length === 1) return `¡Hola, ${names[0]}!`;
-  if (names.length === 2) return `¡Hola, ${names[0]} y ${names[1]}!`;
-  const last = names[names.length - 1];
-  return `¡Hola, ${names.slice(0, -1).join(", ")} y ${last}!`;
+/** Build greeting — now returns empty (redundant with "For" label). */
+function buildGreeting(_guests: PublicGuest[]): string {
+  return "";
 }
 
 /**
@@ -116,8 +111,7 @@ function buildGreeting(guests: PublicGuest[]): string {
  * content, the invitation and the invitee Guest rows. Pure, no Prisma.
  * - Normalizes the template content against DEFAULT_TEMPLATE.
  * - Applies publicPlateOf to each invitee so the page never sees secrets.
- * - Personalizes the greeting to the invitee(s) by name.
- * - Surfaces the couple's bank account for the "🎁 Transferencia" section.
+ * - Surfaces the couple's bank account for the "Transferencia" section.
  */
 export function buildInvitationView(params: {
   wedding: { coupleNameA: string; coupleNameB: string; bankAccount: string | null; venue: string | null };
@@ -128,8 +122,6 @@ export function buildInvitationView(params: {
 }): InvitationView {
   const base = normalizeTemplateContent(params.template);
   const inline = normalizeInvitationContent(params.inline);
-  // TitleA/B come from the Wedding row (set in Profile) with inline overrides.
-  // Venue comes ONLY from Wedding (Profile) — it's no longer in InvitationContent.
   const titleA = inline.titleA || params.wedding.coupleNameA;
   const titleB = inline.titleB || params.wedding.coupleNameB;
   const venue = params.wedding.venue || "";
@@ -157,8 +149,6 @@ export function buildInvitationView(params: {
     invitees,
     greeting: buildGreeting(invitees),
     bankAccount: params.wedding.bankAccount ?? null,
-    // The design is now template-only; invitations may override only their
-    // image. Older rows without content inherit the template image.
     inline: {
       imageUrl: params.inline ? inline.imageUrl : base.imageUrl,
     }

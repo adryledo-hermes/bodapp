@@ -25,6 +25,7 @@ export const RSVP_STATUSES: { value: RsvpStatus; label: string }[] = [
 export interface NormalizedRsvp {
   id: string;
   rsvpStatus: RsvpStatus;
+  plusOneName: string | null;
   allergies: string[];
   musicPrefs: string[];
 }
@@ -71,6 +72,7 @@ export function normalizeRsvpEntry(raw: unknown): NormalizedRsvp {
   return {
     id,
     rsvpStatus: status,
+    plusOneName: typeof r.plusOneName === "string" ? r.plusOneName : null,
     allergies: toStringList(r.allergies),
     musicPrefs: toStringList(r.musicPrefs),
   };

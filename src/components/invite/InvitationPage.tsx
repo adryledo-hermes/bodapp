@@ -25,6 +25,7 @@ const STATUS_KEY: Record<string, string> = {
 /** Per-guest RSVP draft state for the form. */
 interface GuestDraft {
   rsvpStatus: RsvpStatus;
+  plusOneName: string;
   selectedAllergies: string[];
   allergyOther: string;
   selectedGenres: string[];
@@ -34,6 +35,7 @@ interface GuestDraft {
 function initDraft(g: InvitationView["invitees"][number]): GuestDraft {
   return {
     rsvpStatus: g.rsvpStatus !== "pending" ? g.rsvpStatus : "pending",
+    plusOneName: g.plusOneName ?? "",
     selectedAllergies: (ALLERGY_OPTIONS as readonly string[]).filter((a) =>
       g.allergies.includes(a)
     ),
@@ -49,7 +51,7 @@ function initDraft(g: InvitationView["invitees"][number]): GuestDraft {
 
 export default function InvitationPage({ view, locale }: InvitationPageProps) {
   const [currentView, setCurrentView] = useState<InvitationView>(view);
-  const { content, wedding, invitees, greeting, bankAccount } = currentView;
+  const { content, wedding, invitees, bankAccount } = currentView;
 
   const t = (key: string, vars?: Record<string, string | number>) =>
     translate(locale, key, vars);
@@ -61,7 +63,6 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
     ? content.colors.accent
     : FALLBACK_ACCENT;
 
-  // Per-guest draft state
   const [drafts, setDrafts] = useState<Record<string, GuestDraft>>(() => {
     const map: Record<string, GuestDraft> = {};
     for (const g of invitees) {
@@ -70,13 +71,10 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
     return map;
   });
 
-  // Accordion: which guest cards have their details panel expanded
   const [expandedGuests, setExpandedGuests] = useState<Set<string>>(new Set());
-
   const [submitting, setSubmitting] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
-  // Update the countdown every 30 seconds.
   useEffect(() => {
     if (!content.date) return;
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
@@ -104,7 +102,6 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
     [wedding.coupleNameA, wedding.coupleNameB].filter(Boolean).join(" & ") ||
     t("inv.ours");
 
-  // Split invitees into adults and children
   const adults = invitees.filter((g) => !g.isChild);
   const children = invitees.filter((g) => g.isChild);
 
@@ -149,6 +146,7 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
       const gs = Object.entries(drafts).map(([id, d]) => ({
         id,
         rsvpStatus: d.rsvpStatus,
+        plusOneName: d.plusOneName.trim() || null,
         allergies: mergeCustomTags(d.selectedAllergies, d.allergyOther),
         musicPrefs: mergeCustomTags(d.selectedGenres, d.genreOther),
       }));
@@ -179,7 +177,6 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
       </p>
     ) : null;
 
-  /** Render one guest's accordion-style RSVP card. */
   function GuestCard({
     g,
     draft,
@@ -188,21 +185,21 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
     draft: GuestDraft;
   }) {
     const isChild = !!(g as unknown as { isChild?: boolean }).isChild;
+    const hasPlusOne = g.plusOneAllowed && !isChild;
     const declined = draft.rsvpStatus === "declined";
     const isExpanded = expandedGuests.has(g.id);
     const showDetails = isExpanded && !declined;
 
     return (
       <div className="overflow-hidden rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
-        {/* Clickable header — toggles accordion */}
         <button
           type="button"
           onClick={() => toggleExpand(g.id)}
           className="w-full px-4 py-3 text-left transition hover:bg-slate-50 active:bg-slate-100"
         >
-          <div className="flex flex-wrap items-center gap-1.5 sm:flex-nowrap sm:gap-3">
-            {/* Name — full width on mobile so it doesn't compress */}
-            <div className="w-full min-w-0 sm:w-auto sm:flex-1">
+          <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
+            {/* Name — always full width, wraps properly */}
+            <div className="min-w-0 sm:flex-1">
               <p className="text-sm font-semibold text-slate-900 break-words">
                 {g.fullName}
                 {isChild && (
@@ -219,12 +216,12 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
               )}
             </div>
 
-            {/* Status buttons — below name on mobile, beside on sm+ */}
-            <div className="flex shrink-0 gap-1.5" onClick={(e) => e.stopPropagation()}>
+            {/* Buttons + chevron row — wraps under name on mobile */}
+            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
               <button
                 type="button"
                 onClick={() => setStatusAndExpand(g.id, "confirmed")}
-                className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition whitespace-nowrap ${
+                className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
                   draft.rsvpStatus === "confirmed"
                     ? "border-transparent text-white"
                     : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
@@ -240,7 +237,7 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
               <button
                 type="button"
                 onClick={() => setStatusAndExpand(g.id, "declined")}
-                className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition whitespace-nowrap ${
+                className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
                   draft.rsvpStatus === "declined"
                     ? "border-transparent bg-red-500 text-white"
                     : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
@@ -248,20 +245,18 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
               >
                 {t("inv.optDeclined")}
               </button>
+              <svg
+                className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${
+                  isExpanded ? "rotate-180" : ""
+                }`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
             </div>
-
-            {/* Chevron */}
-            <svg
-              className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${
-                isExpanded ? "rotate-180" : ""
-              }`}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path d="M6 9l6 6 6-6" />
-            </svg>
           </div>
         </button>
 
@@ -273,7 +268,7 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
         >
           {showDetails && (
             <div className="border-t border-slate-100 px-4 py-3 space-y-3">
-              {/* Allergies — same for adults and children */}
+              {/* Allergies */}
               <fieldset>
                 <legend className="mb-1.5 text-[11px] font-medium text-slate-600">
                   {t("inv.allergiesLabel")}
@@ -312,7 +307,7 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
                 />
               </fieldset>
 
-              {/* Music — only for adults, omitted for children */}
+              {/* Music — only for adults */}
               {!isChild && (
                 <fieldset>
                   <legend className="mb-1.5 text-[11px] font-medium text-slate-600">
@@ -351,6 +346,22 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
                     className="mt-2 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs focus:border-indigo-400 focus:outline-none"
                   />
                 </fieldset>
+              )}
+
+              {/* Plus one name — only for adults with plusOneAllowed */}
+              {hasPlusOne && (
+                <div>
+                  <label className="mb-1 text-[11px] font-medium text-slate-600 block">
+                    {t("inv.yourPlusOne")}
+                  </label>
+                  <input
+                    type="text"
+                    value={draft.plusOneName}
+                    onChange={(e) => updateGuest(g.id, { plusOneName: e.target.value })}
+                    placeholder={t("invman.plusOnePlaceholder")}
+                    className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs focus:border-indigo-400 focus:outline-none"
+                  />
+                </div>
               )}
             </div>
           )}
@@ -393,11 +404,8 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
             <h1 className="inv-serif mt-5 text-4xl font-normal italic tracking-wide text-[#403B36] sm:text-5xl">
               {coupleTitle}
             </h1>
-            <p className="mt-5 text-base text-[#7A6A5A]">
-              {greeting}
-            </p>
             {invitees.length > 0 && (
-              <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[#8B8176]">
+              <p className="mt-5 text-xs uppercase tracking-[0.18em] text-[#8B8176]">
                 {t("inv.forLabel")} {invitees.map((g) => g.fullName).join(", ")}
               </p>
             )}
@@ -450,7 +458,7 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
               </div>
             ) : null}
 
-            {/* RSVP Form — accordion cards */}
+            {/* RSVP Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
               <h2 className="text-lg font-semibold text-slate-900">
                 {t("inv.confirmTitle")}

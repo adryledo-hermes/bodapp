@@ -193,6 +193,7 @@ describe("POST /api/rsvp", () => {
       where: { id: "g-luis" },
       data: {
         rsvpStatus: "confirmed",
+        plusOneName: null,
         allergies: ["lácteos"],
         musicPrefs: ["jazz"],
       },

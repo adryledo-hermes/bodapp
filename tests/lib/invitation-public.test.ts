@@ -60,7 +60,7 @@ describe("buildInvitationView", () => {
     expect(view.content.titleA).toBe(wedding.coupleNameA);
     expect(view.content.venue).toBe(wedding.venue);
     expect(view.content.schedule).toContain("Ceremonia");
-    expect(view.greeting).toContain("Ana y Luis");
+    expect(view.greeting).toBe("");
   });
 
   it("allows invitation-specific text/image overrides", () => {
