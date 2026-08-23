@@ -85,7 +85,7 @@ model Guest {
   fullName            String
   alias               String?
   relationshipContext String? // "de qué los conocemos"
-  phone               String // E.164 primary phone
+  phone               String?
   allergies           String[] @default([])
   musicPrefs          String[] @default([]) // music GENRES (multiselect)
   favoriteSong        String? // free-text favourite song

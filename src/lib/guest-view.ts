@@ -18,7 +18,7 @@ export interface GuestCardData {
   alias: string | null;
   isChild: boolean;
   relationshipContext: string | null;
-  phone: string;
+  phone: string | null;
   allergies: string[];
   musicPrefs: string[];
   favoriteSong: string | null;

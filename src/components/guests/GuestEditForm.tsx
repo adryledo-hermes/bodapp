@@ -115,7 +115,7 @@ export default function GuestEditForm({ guest, locale, onClose }: GuestEditFormP
         contextSelect === "Otro"
           ? contextOther.trim() || null
           : contextSelect || null,
-      phone: phone.trim(),
+      phone: isChild ? null : (phone?.trim() || null),
       allergies: mergeCustomTags(selectedAllergies, allergyOther),
       musicPrefs: mergeCustomTags(selectedGenres, genreOther),
       favoriteSong: favoriteSong.trim() || null,
@@ -259,18 +259,22 @@ export default function GuestEditForm({ guest, locale, onClose }: GuestEditFormP
         )}
         {contextSelect !== "Otro" && <div className="mb-4" />}
 
-        <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="ef-phone">
-          {t("guest.phone")} *
-        </label>
-        <input
-          id="ef-phone"
-          type="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          className={`mb-1 ${inputClassName}`}
-          required
-        />
-        <p className="mb-4 text-xs text-slate-400">{t("guest.phoneHint")}</p>
+        {!isChild && (
+          <>
+            <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="ef-phone">
+              {t("guest.phone")}
+            </label>
+            <input
+              id="ef-phone"
+              type="tel"
+              value={phone ?? ""}
+              onChange={(e) => setPhone(e.target.value)}
+              className={`mb-1 ${inputClassName}`}
+              required
+            />
+            <p className="mb-4 text-xs text-slate-400">{t("guest.phoneHint")}</p>
+          </>
+        )}
 
         <span className="mb-1 block text-sm font-medium text-slate-700">
           {t("guest.allergies")}

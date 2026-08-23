@@ -279,7 +279,7 @@ export type GuestGroupByOutputType = {
   fullName: string
   alias: string | null
   relationshipContext: string | null
-  phone: string
+  phone: string | null
   allergies: string[]
   musicPrefs: string[]
   favoriteSong: string | null
@@ -327,7 +327,7 @@ export type GuestWhereInput = {
   fullName?: Prisma.StringFilter<"Guest"> | string
   alias?: Prisma.StringNullableFilter<"Guest"> | string | null
   relationshipContext?: Prisma.StringNullableFilter<"Guest"> | string | null
-  phone?: Prisma.StringFilter<"Guest"> | string
+  phone?: Prisma.StringNullableFilter<"Guest"> | string | null
   allergies?: Prisma.StringNullableListFilter<"Guest">
   musicPrefs?: Prisma.StringNullableListFilter<"Guest">
   favoriteSong?: Prisma.StringNullableFilter<"Guest"> | string | null
@@ -357,7 +357,7 @@ export type GuestOrderByWithRelationInput = {
   fullName?: Prisma.SortOrder
   alias?: Prisma.SortOrderInput | Prisma.SortOrder
   relationshipContext?: Prisma.SortOrderInput | Prisma.SortOrder
-  phone?: Prisma.SortOrder
+  phone?: Prisma.SortOrderInput | Prisma.SortOrder
   allergies?: Prisma.SortOrder
   musicPrefs?: Prisma.SortOrder
   favoriteSong?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -391,7 +391,7 @@ export type GuestWhereUniqueInput = Prisma.AtLeast<{
   fullName?: Prisma.StringFilter<"Guest"> | string
   alias?: Prisma.StringNullableFilter<"Guest"> | string | null
   relationshipContext?: Prisma.StringNullableFilter<"Guest"> | string | null
-  phone?: Prisma.StringFilter<"Guest"> | string
+  phone?: Prisma.StringNullableFilter<"Guest"> | string | null
   allergies?: Prisma.StringNullableListFilter<"Guest">
   musicPrefs?: Prisma.StringNullableListFilter<"Guest">
   favoriteSong?: Prisma.StringNullableFilter<"Guest"> | string | null
@@ -420,7 +420,7 @@ export type GuestOrderByWithAggregationInput = {
   fullName?: Prisma.SortOrder
   alias?: Prisma.SortOrderInput | Prisma.SortOrder
   relationshipContext?: Prisma.SortOrderInput | Prisma.SortOrder
-  phone?: Prisma.SortOrder
+  phone?: Prisma.SortOrderInput | Prisma.SortOrder
   allergies?: Prisma.SortOrder
   musicPrefs?: Prisma.SortOrder
   favoriteSong?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -453,7 +453,7 @@ export type GuestScalarWhereWithAggregatesInput = {
   fullName?: Prisma.StringWithAggregatesFilter<"Guest"> | string
   alias?: Prisma.StringNullableWithAggregatesFilter<"Guest"> | string | null
   relationshipContext?: Prisma.StringNullableWithAggregatesFilter<"Guest"> | string | null
-  phone?: Prisma.StringWithAggregatesFilter<"Guest"> | string
+  phone?: Prisma.StringNullableWithAggregatesFilter<"Guest"> | string | null
   allergies?: Prisma.StringNullableListFilter<"Guest">
   musicPrefs?: Prisma.StringNullableListFilter<"Guest">
   favoriteSong?: Prisma.StringNullableWithAggregatesFilter<"Guest"> | string | null
@@ -477,7 +477,7 @@ export type GuestCreateInput = {
   fullName: string
   alias?: string | null
   relationshipContext?: string | null
-  phone: string
+  phone?: string | null
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
   favoriteSong?: string | null
@@ -505,7 +505,7 @@ export type GuestUncheckedCreateInput = {
   fullName: string
   alias?: string | null
   relationshipContext?: string | null
-  phone: string
+  phone?: string | null
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
   favoriteSong?: string | null
@@ -531,7 +531,7 @@ export type GuestUpdateInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   relationshipContext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
   favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -559,7 +559,7 @@ export type GuestUncheckedUpdateInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   relationshipContext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
   favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -586,7 +586,7 @@ export type GuestCreateManyInput = {
   fullName: string
   alias?: string | null
   relationshipContext?: string | null
-  phone: string
+  phone?: string | null
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
   favoriteSong?: string | null
@@ -610,7 +610,7 @@ export type GuestUpdateManyMutationInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   relationshipContext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
   favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -633,7 +633,7 @@ export type GuestUncheckedUpdateManyInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   relationshipContext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
   favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -947,7 +947,7 @@ export type GuestCreateWithoutWeddingInput = {
   fullName: string
   alias?: string | null
   relationshipContext?: string | null
-  phone: string
+  phone?: string | null
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
   favoriteSong?: string | null
@@ -973,7 +973,7 @@ export type GuestUncheckedCreateWithoutWeddingInput = {
   fullName: string
   alias?: string | null
   relationshipContext?: string | null
-  phone: string
+  phone?: string | null
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
   favoriteSong?: string | null
@@ -1029,7 +1029,7 @@ export type GuestScalarWhereInput = {
   fullName?: Prisma.StringFilter<"Guest"> | string
   alias?: Prisma.StringNullableFilter<"Guest"> | string | null
   relationshipContext?: Prisma.StringNullableFilter<"Guest"> | string | null
-  phone?: Prisma.StringFilter<"Guest"> | string
+  phone?: Prisma.StringNullableFilter<"Guest"> | string | null
   allergies?: Prisma.StringNullableListFilter<"Guest">
   musicPrefs?: Prisma.StringNullableListFilter<"Guest">
   favoriteSong?: Prisma.StringNullableFilter<"Guest"> | string | null
@@ -1053,7 +1053,7 @@ export type GuestCreateWithoutFromInput = {
   fullName: string
   alias?: string | null
   relationshipContext?: string | null
-  phone: string
+  phone?: string | null
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
   favoriteSong?: string | null
@@ -1080,7 +1080,7 @@ export type GuestUncheckedCreateWithoutFromInput = {
   fullName: string
   alias?: string | null
   relationshipContext?: string | null
-  phone: string
+  phone?: string | null
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
   favoriteSong?: string | null
@@ -1110,7 +1110,7 @@ export type GuestCreateWithoutToInput = {
   fullName: string
   alias?: string | null
   relationshipContext?: string | null
-  phone: string
+  phone?: string | null
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
   favoriteSong?: string | null
@@ -1137,7 +1137,7 @@ export type GuestUncheckedCreateWithoutToInput = {
   fullName: string
   alias?: string | null
   relationshipContext?: string | null
-  phone: string
+  phone?: string | null
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
   favoriteSong?: string | null
@@ -1178,7 +1178,7 @@ export type GuestUpdateWithoutFromInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   relationshipContext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
   favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1205,7 +1205,7 @@ export type GuestUncheckedUpdateWithoutFromInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   relationshipContext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
   favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1241,7 +1241,7 @@ export type GuestUpdateWithoutToInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   relationshipContext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
   favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1268,7 +1268,7 @@ export type GuestUncheckedUpdateWithoutToInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   relationshipContext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
   favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1293,7 +1293,7 @@ export type GuestCreateWithoutInvitationInput = {
   fullName: string
   alias?: string | null
   relationshipContext?: string | null
-  phone: string
+  phone?: string | null
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
   favoriteSong?: string | null
@@ -1320,7 +1320,7 @@ export type GuestUncheckedCreateWithoutInvitationInput = {
   fullName: string
   alias?: string | null
   relationshipContext?: string | null
-  phone: string
+  phone?: string | null
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
   favoriteSong?: string | null
@@ -1371,7 +1371,7 @@ export type GuestCreateWithoutTableInput = {
   fullName: string
   alias?: string | null
   relationshipContext?: string | null
-  phone: string
+  phone?: string | null
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
   favoriteSong?: string | null
@@ -1398,7 +1398,7 @@ export type GuestUncheckedCreateWithoutTableInput = {
   fullName: string
   alias?: string | null
   relationshipContext?: string | null
-  phone: string
+  phone?: string | null
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
   favoriteSong?: string | null
@@ -1449,7 +1449,7 @@ export type GuestCreateManyWeddingInput = {
   fullName: string
   alias?: string | null
   relationshipContext?: string | null
-  phone: string
+  phone?: string | null
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
   favoriteSong?: string | null
@@ -1473,7 +1473,7 @@ export type GuestUpdateWithoutWeddingInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   relationshipContext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
   favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1499,7 +1499,7 @@ export type GuestUncheckedUpdateWithoutWeddingInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   relationshipContext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
   favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1525,7 +1525,7 @@ export type GuestUncheckedUpdateManyWithoutWeddingInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   relationshipContext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
   favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1550,7 +1550,7 @@ export type GuestCreateManyInvitationInput = {
   fullName: string
   alias?: string | null
   relationshipContext?: string | null
-  phone: string
+  phone?: string | null
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
   favoriteSong?: string | null
@@ -1573,7 +1573,7 @@ export type GuestUpdateWithoutInvitationInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   relationshipContext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
   favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1600,7 +1600,7 @@ export type GuestUncheckedUpdateWithoutInvitationInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   relationshipContext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
   favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1626,7 +1626,7 @@ export type GuestUncheckedUpdateManyWithoutInvitationInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   relationshipContext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
   favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1650,7 +1650,7 @@ export type GuestCreateManyTableInput = {
   fullName: string
   alias?: string | null
   relationshipContext?: string | null
-  phone: string
+  phone?: string | null
   allergies?: Prisma.GuestCreateallergiesInput | string[]
   musicPrefs?: Prisma.GuestCreatemusicPrefsInput | string[]
   favoriteSong?: string | null
@@ -1673,7 +1673,7 @@ export type GuestUpdateWithoutTableInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   relationshipContext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
   favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1700,7 +1700,7 @@ export type GuestUncheckedUpdateWithoutTableInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   relationshipContext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
   favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1726,7 +1726,7 @@ export type GuestUncheckedUpdateManyWithoutTableInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   relationshipContext?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   allergies?: Prisma.GuestUpdateallergiesInput | string[]
   musicPrefs?: Prisma.GuestUpdatemusicPrefsInput | string[]
   favoriteSong?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1931,7 +1931,7 @@ export type $GuestPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     fullName: string
     alias: string | null
     relationshipContext: string | null
-    phone: string
+    phone: string | null
     allergies: string[]
     musicPrefs: string[]
     favoriteSong: string | null

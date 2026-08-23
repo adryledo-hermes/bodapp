@@ -80,7 +80,7 @@ export default function GuestForm({ locale }: { locale: Locale }) {
             contextSelect === "Otro"
               ? contextOther.trim() || null
               : contextSelect || null,
-          phone: phone.trim(),
+          phone: isChild ? null : phone.trim(),
           plusOneAllowed,
           plusOneName:
             plusOneAllowed && plusOneName.trim() ? plusOneName.trim() : null,
@@ -217,27 +217,26 @@ export default function GuestForm({ locale }: { locale: Locale }) {
           )}
         </div>
 
-        <div>
-          <label
-            className="mb-1 block text-sm font-medium text-slate-700"
-            htmlFor="guestPhone"
-          >
-            {t("guest.phone")} *
-          </label>
-          <input
-            id="guestPhone"
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder={t("guest.phoneHint")}
-            pattern="\+?[0-9 ]{5,20}"
-            minLength={5}
-            maxLength={21}
-            className={inputClassName}
-            autoComplete="tel"
-            required
-          />
-        </div>
+        {!isChild && (
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="guestPhone">
+              {t("guest.phone")} {isChild ? "" : "*"}
+            </label>
+            <input
+              id="guestPhone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder={t("guest.phoneHint")}
+              pattern="\+?[0-9 ]{5,20}"
+              minLength={5}
+              maxLength={21}
+              className={inputClassName}
+              autoComplete="tel"
+              required={!isChild}
+            />
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <input

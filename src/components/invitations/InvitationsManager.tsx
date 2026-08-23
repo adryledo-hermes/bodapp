@@ -19,7 +19,7 @@ export interface ManagerInvitation {
   id: string;
   title: string;
   content?: unknown;
-  guests: Array<{ id: string; fullName: string; phone: string; plusOneAllowed: boolean; plusOneName: string | null }>;
+  guests: Array<{ id: string; fullName: string; phone: string | null; plusOneAllowed: boolean; plusOneName: string | null }>;
 }
 
 /**
@@ -93,7 +93,7 @@ export default function InvitationsManager({
       setSelected(new Set());
       setShowForm(false);
       setInvitations((prev) => [
-        { id: data.invitation.id, title: data.invitation.title, content: data.invitation.content, guests: data.invitation.guests.map((g: Record<string, unknown>) => ({ id: g.id as string, fullName: g.fullName as string, phone: g.phone as string, plusOneAllowed: g.plusOneAllowed as boolean, plusOneName: (g.plusOneName as string | null) ?? null })) },
+        { id: data.invitation.id, title: data.invitation.title, content: data.invitation.content, guests: data.invitation.guests.map((g: Record<string, unknown>) => ({ id: g.id as string, fullName: g.fullName as string, phone: (g.phone as string | null) ?? null, plusOneAllowed: g.plusOneAllowed as boolean, plusOneName: (g.plusOneName as string | null) ?? null })) },
         ...prev,
       ]);
       router.refresh();
@@ -181,7 +181,7 @@ export default function InvitationsManager({
                           {t("invman.alreadyInvited")}
                         </span>
                       ) : (
-                        <span className="text-xs text-slate-400">{g.phone}</span>
+                        {g.phone ? <span className="text-xs text-slate-400">{g.phone}</span> : null}
                       )}
                     </label>
                   );
@@ -244,7 +244,7 @@ export default function InvitationsManager({
                 <ul className="mt-2 space-y-1">
                   {inv.guests.map((g) => (
                     <li key={g.id} className="text-sm text-slate-600">
-                      {g.fullName} <span className="text-xs text-slate-400">{g.phone}</span>
+                      {g.fullName} {g.phone ? <span className="text-xs text-slate-400">{g.phone}</span> : null}
                     </li>
                   ))}
                 </ul>
