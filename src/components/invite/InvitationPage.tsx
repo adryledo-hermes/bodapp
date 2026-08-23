@@ -351,21 +351,61 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
                 </fieldset>
               )}
 
-              {/* Plus one name — only for adults with plusOneAllowed */}
-              {hasPlusOne && (
-                <div>
-                  <label className="mb-1 text-[11px] font-medium text-slate-600 block">
-                    {t("inv.yourPlusOne")}
-                  </label>
-                  <input
-                    type="text"
-                    value={draft.plusOneName}
-                    onChange={(e) => updateGuest(g.id, { plusOneName: e.target.value })}
-                    placeholder={t("invman.plusOnePlaceholder")}
-                    className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs focus:border-indigo-400 focus:outline-none"
-                  />
-                </div>
-              )}
+              {/* Plus one — only for adults with plusOneAllowed */}
+                            {hasPlusOne && (
+                              <div>
+                                {/* Toggle: bringing a plus one or not */}
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      updateGuest(g.id, {
+                                        plusOneName: draft.plusOneName ? draft.plusOneName : "",
+                                      })
+                                    }
+                                    className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
+                                      draft.plusOneName !== ""
+                                        ? "border-transparent text-white"
+                                        : "border-slate-200 bg-white text-slate-500"
+                                    }`}
+                                    style={
+                                      draft.plusOneName !== ""
+                                        ? { backgroundColor: primary }
+                                        : undefined
+                                    }
+                                  >
+                                    {t("inv.plusOneBring")}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => updateGuest(g.id, { plusOneName: "" })}
+                                    className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
+                                      draft.plusOneName === ""
+                                        ? "border-transparent bg-red-500 text-white"
+                                        : "border-slate-200 bg-white text-slate-500"
+                                    }`}
+                                  >
+                                    {t("inv.plusOneNoBring")}
+                                  </button>
+                                </div>
+
+                                {/* Name input — only when bringing a plus one */}
+                                {draft.plusOneName !== "" && (
+                                  <div className="mt-2">
+                                    <label className="mb-1 text-[11px] font-medium text-slate-600 block">
+                                      {t("inv.yourPlusOne")}
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={draft.plusOneName}
+                                      onChange={(e) => updateGuest(g.id, { plusOneName: e.target.value })}
+                                      placeholder={t("invman.plusOnePlaceholder")}
+                                      className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs focus:border-indigo-400 focus:outline-none"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            )}
             </div>
           )}
         </div>
