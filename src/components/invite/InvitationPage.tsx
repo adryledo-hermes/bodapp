@@ -266,7 +266,7 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
         {/* Collapsible detail panel */}
         <div
           className={`overflow-hidden transition-all duration-200 ${
-            isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+            isExpanded ? "max-h-[999px] opacity-100" : "max-h-0 opacity-0"
           }`}
         >
           {showDetails && (
@@ -330,7 +330,7 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
                                 : [...draft.selectedGenres, opt],
                             })
                           }
-                          className={`rounded-full border px-2 py-0.text-[10px] font-medium transition leading-tight ${
+                          className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
                             active
                               ? "border-indigo-400 bg-indigo-50 text-indigo-700 shadow-sm"
                               : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50"
