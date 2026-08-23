@@ -125,15 +125,18 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
   );
 
   const setStatusAndExpand = useCallback(
-    (id: string, status: RsvpStatus) => {
-      updateGuest(id, { rsvpStatus: status });
-      setExpandedGuests((prev) => {
-        if (prev.has(id)) return prev;
-        return new Set(prev).add(id);
-      });
-    },
-    [updateGuest]
-  );
+      (id: string, status: RsvpStatus) => {
+        updateGuest(id, {
+          // If the guest clicks the already-active button, reset to pending
+          rsvpStatus: status === drafts[id]?.rsvpStatus ? "pending" : status,
+        });
+        setExpandedGuests((prev) => {
+          if (prev.has(id)) return prev;
+          return new Set(prev).add(id);
+        });
+      },
+      [updateGuest, drafts]
+    );
 
   const hasPending = Object.values(drafts).some((d) => d.rsvpStatus === "pending");
 
@@ -307,13 +310,13 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
                 />
               </fieldset>
 
-              {/* Music — only for adults */}
+              {/* Music — only for adults, wrapped for mobile */}
               {!isChild && (
                 <fieldset>
                   <legend className="mb-1.5 text-[11px] font-medium text-slate-600">
                     {t("inv.musicLabel")}
                   </legend>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-1">
                     {(MUSIC_GENRES as readonly string[]).map((opt) => {
                       const active = draft.selectedGenres.includes(opt);
                       return (
@@ -327,7 +330,7 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
                                 : [...draft.selectedGenres, opt],
                             })
                           }
-                          className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
+                          className={`rounded-full border px-2 py-0.text-[10px] font-medium transition leading-tight ${
                             active
                               ? "border-indigo-400 bg-indigo-50 text-indigo-700 shadow-sm"
                               : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50"
