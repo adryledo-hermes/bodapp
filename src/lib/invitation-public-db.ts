@@ -55,7 +55,10 @@ export async function loadPublicInvitationView(
     prisma.guest.findMany({
       where: {
         weddingId: invitation.weddingId,
-        phone: { in: invitation.acceptedPhones },
+        OR: [
+          { invitationId: invitation.id },
+          { phone: { in: invitation.acceptedPhones } },
+        ],
       },
       select: GUEST_SELECT,
     }),

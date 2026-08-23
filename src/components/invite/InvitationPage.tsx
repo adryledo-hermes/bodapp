@@ -198,68 +198,71 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
         <button
           type="button"
           onClick={() => toggleExpand(g.id)}
-          className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50 active:bg-slate-100"
+          className="w-full px-4 py-3 text-left transition hover:bg-slate-50 active:bg-slate-100"
         >
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-slate-900 break-words pr-1">
-              {g.fullName}
-              {isChild && (
-                <span className="ml-1.5 inline-block rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 leading-tight">
-                  {t("inv.child")}
-                </span>
-              )}
-            </p>
-            {draft.rsvpStatus !== "pending" && (
-              <p className="mt-0.5 text-[11px] text-slate-500">
-                {t("inv.currentResponse")}{" "}
-                <span className="font-medium">{t(STATUS_KEY[draft.rsvpStatus])}</span>
+          <div className="flex flex-wrap items-center gap-1.5 sm:flex-nowrap sm:gap-3">
+            {/* Name — full width on mobile so it doesn't compress */}
+            <div className="w-full min-w-0 sm:w-auto sm:flex-1">
+              <p className="text-sm font-semibold text-slate-900 break-words">
+                {g.fullName}
+                {isChild && (
+                  <span className="ml-1.5 inline-block rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 leading-tight">
+                    {t("inv.child")}
+                  </span>
+                )}
               </p>
-            )}
-          </div>
+              {draft.rsvpStatus !== "pending" && (
+                <p className="mt-0.5 text-[11px] text-slate-500">
+                  {t("inv.currentResponse")}{" "}
+                  <span className="font-medium">{t(STATUS_KEY[draft.rsvpStatus])}</span>
+                </p>
+              )}
+            </div>
 
-          {/* Status buttons — stopPropagation so they don't toggle accordion */}
-          <div className="flex shrink-0 gap-1.5" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              onClick={() => setStatusAndExpand(g.id, "confirmed")}
-              className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
-                draft.rsvpStatus === "confirmed"
-                  ? "border-transparent bg-white text-white"
-                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-              }`}
-              style={
-                draft.rsvpStatus === "confirmed"
-                  ? { backgroundColor: primary }
-                  : undefined
-              }
-            >
-              {t("inv.optConfirmed")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusAndExpand(g.id, "declined")}
-              className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
-                draft.rsvpStatus === "declined"
-                  ? "border-transparent bg-red-500 text-white"
-                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              {t("inv.optDeclined")}
-            </button>
-          </div>
+            {/* Status buttons — below name on mobile, beside on sm+ */}
+            <div className="flex shrink-0 gap-1.5" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                onClick={() => setStatusAndExpand(g.id, "confirmed")}
+                className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition whitespace-nowrap ${
+                  draft.rsvpStatus === "confirmed"
+                    ? "border-transparent text-white"
+                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                }`}
+                style={
+                  draft.rsvpStatus === "confirmed"
+                    ? { backgroundColor: primary }
+                    : undefined
+                }
+              >
+                {t("inv.optConfirmed")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusAndExpand(g.id, "declined")}
+                className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition whitespace-nowrap ${
+                  draft.rsvpStatus === "declined"
+                    ? "border-transparent bg-red-500 text-white"
+                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                {t("inv.optDeclined")}
+              </button>
+            </div>
 
-          {/* Chevron */}
-          <svg
-            className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${
-              isExpanded ? "rotate-180" : ""
-            }`}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path d="M6 9l6 6 6-6" />
-          </svg>
+            {/* Chevron */}
+            <svg
+              className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${
+                isExpanded ? "rotate-180" : ""
+              }`}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </div>
         </button>
 
         {/* Collapsible detail panel */}
