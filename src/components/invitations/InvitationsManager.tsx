@@ -10,8 +10,8 @@ export interface InviteeOption {
   id: string;
   fullName: string;
   alias: string | null;
-  phone: string;
-  invitationId: string | null; // set → already invited → disabled
+  phone: string | null;
+  invitationId: string | null;
 }
 
 /** An invitation as rendered by the manager. */
@@ -181,7 +181,7 @@ export default function InvitationsManager({
                           {t("invman.alreadyInvited")}
                         </span>
                       ) : (
-                        {g.phone ? <span className="text-xs text-slate-400">{g.phone}</span> : null}
+                        g.phone ? <span className="text-xs text-slate-400">{g.phone}</span> : null
                       )}
                     </label>
                   );

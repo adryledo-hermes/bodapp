@@ -9,7 +9,7 @@ export interface InvitationDetailBase {
   id: string;
   title: string;
   content?: unknown;
-  guests: Array<{ id: string; fullName: string; phone: string; plusOneAllowed: boolean; plusOneName: string | null }>;
+  guests: Array<{ id: string; fullName: string; phone: string | null; plusOneAllowed: boolean; plusOneName: string | null }>;
 }
 
 const inputClassName =

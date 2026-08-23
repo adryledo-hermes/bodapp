@@ -26,6 +26,7 @@ export default async function GuestsPage() {
     alias: g.alias,
     relationshipContext: g.relationshipContext,
     phone: g.phone,
+    isChild: g.isChild ?? false,
     allergies: g.allergies,
     musicPrefs: g.musicPrefs,
     favoriteSong: g.favoriteSong,

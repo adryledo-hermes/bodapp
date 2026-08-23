@@ -112,13 +112,16 @@ export const guestSchema = z.object({
   phone: z
     .string()
     .min(5)
-    .regex(/^\+?[0-9 ]{5,20}$/, "Teléfono inválido"),
+    .regex(/^\+?[0-9 ]{5,20}$/, "Teléfono inválido")
+    .nullable()
+    .optional(),
   allergies: z.array(z.string()).default([]),
   musicPrefs: z.array(z.string()).default([]), // genres
   favoriteSong: z.string().nullable().optional(),
   paperInvitation: z.boolean().default(false),
   plusOneAllowed: z.boolean().default(false),
   plusOneName: z.string().optional().nullable(),
+  isChild: z.boolean().optional().default(false),
   notes: z.string().optional().nullable(),
   seatNumber: z.number().int().min(1).nullable().optional(),
   photoUrl: photoUrlSchema,

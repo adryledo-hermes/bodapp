@@ -93,7 +93,7 @@ export function normalizeRsvpBody(raw: unknown): NormalizedRsvpBody {
  * @deprecated Use normalizeRsvpEntry or normalizeRsvpBody.
  */
 export function normalizeRsvpInput(raw: unknown): NormalizedRsvp {
-  return { id: "", ...normalizeRsvpEntry(raw) };
+  return normalizeRsvpEntry(raw);
 }
 
 /**

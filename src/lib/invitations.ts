@@ -7,7 +7,7 @@
 export interface InviteeGuest {
   id: string;
   fullName: string;
-  phone: string;
+  phone: string | null;
 }
 
 /**

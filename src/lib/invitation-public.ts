@@ -20,7 +20,7 @@ export interface InviteeGuest {
   id: string;
   fullName: string;
   alias: string | null;
-  phone: string;
+  phone: string | null;
   isChild: boolean;
   allergies: string[];
   musicPrefs: string[];
