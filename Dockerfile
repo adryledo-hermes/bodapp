@@ -51,6 +51,9 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+# Pin photo storage path so it's always /app/storage/photos regardless of cwd
+# in Next.js standalone mode. Matches the compose bind-mount ./storage:/app/storage.
+ENV PHOTO_STORAGE_DIR=/app/storage/photos
 
 # Non-root user (uid/gid 1001, matching the official Next.js standalone image).
 RUN addgroup --system --gid 1001 nodejs \
