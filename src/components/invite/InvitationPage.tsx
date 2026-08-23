@@ -501,7 +501,7 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
 
               <button
                 type="submit"
-                disabled={submitting || hasPending}
+                disabled={submitting}
                 className="tap-min w-full rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                 style={{ backgroundColor: primary }}
               >
