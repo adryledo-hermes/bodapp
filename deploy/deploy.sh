@@ -30,7 +30,10 @@ echo "==> [deploy] working in $REPO_DIR"
 # 1. Fetch latest code (the pipeline already did git pull, but be safe)
 git fetch --all --tags
 git reset --hard origin/"${BRANCH:-main}"
-git clean -fd
+# CRITICAL: git clean -fd removes untracked files, which would delete the
+# storage/ directory (not git-tracked) and ALL uploaded photos. Exclude it.
+# The directory is re-created below anyway, but the photos inside must survive.
+git clean -fd -e storage/
 
 # 2. Ensure the photo-storage mount's host dir exists & is writable by
 #    the container's non-root user (uid 1001). Best-effort — the setup

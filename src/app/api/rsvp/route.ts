@@ -23,6 +23,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "no valid guests" }, { status: 400 });
   }
 
+  // Build a map of raw guest body entries keyed by id so we can check which
+  // fields the client explicitly sent (NormalizedRsvp has all fields always).
+  const rawBody = (body as Record<string, unknown>)?.guests as Array<Record<string, unknown>> | undefined;
+  const rawByGuestId = new Map<string, Record<string, unknown>>();
+  if (Array.isArray(rawBody)) {
+    for (const entry of rawBody) {
+      if (typeof entry.id === "string") {
+        rawByGuestId.set(entry.id, entry);
+      }
+    }
+  }
+
   const invitation = await findInvitationByToken(access.invitationId);
   if (!invitation || invitation.weddingId !== access.weddingId) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
@@ -43,7 +55,11 @@ export async function POST(req: Request) {
         allergies: g.allergies,
         musicPrefs: g.musicPrefs,
       };
-      if ("plusOneName" in g) {
+      // Only write plusOneName when the client explicitly sent it — otherwise
+      // preserve the stored value. The normalized type always has it, so we
+      // must check the raw body.
+      const raw = rawByGuestId.get(g.id);
+      if (raw && "plusOneName" in raw) {
         data.plusOneName = g.plusOneName ?? null;
       }
       return prisma.guest.update({

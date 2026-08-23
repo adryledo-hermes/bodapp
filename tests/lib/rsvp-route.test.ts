@@ -99,6 +99,7 @@ function makeRequest(overrides: Record<string, unknown> = {}) {
         {
           id: "g-luis",
           rsvpStatus: "confirmed",
+          plusOneName: null,
           allergies: ["lácteos"],
           musicPrefs: ["jazz"],
           ...overrides,
