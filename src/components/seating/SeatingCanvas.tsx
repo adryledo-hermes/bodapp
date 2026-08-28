@@ -238,6 +238,26 @@ export default function SeatingCanvas({
     const rel = locateGuest(guestId);
     if (!rel) return;
 
+    // A generic drop on the table body (no specific chair) should assign the
+    // guest the FIRST available free seat (1..capacity), not leave them unseated.
+    let effectiveSeat = seatNumber ?? null;
+    if (effectiveSeat === null) {
+      const target = tables.find((t) => t.id === targetTableId);
+      if (target) {
+        const taken = new Set(
+          target.guests
+            .map((g) => g.seatNumber)
+            .filter((n): n is number => typeof n === "number" && n >= 1)
+        );
+        for (let i = 1; i <= target.capacity; i++) {
+          if (!taken.has(i)) {
+            effectiveSeat = i;
+            break;
+          }
+        }
+      }
+    }
+
     // Dropping on a chair of the guest's OWN table = re-seat within the same
     // table: keep the table, just change the seat number (one PATCH).
     if (rel.fromTableId === targetTableId) {
@@ -283,7 +303,7 @@ export default function SeatingCanvas({
             ...t,
             guests: [
               ...t.guests,
-              { ...rel.guest, seatNumber: seatNumber ?? rel.guest.seatNumber },
+              { ...rel.guest, seatNumber: effectiveSeat ?? rel.guest.seatNumber },
             ],
           };
         }
@@ -297,7 +317,7 @@ export default function SeatingCanvas({
     setSelectedTable((prev) => {
       if (!prev) return prev;
       if (prev.id === targetTableId) {
-        return { ...prev, guests: [...prev.guests, { ...rel.guest, seatNumber: seatNumber ?? rel.guest.seatNumber }] };
+        return { ...prev, guests: [...prev.guests, { ...rel.guest, seatNumber: effectiveSeat ?? rel.guest.seatNumber }] };
       }
       if (rel.fromTableId && prev.id === rel.fromTableId) {
         return { ...prev, guests: prev.guests.filter((g) => g.id !== guestId) };
@@ -309,7 +329,9 @@ export default function SeatingCanvas({
     try {
       res = await send(`/api/tables/${targetTableId}/guests`, "POST", {
         guestId,
-        ...(seatNumber === undefined ? {} : { seatNumber }),
+        // Send the seat number regardless (effectiveSeat is computed for generic
+        // drops); the server assigns the seat explicitly when provided.
+        seatNumber: effectiveSeat ?? undefined,
       });
     } catch {
       setTables(prevTables);
@@ -471,6 +493,19 @@ export default function SeatingCanvas({
           : t
       )
     );
+    // Sync the hero panel so its controls (shape/capacity/name) reflect the
+    // live table state instead of the snapshot taken when it was opened.
+    setSelectedTable((prev) => {
+      if (!prev || prev.id !== tableId) return prev;
+      return {
+        ...prev,
+        name: patch.name !== undefined ? table.name : prev.name,
+        shape: patch.shape !== undefined ? table.shape : prev.shape,
+        capacity: patch.capacity !== undefined ? table.capacity : prev.capacity,
+        positionX: patch.positionX !== undefined ? table.positionX : prev.positionX,
+        positionY: patch.positionY !== undefined ? table.positionY : prev.positionY,
+      };
+    });
   }
 
   function toggleShape(tableId: string, current: string | null | undefined) {

@@ -24,7 +24,7 @@ export default async function InvitacionPage() {
     }),
     prisma.wedding.findUnique({
       where: { id: auth.session.weddingId },
-      select: { bankAccount: true },
+      select: { bankAccount: true, coupleNameA: true, coupleNameB: true },
     }),
   ]);
 
@@ -44,6 +44,8 @@ export default async function InvitacionPage() {
         initialContent={content}
         initialVersion={template?.version ?? DEFAULT_TEMPLATE_VERSION}
         initialBankAccount={wedding?.bankAccount ?? ""}
+        initialCoupleNameA={wedding?.coupleNameA ?? ""}
+        initialCoupleNameB={wedding?.coupleNameB ?? ""}
         locale={locale}
       />
     </main>

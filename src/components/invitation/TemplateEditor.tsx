@@ -11,6 +11,8 @@ interface TemplateEditorProps {
   initialContent: TemplateContent;
   initialVersion: number;
   initialBankAccount: string;
+  initialCoupleNameA?: string;
+  initialCoupleNameB?: string;
   locale: Locale;
 }
 
@@ -52,6 +54,8 @@ export default function TemplateEditor({
   initialContent,
   initialVersion,
   initialBankAccount,
+  initialCoupleNameA = "",
+  initialCoupleNameB = "",
   locale,
 }: TemplateEditorProps) {
   const [draft, setDraft] = useState<DraftState>(() =>
@@ -170,7 +174,7 @@ export default function TemplateEditor({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className={labelCls} htmlFor="date">
                 {t("tpl.dateLabel")}
@@ -341,7 +345,8 @@ export default function TemplateEditor({
             <p className="text-[10px] uppercase tracking-[0.36em] text-[#7A6A5A]">{t("inv.invitation")}</p>
             <div className="mx-auto mt-4 h-px w-12 bg-[#7A6A5A]" />
             <h1 className="inv-serif mt-4 text-3xl font-normal italic tracking-wide text-[#403B36] sm:text-4xl">
-              {t("tpl.namesFromProfile")}
+              {[initialCoupleNameA, initialCoupleNameB].filter(Boolean).join(" & ") ||
+                t("tpl.namesFromProfile")}
             </h1>
             {draft.message && (
               <p className="inv-serif mx-auto mt-4 max-w-sm text-base italic leading-relaxed text-[#5D554D]">
