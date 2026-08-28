@@ -51,3 +51,32 @@ body {
   }
 }
 
+/* ---- Envelope intro animation (Task: wax-seal reveal) ---- */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Gentle idle pulse on the wax seal so guests notice it's tappable. */
+@keyframes sealPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 6px 18px rgba(93, 79, 63, 0.35);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 10px 26px rgba(93, 79, 63, 0.45);
+  }
+}
+
+.animate-seal-pulse {
+  animation: sealPulse 2.4s ease-in-out infinite;
+}
+

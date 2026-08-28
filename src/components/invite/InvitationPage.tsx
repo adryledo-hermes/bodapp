@@ -8,6 +8,7 @@ import { ALLERGY_OPTIONS, MUSIC_GENRES, mergeCustomTags } from "@/lib/guests";
 import { translate, type Locale } from "@/lib/i18n";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import GuestCard from "./GuestCard";
+import EnvelopeIntro from "./EnvelopeIntro";
 
 interface InvitationPageProps {
   view: InvitationView;
@@ -187,12 +188,13 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
     ) : null;
 
   return (
-    <main
-      className="min-h-screen bg-[#F3EFE8] px-4 py-10 text-[#403B36] sm:px-6"
-      style={{
-        background: `linear-gradient(180deg, ${accent} 0%, #F3EFE8 55%, #FCFAF6 100%)`,
-      }}
-    >
+    <EnvelopeIntro primary={primary} accent={accent} coupleTitle={coupleTitle} locale={locale}>
+      <main
+        className="min-h-screen bg-[#F3EFE8] px-4 py-10 text-[#403B36] sm:px-6"
+        style={{
+          background: `linear-gradient(180deg, ${accent} 0%, #F3EFE8 55%, #FCFAF6 100%)`,
+        }}
+      >
       <div className="mx-auto w-full max-w-2xl">
         <div className="mb-4 flex justify-end">
           <LocaleSwitcher locale={locale} />
@@ -349,6 +351,7 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
           </div>
         </div>
       </div>
-    </main>
+      </main>
+    </EnvelopeIntro>
   );
 }
