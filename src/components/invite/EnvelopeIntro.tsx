@@ -9,19 +9,25 @@ import { translate, type Locale } from "@/lib/i18n";
  * Flat z-index stacking (no preserve-3d): back z1 · card z2 · pocket z3 ·
  * flap z4→z1 · seal z5. Perspective only drives the flap's rotateX.
  *
- * Tap sequence (ms from click) — mirrors sketches/envelope-wax-seal v3:
- *       0  seal cracks: fragments fly + seal fades (380ms)
- *     350  flap rotates 180° outward, 1400ms; z 4→1 at ~700ms
- *    1500  invitation card slides up out of the pocket AND the blur+spark
- *          overlay starts in parallel (same instant, per mockup v3)
- *    4300  full invitation revealed (fadeUp + blur→sharp)
+ * Geometry (scene aspect 1.5:1, flap triangle tip at 55% height):
+ *   card top 35% → its top corners sit where the flap triangle is ~64% wide,
+ *   so the card is FULLY hidden behind flap+pocket (no white paper peeking).
+ *
+ * Aged-paper texture: two SVG turbulence layers (fine fibers + large stains),
+ * edge vignette, sepia tint — on pocket, flap and (faintly) the card.
+ *
+ * Tap sequence (ms from click) — slow open, short blur:
+ *       0  seal cracks: fragments fly (1100ms)
+ *     400  flap rotates 180° outward, 2200ms; z 4→1 at ~90° (1500ms)
+ *    2400  invitation slides up out of the pocket (2200ms) AND fx starts
+ *    4600  full invitation revealed (fadeUp 0.6s — snappy, little blur wait)
  */
 
 interface EnvelopeIntroProps {
   primary: string;
   accent: string;
   coupleTitle: string;
-  /** Optional short date line for the card (e.g. "12 · Septiembre · 2026"). */
+  /** Optional short date line for the card (e.g. "12 · septiembre · 2026"). */
   cardDate?: string;
   locale: Locale;
   /** Rendered once the envelope sequence completes. */
@@ -31,10 +37,10 @@ interface EnvelopeIntroProps {
 type Stage =
   | "sealed"
   | "broken" //      0ms  seal cracks + fragments
-  | "flap" //      350ms  flap rotating (1400ms)
-  | "flapBehind" // 700ms  flap passes ~90° → z 4→1
-  | "rising" //    1500ms  card emerges + fx overlay begins
-  | "open"; //     4300ms  hand over to the invitation
+  | "flap" //      400ms  flap rotating (2200ms)
+  | "flapBehind" //1500ms  flap passes ~90° → z 4→1
+  | "rising" //    2400ms  card emerges + fx overlay begins
+  | "open"; //     4600ms  hand over to the invitation
 
 export default function EnvelopeIntro({
   primary,
@@ -72,11 +78,11 @@ export default function EnvelopeIntro({
     const at = (ms: number, next: Stage) => {
       timers.current.push(window.setTimeout(() => setStage(next), ms));
     };
-    setStage("broken"); //       0ms — seal cracks
-    at(350, "flap"); //        350ms — flap rotation begins (1400ms)
-    at(700, "flapBehind"); //   700ms — flap ~90°, swap z-index 4 → 1
-    at(1500, "rising"); //    1500ms — card emerges; fx starts in parallel
-    at(4300, "open"); //      4300ms — reveal the invitation
+    setStage("broken"); //        0ms — seal cracks
+    at(400, "flap"); //         400ms — flap rotation begins (2200ms)
+    at(1500, "flapBehind"); // 1500ms — flap ~90°, swap z-index 4 → 1
+    at(2400, "rising"); //     2400ms — card emerges; fx starts in parallel
+    at(4600, "open"); //       4600ms — reveal the invitation
   }, [stage]);
 
   const isOpen = stage === "open";
@@ -102,9 +108,31 @@ export default function EnvelopeIntro({
     <div
       className="fixed inset-0 z-40 flex flex-col items-center justify-center overflow-hidden px-5"
       style={{
-        background: `radial-gradient(circle at 50% 20%, #ffffff 0%, ${accent} 55%, ${shade(accent, -9)} 100%)`,
+        background: `radial-gradient(circle at 50% 20%, ${mix(accent, "#fffdf6", 0.9)} 0%, ${mix(accent, "#e8dcc0", 0.85)} 70%, ${mix(accent, "#d9c9a4", 0.75)} 100%)`,
       }}
     >
+      {/* Shared aged-paper SVG filter definitions */}
+      <svg width="0" height="0" className="absolute" aria-hidden>
+        <defs>
+          {/* Fine paper fibers */}
+          <filter id="paperFibers" x="0" y="0" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="4" seed="7" stitchTiles="stitch" />
+            <feColorMatrix
+              type="matrix"
+              values="0 0 0 0 0.36  0 0 0 0 0.31  0 0 0 0 0.24  0 0 0 0.26 0"
+            />
+          </filter>
+          {/* Large age stains / blotches */}
+          <filter id="paperStains" x="0" y="0" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.016" numOctaves="3" seed="21" stitchTiles="stitch" />
+            <feColorMatrix
+              type="matrix"
+              values="0 0 0 0 0.48  0 0 0 0 0.38  0 0 0 0 0.22  0 0 0 0.12 0"
+            />
+          </filter>
+        </defs>
+      </svg>
+
       {/* Welcome heading + hint */}
       <h1
         className="inv-serif mb-1 text-center text-4xl font-normal italic tracking-wide sm:text-5xl"
@@ -127,7 +155,7 @@ export default function EnvelopeIntro({
         className="relative w-full max-w-md"
         style={{ perspective: "1400px", aspectRatio: "1.5 / 1" }}
       >
-        {/* z-1: rear panel + striped liner */}
+        {/* z-1: rear panel + striped liner (aged) */}
         <div
           className="absolute inset-0 z-[1] rounded-md"
           style={{
@@ -140,7 +168,7 @@ export default function EnvelopeIntro({
         <div
           className="absolute left-1/2 z-[2] overflow-hidden rounded-[3px]"
           style={{
-            top: "21%",
+            top: "35%",
             width: "60%",
             aspectRatio: "1.5 / 1",
             background:
@@ -149,14 +177,18 @@ export default function EnvelopeIntro({
             transform: cardUp
               ? "translateX(-50%) translateY(-190%) scale(2.35)"
               : "translateX(-50%) translateY(0)",
-            transition: `transform 1400ms cubic-bezier(0.22, 1, 0.36, 1)`,
+            transition: `transform 2200ms cubic-bezier(0.22, 1, 0.36, 1)`,
           }}
         >
+          {/* faint paper grain on the card */}
+          <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-40" aria-hidden>
+            <rect width="100%" height="100%" filter="url(#paperFibers)" />
+          </svg>
           <div
             className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-center"
             style={{
               transform: cardUp ? "scale(1)" : "scale(0.62)",
-              transition: `transform 1400ms cubic-bezier(0.22, 1, 0.36, 1)`,
+              transition: `transform 2200ms cubic-bezier(0.22, 1, 0.36, 1)`,
             }}
           >
             <p className="text-[9px] uppercase tracking-[0.38em] text-[#7A6A5A]">
@@ -172,11 +204,11 @@ export default function EnvelopeIntro({
           </div>
         </div>
 
-        {/* z-3: front pocket with V-fold */}
+        {/* z-3: front pocket with V-fold (aged paper) */}
         <div
           className="absolute inset-0 z-[3] rounded-md"
           style={{
-            background: `linear-gradient(173deg, ${mix(accent, "#ffffff", 0.92)} 0%, ${accent} 46%, ${mix(accent, "#cbbfa8", 0.82)} 100%)`,
+            background: `linear-gradient(173deg, ${mix(accent, "#f6ecd6", 0.9)} 0%, ${mix(accent, "#e3d5b5", 0.55)} 55%, ${mix(accent, "#cdbb92", 0.8)} 100%)`,
             clipPath: "polygon(0 0, 50% 55%, 100% 0, 100% 100%, 0 100%)",
             boxShadow: "0 22px 44px rgba(64,59,54,.30), inset 0 -2px 0 rgba(255,255,255,.5)",
           }}
@@ -196,53 +228,56 @@ export default function EnvelopeIntro({
               clipPath: "polygon(100% 0, 50% 55%, 100% 100%)",
             }}
           />
-          {/* paper grain */}
-          <svg className="absolute inset-0 h-full w-full opacity-[0.85] mix-blend-multiply" aria-hidden>
-            <defs>
-              <filter id="paperGrain">
-                <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="4" seed="7" stitchTiles="stitch" />
-                <feColorMatrix
-                  type="matrix"
-                  values="0 0 0 0 0.42  0 0 0 0 0.38  0 0 0 0 0.33  0 0 0 0.14 0"
-                />
-              </filter>
-            </defs>
-            <rect width="100%" height="100%" filter="url(#paperGrain)" />
+          {/* aged paper: stains + fibers + vignette */}
+          <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+            <rect width="100%" height="100%" filter="url(#paperStains)" />
           </svg>
+          <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+            <rect width="100%" height="100%" filter="url(#paperFibers)" />
+          </svg>
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: "radial-gradient(ellipse at 50% 45%, transparent 52%, rgba(64,59,54,.16) 100%)",
+            }}
+          />
         </div>
 
         {/* z-4 (→1 mid-rotation): top triangular flap, two faces */}
         <div
           className="absolute left-0 top-0 w-full"
           style={{
-            height: "58%",
+            height: "55%",
             transformOrigin: "top center",
             zIndex: flapBehind ? 1 : 4,
             transform: flapOpen ? "rotateX(180deg)" : "rotateX(0deg)",
-            transition: `transform 1400ms cubic-bezier(0.4, 0, 0.2, 1), z-index 0s`,
-            transitionDelay: flapBehind ? "0s, 0.7s" : "0s",
+            transition: `transform 2200ms cubic-bezier(0.4, 0, 0.2, 1), z-index 0s`,
+            transitionDelay: flapBehind ? "0s, 1.1s" : "0s",
           }}
         >
-          {/* front face */}
+          {/* front face (aged paper) */}
           <div
             className="absolute inset-0"
             style={{
               clipPath: "polygon(0 0, 100% 0, 50% 100%)",
-              background: `radial-gradient(circle at 50% 0%, ${mix(accent, "#ffffff", 0.96)} 0%, ${accent} 58%, ${mix(accent, "#c6b99f", 0.78)} 100%)`,
+              background: `radial-gradient(circle at 50% 0%, ${mix(accent, "#f6ecd6", 0.95)} 0%, ${mix(accent, "#e3d5b5", 0.5)} 58%, ${mix(accent, "#c6b28a", 0.78)} 100%)`,
               boxShadow: "inset 0 -6px 14px rgba(64,59,54,.10)",
               backfaceVisibility: "hidden",
             }}
           >
             {/* vignette at the fold */}
             <div
-              className="absolute inset-0"
+              className="pointer-events-none absolute inset-0"
               style={{
-                background: "radial-gradient(ellipse at 50% 100%, rgba(64,59,54,.08), transparent 42%)",
+                background: "radial-gradient(ellipse at 50% 100%, rgba(64,59,54,.10), transparent 45%)",
               }}
             />
-            {/* paper grain on the flap */}
-            <svg className="absolute inset-0 h-full w-full opacity-70 mix-blend-multiply" aria-hidden>
-              <rect width="100%" height="100%" filter="url(#paperGrain)" />
+            {/* aged paper on the flap */}
+            <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+              <rect width="100%" height="100%" filter="url(#paperStains)" />
+            </svg>
+            <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+              <rect width="100%" height="100%" filter="url(#paperFibers)" />
             </svg>
           </div>
           {/* back face (visible when open — striped liner) */}
@@ -266,7 +301,7 @@ export default function EnvelopeIntro({
               : "translate(-50%, -50%)",
             pointerEvents: sealBroken ? "none" : "auto",
             opacity: sealBroken ? 0 : 1,
-            transition: `opacity 380ms cubic-bezier(0.4, 0, 0.2, 1), transform 380ms cubic-bezier(0.4, 0, 0.2, 1)`,
+            transition: `opacity 500ms cubic-bezier(0.4, 0, 0.2, 1), transform 500ms cubic-bezier(0.4, 0, 0.2, 1)`,
           }}
         >
           <button
@@ -322,12 +357,12 @@ export default function EnvelopeIntro({
             </svg>
           </button>
 
-          {/* crack fragments */}
+          {/* crack fragments — slow, 1100ms */}
           {[
             { cls: "f1", d: "M2 4 L12 2 L8 18 Z", tx: -130, ty: -95, r: -210, delay: 0 },
-            { cls: "f2", d: "M6 2 L18 8 L10 18 Z", tx: 120, ty: -110, r: 160, delay: 40 },
-            { cls: "f3", d: "M2 10 L14 4 L12 18 Z", tx: -60, ty: -150, r: 90, delay: 80 },
-            { cls: "f4", d: "M8 2 L18 12 L4 16 Z", tx: 170, ty: -40, r: 260, delay: 30 },
+            { cls: "f2", d: "M6 2 L18 8 L10 18 Z", tx: 120, ty: -110, r: 160, delay: 60 },
+            { cls: "f3", d: "M2 10 L14 4 L12 18 Z", tx: -60, ty: -150, r: 90, delay: 120 },
+            { cls: "f4", d: "M8 2 L18 12 L4 16 Z", tx: 170, ty: -40, r: 260, delay: 40 },
           ].map((f) => (
             <svg
               key={f.cls}
@@ -337,7 +372,7 @@ export default function EnvelopeIntro({
               style={{
                 opacity: 0,
                 animation: sealBroken
-                  ? `fly 700ms cubic-bezier(0.4, 0, 0.2, 1) ${f.delay}ms forwards`
+                  ? `fly 1100ms cubic-bezier(0.25, 0.6, 0.3, 1) ${f.delay}ms forwards`
                   : "none",
                 ["--tx" as string]: `${f.tx}px`,
                 ["--ty" as string]: `${f.ty}px`,
@@ -347,11 +382,10 @@ export default function EnvelopeIntro({
               <path d={f.d} fill={shade(primary, -8)} />
             </svg>
           ))}
-          {/* keyframes for fragments are defined globally in globals.css (@keyframes fly) */}
         </div>
       </div>
 
-      {/* ——— fx overlay: blur + sparks, starts WITH the card ——— */}
+      {/* ——— fx overlay: brief blur + slower sparks, starts WITH the card ——— */}
       <div
         className="pointer-events-none fixed inset-0 z-30"
         style={{ opacity: fxOn ? 1 : 0, transition: `opacity 400ms ease` }}
@@ -359,15 +393,15 @@ export default function EnvelopeIntro({
         <div
           className="absolute inset-0"
           style={{
-            backdropFilter: fxOn ? "blur(12px)" : "blur(0px)",
-            WebkitBackdropFilter: fxOn ? "blur(12px)" : "blur(0px)",
+            backdropFilter: fxOn ? "blur(10px)" : "blur(0px)",
+            WebkitBackdropFilter: fxOn ? "blur(10px)" : "blur(0px)",
             background: fxOn
-              ? "radial-gradient(circle at 50% 45%, rgba(255,248,238,.35), rgba(240,230,214,.55))"
+              ? "radial-gradient(circle at 50% 45%, rgba(255,248,238,.30), rgba(240,230,214,.45))"
               : "radial-gradient(circle at 50% 45%, rgba(255,248,238,.25), rgba(240,230,214,.4))",
-            transition: `backdrop-filter 1400ms cubic-bezier(0.4, 0, 0.2, 1), background 1400ms cubic-bezier(0.4, 0, 0.2, 1)`,
+            transition: `backdrop-filter 900ms cubic-bezier(0.4, 0, 0.2, 1), background 900ms cubic-bezier(0.4, 0, 0.2, 1)`,
           }}
         />
-        {/* sparks — 13, radiating */}
+        {/* sparks — slower (1800ms), staggered up to 420ms */}
         {SPARKS.map((s, i) => (
           <span
             key={i}
@@ -377,7 +411,7 @@ export default function EnvelopeIntro({
               background: "radial-gradient(circle, #fff 0%, #ffe9c9 40%, rgba(255,220,170,0) 70%)",
               opacity: 0,
               animation: fxOn
-                ? `sparkFly 1200ms cubic-bezier(0.22, 1, 0.36, 1) ${s.delay}ms forwards`
+                ? `sparkFly 1800ms cubic-bezier(0.22, 1, 0.36, 1) ${s.delay}ms forwards`
                 : "none",
               ["--a" as string]: `${s.a}deg`,
               ["--d" as string]: `${s.d}px`,
@@ -393,18 +427,18 @@ export default function EnvelopeIntro({
 /** Spark burst definition: angle (deg), distance (px), scale, stagger (ms). */
 const SPARKS: Array<{ a: number; d: number; s: number; delay: number }> = [
   { a: -150, d: 120, s: 1.4, delay: 0 },
-  { a: -110, d: 170, s: 1.0, delay: 90 },
-  { a: -60, d: 140, s: 1.6, delay: 40 },
-  { a: -20, d: 190, s: 0.9, delay: 140 },
-  { a: 15, d: 130, s: 1.3, delay: 60 },
-  { a: 55, d: 175, s: 1.1, delay: 180 },
-  { a: 95, d: 145, s: 1.5, delay: 20 },
-  { a: 140, d: 185, s: 1.0, delay: 120 },
-  { a: 185, d: 135, s: 1.45, delay: 200 },
-  { a: 225, d: 165, s: 0.95, delay: 100 },
-  { a: 265, d: 150, s: 1.35, delay: 160 },
-  { a: 305, d: 180, s: 1.05, delay: 240 },
-  { a: 345, d: 155, s: 1.2, delay: 70 },
+  { a: -110, d: 170, s: 1.0, delay: 180 },
+  { a: -60, d: 140, s: 1.6, delay: 80 },
+  { a: -20, d: 190, s: 0.9, delay: 280 },
+  { a: 15, d: 130, s: 1.3, delay: 120 },
+  { a: 55, d: 175, s: 1.1, delay: 340 },
+  { a: 95, d: 145, s: 1.5, delay: 40 },
+  { a: 140, d: 185, s: 1.0, delay: 240 },
+  { a: 185, d: 135, s: 1.45, delay: 380 },
+  { a: 225, d: 165, s: 0.95, delay: 200 },
+  { a: 265, d: 150, s: 1.35, delay: 320 },
+  { a: 305, d: 180, s: 1.05, delay: 420 },
+  { a: 345, d: 155, s: 1.2, delay: 140 },
 ];
 
 /* ——— Tiny hex helpers (no external deps) ——— */
