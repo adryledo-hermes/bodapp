@@ -66,9 +66,9 @@ function matchesRsvp(g: GuestCardData, status: string): boolean {
 }
 
 function matchesAllergy(g: GuestCardData, term: string): boolean {
-  const q = term.trim().toLowerCase();
+  const q = normalize(term.trim());
   if (!q) return true;
-  return g.allergies.some((a) => a.toLowerCase().includes(q));
+  return g.allergies.some((a) => normalize(a).includes(q));
 }
 
 function matchesTable(g: GuestCardData, tableId: string): boolean {
