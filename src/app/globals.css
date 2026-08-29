@@ -84,3 +84,37 @@ body {
   animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ---- Envelope intro: wax-seal crack fragments ---- */
+/* Elements carry --tx/--ty/--r custom props; base opacity 0, animation fills. */
+@keyframes fly {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty)))
+      scale(0.4) rotate(var(--r));
+  }
+}
+
+/* ---- Envelope intro: golden sparks before the invitation reveal ---- */
+/* Elements carry --a (angle) / --d (distance) / --s (scale). */
+@keyframes sparkFly {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(
+        calc(-50% + cos(var(--a)) * var(--d) * 1.15),
+        calc(-50% + sin(var(--a)) * var(--d) * 1.15)
+      )
+      scale(var(--s));
+  }
+}
+

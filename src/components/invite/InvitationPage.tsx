@@ -109,6 +109,20 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
     [wedding.coupleNameA, wedding.coupleNameB].filter(Boolean).join(" & ") ||
     t("inv.ours");
 
+  // Short date for the envelope card (e.g. "12 · septiembre · 2026").
+  const cardDate = (() => {
+    if (!content.date) return undefined;
+    const d = new Date(`${content.date}T00:00`);
+    if (Number.isNaN(d.getTime())) return content.date;
+    return d
+      .toLocaleDateString(locale === "en" ? "en-GB" : "es-ES", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+      .replace(/ /g, " · ");
+  })();
+
   const adults = invitees.filter((g) => !g.isChild);
   const children = invitees.filter((g) => g.isChild);
 
@@ -188,7 +202,7 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
     ) : null;
 
   return (
-    <EnvelopeIntro primary={primary} accent={accent} coupleTitle={coupleTitle} locale={locale}>
+    <EnvelopeIntro primary={primary} accent={accent} coupleTitle={coupleTitle} cardDate={cardDate} locale={locale}>
       <main
         className="min-h-screen bg-[#F3EFE8] px-4 py-10 text-[#403B36] sm:px-6"
         style={{

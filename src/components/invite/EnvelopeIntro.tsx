@@ -4,28 +4,25 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { translate, type Locale } from "@/lib/i18n";
 
 /**
- * EnvelopeIntro — realistic 3D wax-seal envelope opening sequence.
+ * EnvelopeIntro — realistic wax-seal envelope opening sequence.
  *
- * DOM layering (bottom → top):
- *   z-1  rear panel + interior liner texture
- *   z-2  invitation card (sits inside the pocket)
- *   z-3  front pocket (covers the lower part of the card)
- *   z-4  top triangular flap (overlaps the pocket) → z-1 mid-rotation
- *   z-5  interactive wax seal button (over the flap tip)
+ * Flat z-index stacking (no preserve-3d): back z1 · card z2 · pocket z3 ·
+ * flap z4→z1 · seal z5. Perspective only drives the flap's rotateX.
  *
- * Tap sequence (ms from click):
- *     0–300   seal cracks: scale 1.1 + fade out + translateY(-10px), pointer-events off
- *   200–800   flap rotates 180° outward (perspective 1000px, origin top center);
- *             at ~90° (500ms) its z-index drops to 1 so it lands behind the body
- *   600–1300  card slides up out of the pocket (translateY -72%), z-index → 10
- *  1300–1600  whole scene zooms toward the viewer and fades out
- *    1450     real invitation content is revealed
+ * Tap sequence (ms from click) — mirrors sketches/envelope-wax-seal v3:
+ *       0  seal cracks: fragments fly + seal fades (380ms)
+ *     350  flap rotates 180° outward, 1400ms; z 4→1 at ~700ms
+ *    1500  invitation card slides up out of the pocket AND the blur+spark
+ *          overlay starts in parallel (same instant, per mockup v3)
+ *    4300  full invitation revealed (fadeUp + blur→sharp)
  */
 
 interface EnvelopeIntroProps {
   primary: string;
   accent: string;
   coupleTitle: string;
+  /** Optional short date line for the card (e.g. "12 · Septiembre · 2026"). */
+  cardDate?: string;
   locale: Locale;
   /** Rendered once the envelope sequence completes. */
   children: React.ReactNode;
@@ -33,19 +30,17 @@ interface EnvelopeIntroProps {
 
 type Stage =
   | "sealed"
-  | "cracked" //    0ms  seal breaks
-  | "flap" //     200ms  flap starts rotating
-  | "flapBehind" // 500ms  flap passes 90° → z-index 4 → 1
-  | "rising" //    600ms  card slides up
-  | "zoom" //     1300ms  scene zooms + fades
-  | "open"; //     1450ms  swap to invitation
-
-const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
+  | "broken" //      0ms  seal cracks + fragments
+  | "flap" //      350ms  flap rotating (1400ms)
+  | "flapBehind" // 700ms  flap passes ~90° → z 4→1
+  | "rising" //    1500ms  card emerges + fx overlay begins
+  | "open"; //     4300ms  hand over to the invitation
 
 export default function EnvelopeIntro({
   primary,
   accent,
   coupleTitle,
+  cardDate,
   locale,
   children,
 }: EnvelopeIntroProps) {
@@ -77,20 +72,19 @@ export default function EnvelopeIntro({
     const at = (ms: number, next: Stage) => {
       timers.current.push(window.setTimeout(() => setStage(next), ms));
     };
-    setStage("cracked"); //     0ms — seal cracks
-    at(200, "flap"); //       200ms — flap rotation begins (600ms)
-    at(500, "flapBehind"); //  500ms — flap ~90°, swap z-index 4 → 1
-    at(600, "rising"); //      600ms — card slides out of the pocket (700ms)
-    at(1300, "zoom"); //      1300ms — scene zooms toward the viewer
-    at(1450, "open"); //      1450ms — hand over to the invitation
+    setStage("broken"); //       0ms — seal cracks
+    at(350, "flap"); //        350ms — flap rotation begins (1400ms)
+    at(700, "flapBehind"); //   700ms — flap ~90°, swap z-index 4 → 1
+    at(1500, "rising"); //    1500ms — card emerges; fx starts in parallel
+    at(4300, "open"); //      4300ms — reveal the invitation
   }, [stage]);
 
   const isOpen = stage === "open";
-  const flapOpen = stage === "flap" || stage === "flapBehind" || stage === "rising" || stage === "zoom";
-  const flapBehind = stage === "flapBehind" || stage === "rising" || stage === "zoom";
-  const cardUp = stage === "rising" || stage === "zoom";
+  const flapOpen = stage !== "sealed" && stage !== "broken";
+  const flapBehind = stage === "flapBehind" || stage === "rising";
+  const cardUp = stage === "rising";
   const sealBroken = stage !== "sealed";
-  const sceneZoom = stage === "zoom";
+  const fxOn = stage === "rising";
 
   // Couple initials for the wax seal: "María & Pedro" → "M/P"
   const coupleInitials = coupleTitle
@@ -106,183 +100,312 @@ export default function EnvelopeIntro({
 
   return (
     <div
-      className="fixed inset-0 flex flex-col items-center justify-center overflow-hidden px-5"
+      className="fixed inset-0 z-40 flex flex-col items-center justify-center overflow-hidden px-5"
       style={{
-        background: `radial-gradient(circle at 50% 30%, ${lighten(accent, 8)} 0%, ${accent} 70%)`,
-        opacity: sceneZoom ? 0 : 1,
-        transform: sceneZoom ? "scale(1.45)" : "scale(1)",
-        transition: `opacity 300ms ${EASE}, transform 300ms ${EASE}`,
+        background: `radial-gradient(circle at 50% 20%, #ffffff 0%, ${accent} 55%, ${shade(accent, -9)} 100%)`,
       }}
     >
-      {/* Welcome heading */}
+      {/* Welcome heading + hint */}
       <h1
         className="inv-serif mb-1 text-center text-4xl font-normal italic tracking-wide sm:text-5xl"
         style={{ color: primary }}
       >
         {t("inv.envelopeWelcome")}
       </h1>
-      <p className="mb-10 text-center text-xs uppercase tracking-[0.22em]" style={{ color: `${primary}b3` }}>
+      <p
+        className="mb-10 text-center text-xs uppercase tracking-[0.22em] transition-opacity duration-500"
+        style={{
+          color: `${shade(primary, -18)}b3`,
+          opacity: stage === "sealed" ? 1 : 0,
+        }}
+      >
         {t("inv.envelopeHint")}
       </p>
 
-      {/* ——— Envelope scene (perspective parent for the 3D flap) ——— */}
+      {/* ——— Envelope scene ——— */}
       <div
         className="relative w-full max-w-md"
-        style={{ perspective: "1000px" }}
+        style={{ perspective: "1400px", aspectRatio: "1.5 / 1" }}
       >
-        {/* z-1: rear panel + interior liner texture */}
+        {/* z-1: rear panel + striped liner */}
         <div
-          className="absolute inset-0 z-[1] overflow-hidden rounded-lg"
-          style={{ background: shade(accent, -16) }}
-        >
-          {/* Liner pattern — diagonal stripes tinted with the primary colour */}
-          <div
-            className="absolute inset-0 opacity-[0.16]"
-            style={{
-              background: `repeating-linear-gradient(45deg, ${primary} 0px, ${primary} 2px, transparent 2px, transparent 12px)`,
-            }}
-          />
-          {/* Inner shadow so the pocket reads as recessed */}
-          <div
-            className="absolute inset-0"
-            style={{ boxShadow: "inset 0 8px 24px rgba(0,0,0,0.18)" }}
-          />
-        </div>
-
-        {/* z-2 (→10): invitation card inside the pocket */}
-        <div
-          className="absolute bottom-2 left-1/2 w-[88%] rounded-md bg-[#FCFAF6] shadow-[0_6px_24px_rgba(93,79,63,0.28)]"
+          className="absolute inset-0 z-[1] rounded-md"
           style={{
-            aspectRatio: "1.55 / 1",
-            zIndex: cardUp ? 10 : 2,
+            background: `repeating-linear-gradient(45deg, ${hexA(primary, 0.22)} 0px, ${hexA(primary, 0.22)} 1.5px, transparent 1.5px, transparent 11px), linear-gradient(160deg, ${mix(accent, "#c9bfae", 0.7)} 0%, #cfc4b0 100%)`,
+            boxShadow: "inset 0 10px 30px rgba(64,59,54,.28), 0 1px 0 rgba(255,255,255,.6)",
+          }}
+        />
+
+        {/* z-2: invitation card (the full invitation, folded small inside) */}
+        <div
+          className="absolute left-1/2 z-[2] overflow-hidden rounded-[3px]"
+          style={{
+            top: "21%",
+            width: "60%",
+            aspectRatio: "1.5 / 1",
+            background:
+              "radial-gradient(circle at 25% 12%, rgba(255,255,255,.9), transparent 55%), linear-gradient(175deg, #fffdf8 0%, #FCFAF6 60%, #f4efe5 100%)",
+            boxShadow: "0 1px 2px rgba(64,59,54,.12), 0 14px 38px rgba(64,59,54,.32)",
             transform: cardUp
-              ? "translate(-50%, -78%) scale(1.03)"
-              : "translate(-50%, 0)",
-            transition: `transform 700ms ${EASE}, z-index 0ms`,
+              ? "translateX(-50%) translateY(-190%) scale(2.35)"
+              : "translateX(-50%) translateY(0)",
+            transition: `transform 1400ms cubic-bezier(0.22, 1, 0.36, 1)`,
           }}
         >
-          <div className="flex h-full flex-col items-center justify-center px-4 text-center">
-            <p className="text-[9px] uppercase tracking-[0.36em] text-[#7A6A5A]">
+          <div
+            className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-center"
+            style={{
+              transform: cardUp ? "scale(1)" : "scale(0.62)",
+              transition: `transform 1400ms cubic-bezier(0.22, 1, 0.36, 1)`,
+            }}
+          >
+            <p className="text-[9px] uppercase tracking-[0.38em] text-[#7A6A5A]">
               {t("inv.invitation")}
             </p>
-            <div className="mx-auto my-2 h-px w-10" style={{ backgroundColor: primary }} />
-            <p className="inv-serif text-xl italic leading-snug sm:text-2xl" style={{ color: primary }}>
+            <div className="h-px w-10" style={{ backgroundColor: primary }} />
+            <p className="inv-serif italic text-[#403B36]" style={{ fontSize: "clamp(15px, 4.4vw, 22px)" }}>
               {coupleTitle}
             </p>
+            {cardDate && (
+              <p className="text-[9px] uppercase tracking-[0.2em] text-[#7A6A5A]">{cardDate}</p>
+            )}
           </div>
         </div>
 
-        {/* z-3: front pocket — V fold covering the lower part of the card */}
+        {/* z-3: front pocket with V-fold */}
         <div
-          className="absolute inset-0 z-[3] rounded-b-lg"
+          className="absolute inset-0 z-[3] rounded-md"
           style={{
-            background: `linear-gradient(175deg, ${lighten(accent, 6)} 0%, ${shade(accent, -6)} 100%)`,
-            clipPath: "polygon(0 0, 50% 52%, 100% 0, 100% 100%, 0 100%)",
-            boxShadow: "0 14px 40px rgba(93,79,63,0.22)",
+            background: `linear-gradient(173deg, ${mix(accent, "#ffffff", 0.92)} 0%, ${accent} 46%, ${mix(accent, "#cbbfa8", 0.82)} 100%)`,
+            clipPath: "polygon(0 0, 50% 55%, 100% 0, 100% 100%, 0 100%)",
+            boxShadow: "0 22px 44px rgba(64,59,54,.30), inset 0 -2px 0 rgba(255,255,255,.5)",
           }}
         >
-          {/* Pocket edge highlight along the V fold */}
+          {/* side fold shadows */}
           <div
             className="absolute inset-0"
             style={{
-              clipPath: "polygon(0 0, 50% 52%, 100% 0, 100% 1.5%, 50% 54.5%, 0 1.5%)",
-              background: shade(accent, 18),
+              background: "linear-gradient(115deg, rgba(64,59,54,.10) 0%, transparent 26%)",
+              clipPath: "polygon(0 0, 50% 55%, 0 100%)",
             }}
           />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(245deg, rgba(64,59,54,.10) 0%, transparent 26%)",
+              clipPath: "polygon(100% 0, 50% 55%, 100% 100%)",
+            }}
+          />
+          {/* paper grain */}
+          <svg className="absolute inset-0 h-full w-full opacity-[0.85] mix-blend-multiply" aria-hidden>
+            <defs>
+              <filter id="paperGrain">
+                <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="4" seed="7" stitchTiles="stitch" />
+                <feColorMatrix
+                  type="matrix"
+                  values="0 0 0 0 0.42  0 0 0 0 0.38  0 0 0 0 0.33  0 0 0 0.14 0"
+                />
+              </filter>
+            </defs>
+            <rect width="100%" height="100%" filter="url(#paperGrain)" />
+          </svg>
         </div>
 
-        {/* z-4 (→1 mid-rotation): top triangular flap */}
+        {/* z-4 (→1 mid-rotation): top triangular flap, two faces */}
         <div
           className="absolute left-0 top-0 w-full"
           style={{
+            height: "58%",
             transformOrigin: "top center",
-            transformStyle: "preserve-3d",
             zIndex: flapBehind ? 1 : 4,
             transform: flapOpen ? "rotateX(180deg)" : "rotateX(0deg)",
-            transition: `transform 600ms ${EASE}, z-index 0ms`,
+            transition: `transform 1400ms cubic-bezier(0.4, 0, 0.2, 1), z-index 0s`,
+            transitionDelay: flapBehind ? "0s, 0.7s" : "0s",
           }}
         >
+          {/* front face */}
           <div
-            className="w-full"
+            className="absolute inset-0"
             style={{
-              aspectRatio: "1.9 / 1",
               clipPath: "polygon(0 0, 100% 0, 50% 100%)",
-              background: `linear-gradient(180deg, ${shade(accent, -4)} 0%, ${shade(accent, -14)} 100%)`,
-              filter: "drop-shadow(0 3px 6px rgba(93,79,63,0.25))",
+              background: `radial-gradient(circle at 50% 0%, ${mix(accent, "#ffffff", 0.96)} 0%, ${accent} 58%, ${mix(accent, "#c6b99f", 0.78)} 100%)`,
+              boxShadow: "inset 0 -6px 14px rgba(64,59,54,.10)",
+              backfaceVisibility: "hidden",
+            }}
+          >
+            {/* vignette at the fold */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: "radial-gradient(ellipse at 50% 100%, rgba(64,59,54,.08), transparent 42%)",
+              }}
+            />
+            {/* paper grain on the flap */}
+            <svg className="absolute inset-0 h-full w-full opacity-70 mix-blend-multiply" aria-hidden>
+              <rect width="100%" height="100%" filter="url(#paperGrain)" />
+            </svg>
+          </div>
+          {/* back face (visible when open — striped liner) */}
+          <div
+            className="absolute inset-0"
+            style={{
+              clipPath: "polygon(0 0, 100% 0, 50% 100%)",
+              background: `repeating-linear-gradient(45deg, ${hexA(primary, 0.22)} 0px, ${hexA(primary, 0.22)} 1.5px, transparent 1.5px, transparent 11px), linear-gradient(180deg, #d8cdb9 0%, #cbbfa8 100%)`,
+              transform: "rotateX(180deg)",
+              backfaceVisibility: "hidden",
             }}
           />
         </div>
 
-        {/* z-5: interactive wax seal over the flap tip (+ crack fragments) */}
+        {/* z-5: wax seal (SVG) + crack fragments */}
         <div
-          className="absolute left-1/2 top-[52%] z-[5] -translate-x-1/2 -translate-y-1/2"
+          className="absolute left-1/2 top-[55%] z-[5]"
           style={{
+            transform: sealBroken
+              ? "translate(-50%, -50%) scale(1.14)"
+              : "translate(-50%, -50%)",
             pointerEvents: sealBroken ? "none" : "auto",
+            opacity: sealBroken ? 0 : 1,
+            transition: `opacity 380ms cubic-bezier(0.4, 0, 0.2, 1), transform 380ms cubic-bezier(0.4, 0, 0.2, 1)`,
           }}
         >
-          {/* Crack fragments — fly apart + fade on tap */}
-          <span
-            className="absolute left-1/2 top-1/2 block h-6 w-6 rounded-full"
-            aria-hidden
-            style={{
-              background: shade(primary, -8),
-              clipPath: "polygon(0 0, 55% 0, 20% 100%)",
-              opacity: sealBroken ? 0 : 0.9,
-              transform: sealBroken
-                ? "translate(-260%, -180%) rotate(-40deg)"
-                : "translate(-50%, -50%)",
-              transition: `all 300ms ${EASE}`,
-            }}
-          />
-          <span
-            className="absolute left-1/2 top-1/2 block h-6 w-6 rounded-full"
-            aria-hidden
-            style={{
-              background: shade(primary, -8),
-              clipPath: "polygon(45% 0, 100% 20%, 80% 100%)",
-              opacity: sealBroken ? 0 : 0.9,
-              transform: sealBroken
-                ? "translate(120%, -220%) rotate(35deg)"
-                : "translate(-50%, -50%)",
-              transition: `all 300ms ${EASE}`,
-            }}
-          />
-
           <button
             type="button"
             onClick={handleTap}
             disabled={sealBroken}
             aria-label={t("inv.envelopeOpenAria")}
-            className="animate-seal-pulse relative block h-20 w-20 cursor-pointer touch-manipulation rounded-full focus:outline-none disabled:cursor-default"
-            style={{
-              background: `radial-gradient(circle at 35% 30%, ${lighten(primary, 22)} 0%, ${primary} 62%, ${shade(primary, -14)} 100%)`,
-              opacity: sealBroken ? 0 : 1,
-              transform: sealBroken ? "scale(1.1) translateY(-10px)" : "scale(1)",
-              transition: `all 300ms ${EASE}`,
-              boxShadow: "0 4px 14px rgba(0,0,0,0.25), inset 0 -2px 6px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.25)",
-            }}
+            className="animate-seal-pulse relative block cursor-pointer touch-manipulation rounded-full focus:outline-none disabled:cursor-default"
+            style={{ width: 92, height: 92 }}
           >
-            {/* Wavy wax edge */}
-            <span
-              aria-hidden
-              className="absolute inset-0 rounded-full"
-              style={{
-                background: "transparent",
-                boxShadow: "inset 0 0 0 3px rgba(0,0,0,0.06)",
-              }}
-            />
-            <span
-              className="inv-serif relative text-lg font-semibold italic"
-              style={{ color: shade(primary, -38) }}
-            >
-              {coupleInitials}
-            </span>
+            <svg viewBox="0 0 120 120" width="100%" height="100%" style={{ filter: "drop-shadow(0 6px 12px rgba(64,59,54,.45))" }}>
+              <defs>
+                <radialGradient id="wax" cx="38%" cy="30%" r="75%">
+                  <stop offset="0%" stopColor={lighten(primary, 16)} />
+                  <stop offset="45%" stopColor={primary} />
+                  <stop offset="80%" stopColor={shade(primary, -13)} />
+                  <stop offset="100%" stopColor={shade(primary, -19)} />
+                </radialGradient>
+                <radialGradient id="waxIn" cx="50%" cy="42%" r="62%">
+                  <stop offset="0%" stopColor={shade(primary, -13)} stopOpacity="0.55" />
+                  <stop offset="70%" stopColor={shade(primary, -19)} stopOpacity="0.18" />
+                  <stop offset="100%" stopColor={shade(primary, -24)} stopOpacity="0" />
+                </radialGradient>
+                <filter id="waxRough">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.11" numOctaves="4" seed="11" result="n" />
+                  <feDisplacementMap in="SourceGraphic" in2="n" scale="5.5" />
+                </filter>
+              </defs>
+              <g filter="url(#waxRough)">
+                <circle cx="60" cy="60" r="46" fill="url(#wax)" />
+                <circle cx="60" cy="60" r="45" fill="url(#waxIn)" />
+                <circle cx="21" cy="72" r="7" fill="url(#wax)" />
+                <circle cx="98" cy="55" r="5.5" fill="url(#wax)" />
+                <circle cx="76" cy="101" r="6" fill="url(#wax)" />
+                <circle cx="38" cy="20" r="5" fill="url(#wax)" />
+              </g>
+              <g filter="url(#waxRough)" opacity="0.92">
+                <circle cx="60" cy="60" r="33" fill="none" stroke={shade(primary, -24)} strokeWidth="1.6" opacity="0.55" />
+                <text
+                  x="60"
+                  y="70"
+                  textAnchor="middle"
+                  fontFamily="Georgia, serif"
+                  fontStyle="italic"
+                  fontSize="26"
+                  fill={shade(primary, -24)}
+                  opacity="0.8"
+                >
+                  {coupleInitials}
+                </text>
+              </g>
+              <ellipse cx="46" cy="38" rx="22" ry="13" fill="#ffffff" opacity="0.16" transform="rotate(-24 46 38)" />
+            </svg>
           </button>
+
+          {/* crack fragments */}
+          {[
+            { cls: "f1", d: "M2 4 L12 2 L8 18 Z", tx: -130, ty: -95, r: -210, delay: 0 },
+            { cls: "f2", d: "M6 2 L18 8 L10 18 Z", tx: 120, ty: -110, r: 160, delay: 40 },
+            { cls: "f3", d: "M2 10 L14 4 L12 18 Z", tx: -60, ty: -150, r: 90, delay: 80 },
+            { cls: "f4", d: "M8 2 L18 12 L4 16 Z", tx: 170, ty: -40, r: 260, delay: 30 },
+          ].map((f) => (
+            <svg
+              key={f.cls}
+              className="absolute left-1/2 top-1/2 h-5 w-5"
+              viewBox="0 0 20 20"
+              aria-hidden
+              style={{
+                opacity: 0,
+                animation: sealBroken
+                  ? `fly 700ms cubic-bezier(0.4, 0, 0.2, 1) ${f.delay}ms forwards`
+                  : "none",
+                ["--tx" as string]: `${f.tx}px`,
+                ["--ty" as string]: `${f.ty}px`,
+                ["--r" as string]: `${f.r}deg`,
+              }}
+            >
+              <path d={f.d} fill={shade(primary, -8)} />
+            </svg>
+          ))}
+          {/* keyframes for fragments are defined globally in globals.css (@keyframes fly) */}
         </div>
+      </div>
+
+      {/* ——— fx overlay: blur + sparks, starts WITH the card ——— */}
+      <div
+        className="pointer-events-none fixed inset-0 z-30"
+        style={{ opacity: fxOn ? 1 : 0, transition: `opacity 400ms ease` }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            backdropFilter: fxOn ? "blur(12px)" : "blur(0px)",
+            WebkitBackdropFilter: fxOn ? "blur(12px)" : "blur(0px)",
+            background: fxOn
+              ? "radial-gradient(circle at 50% 45%, rgba(255,248,238,.35), rgba(240,230,214,.55))"
+              : "radial-gradient(circle at 50% 45%, rgba(255,248,238,.25), rgba(240,230,214,.4))",
+            transition: `backdrop-filter 1400ms cubic-bezier(0.4, 0, 0.2, 1), background 1400ms cubic-bezier(0.4, 0, 0.2, 1)`,
+          }}
+        />
+        {/* sparks — 13, radiating */}
+        {SPARKS.map((s, i) => (
+          <span
+            key={i}
+            className="absolute left-1/2 top-[45%] h-[5px] w-[5px] rounded-full"
+            aria-hidden
+            style={{
+              background: "radial-gradient(circle, #fff 0%, #ffe9c9 40%, rgba(255,220,170,0) 70%)",
+              opacity: 0,
+              animation: fxOn
+                ? `sparkFly 1200ms cubic-bezier(0.22, 1, 0.36, 1) ${s.delay}ms forwards`
+                : "none",
+              ["--a" as string]: `${s.a}deg`,
+              ["--d" as string]: `${s.d}px`,
+              ["--s" as string]: `${s.s}`,
+            }}
+          />
+        ))}
       </div>
     </div>
   );
 }
+
+/** Spark burst definition: angle (deg), distance (px), scale, stagger (ms). */
+const SPARKS: Array<{ a: number; d: number; s: number; delay: number }> = [
+  { a: -150, d: 120, s: 1.4, delay: 0 },
+  { a: -110, d: 170, s: 1.0, delay: 90 },
+  { a: -60, d: 140, s: 1.6, delay: 40 },
+  { a: -20, d: 190, s: 0.9, delay: 140 },
+  { a: 15, d: 130, s: 1.3, delay: 60 },
+  { a: 55, d: 175, s: 1.1, delay: 180 },
+  { a: 95, d: 145, s: 1.5, delay: 20 },
+  { a: 140, d: 185, s: 1.0, delay: 120 },
+  { a: 185, d: 135, s: 1.45, delay: 200 },
+  { a: 225, d: 165, s: 0.95, delay: 100 },
+  { a: 265, d: 150, s: 1.35, delay: 160 },
+  { a: 305, d: 180, s: 1.05, delay: 240 },
+  { a: 345, d: 155, s: 1.2, delay: 70 },
+];
 
 /* ——— Tiny hex helpers (no external deps) ——— */
 
@@ -290,6 +413,7 @@ function clamp(v: number): number {
   return Math.min(255, Math.max(0, Math.round(v)));
 }
 
+/** shade(hex, percent): percent > 0 lightens, < 0 darkens. */
 function shade(hex: string, percent: number): string {
   const clean = hex.replace("#", "");
   const num = parseInt(clean.length === 3 ? clean.replace(/(.)/g, "$1$1") : clean, 16);
@@ -302,4 +426,27 @@ function shade(hex: string, percent: number): string {
 
 function lighten(hex: string, percent: number): string {
   return shade(hex, percent);
+}
+
+/** hexA(hex, alpha): hex → rgba() string. */
+function hexA(hex: string, alpha: number): string {
+  const clean = hex.replace("#", "");
+  const num = parseInt(clean.length === 3 ? clean.replace(/(.)/g, "$1$1") : clean, 16);
+  return `rgba(${num >> 16}, ${(num >> 8) & 0x00ff}, ${num & 0x0000ff}, ${alpha})`;
+}
+
+/** mix(hexA, hexB, weightA): linear blend of two hex colours (weightA 0..1). */
+function mix(hexA_: string, hexB: string, weightA: number): string {
+  const parse = (h: string) => {
+    const c = h.replace("#", "");
+    const n = parseInt(c.length === 3 ? c.replace(/(.)/g, "$1$1") : c, 16);
+    return [n >> 16, (n >> 8) & 0x00ff, n & 0x0000ff] as const;
+  };
+  const [r1, g1, b1] = parse(hexA_);
+  const [r2, g2, b2] = parse(hexB);
+  const w = Math.min(1, Math.max(0, weightA));
+  const r = Math.round(r1 * w + r2 * (1 - w));
+  const g = Math.round(g1 * w + g2 * (1 - w));
+  const b = Math.round(b1 * w + b2 * (1 - w));
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 }
