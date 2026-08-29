@@ -29,13 +29,15 @@ function serialize(photo: {
   };
 }
 
-// GET /api/photos — list the session wedding's photos (tenant-scoped)
+// GET /api/photos — list the session wedding's photos (tenant-scoped).
+// Returns ONLY gallery-purpose photos; profile/invitation uploads are assets
+// referenced elsewhere, not gallery content.
 export async function GET() {
   const auth = await requireSession();
   if (auth.error) return auth.error;
 
   const photos = await prisma.photo.findMany({
-    where: tenantWhere(auth.session),
+    where: { ...tenantWhere(auth.session), purpose: "gallery" },
     orderBy: { createdAt: "desc" },
     select: { id: true, mimeType: true, size: true, createdAt: true },
   });
@@ -44,9 +46,17 @@ export async function GET() {
 }
 
 // POST /api/photos — upload a photo for the session wedding
+// ?purpose=gallery (default) | profile | invitation — tags the photo origin so
+// the photos panel can show ONLY gallery uploads (Upload-photo button).
 export async function POST(req: Request) {
   const auth = await requireSession();
   if (auth.error) return auth.error;
+
+  const allowedPurposes = new Set(["gallery", "profile", "invitation"]);
+  const purpose = (() => {
+    const p = new URL(req.url).searchParams.get("purpose");
+    return p && allowedPurposes.has(p) ? p : "gallery";
+  })();
 
   let form: FormData;
   try {
@@ -92,6 +102,7 @@ export async function POST(req: Request) {
         filename,
         mimeType: file.type,
         size: file.size,
+        purpose,
       },
       select: { id: true, mimeType: true, size: true, createdAt: true },
     });

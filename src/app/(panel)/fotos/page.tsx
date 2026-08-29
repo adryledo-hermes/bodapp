@@ -7,56 +7,19 @@ import { translate } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
-/**
- * The wedding gallery shows ONLY wedding photos — it must NOT include images
- * uploaded for other purposes (guest profile photos, invitation images), even
- * though they share the /api/photos storage. We collect every photo id that is
- * referenced by a Guest.photoUrl or an Invitation.content.imageUrl and exclude
- * them from the gallery.
- */
-async function referencedPhotoIds(weddingId: string): Promise<Set<string>> {
-  const ids = new Set<string>();
-  const addFromUrl = (url: string | null | undefined) => {
-    if (!url) return;
-    // App-relative photo URLs look like /api/photos/<id>/file
-    const m = /^\/api\/photos\/([^/]+)\/file$/.exec(url);
-    if (m) ids.add(m[1]);
-  };
-
-  const [guests, invitations] = await Promise.all([
-    prisma.guest.findMany({
-      where: { weddingId },
-      select: { photoUrl: true },
-    }),
-    prisma.invitation.findMany({
-      where: { weddingId },
-      select: { content: true },
-    }),
-  ]);
-
-  for (const g of guests) addFromUrl(g.photoUrl);
-  for (const inv of invitations) {
-    if (inv.content && typeof inv.content === "object") {
-      const c = inv.content as Record<string, unknown>;
-      addFromUrl(typeof c.imageUrl === "string" ? c.imageUrl : null);
-    }
-  }
-  return ids;
-}
-
 export default async function FotosPage() {
   const auth = await requireSession();
   if (auth.error) redirect("/login");
 
   const locale = await getLocale();
 
-  const referenced = await referencedPhotoIds(auth.session.weddingId);
-
   const photos = await prisma.photo.findMany({
     where: {
       weddingId: auth.session.weddingId,
-      // Only wedding gallery photos — exclude profile/invitation images.
-      ...(referenced.size > 0 ? { id: { notIn: [...referenced] } } : {}),
+      // ONLY photos uploaded via the 'Upload photo' button on this page (or the
+      // future guest upload page) — profile/invitation images are excluded by
+      // their purpose tag at upload time.
+      purpose: "gallery",
     },
     select: { id: true, mimeType: true, size: true, createdAt: true },
     orderBy: { createdAt: "desc" },

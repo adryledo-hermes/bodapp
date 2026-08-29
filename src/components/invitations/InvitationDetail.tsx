@@ -59,7 +59,7 @@ export default function InvitationDetail({
   async function uploadImage(file: File) {
     const form = new FormData();
     form.append("photo", file);
-    const res = await fetch("/api/photos", { method: "POST", body: form });
+    const res = await fetch("/api/photos?purpose=invitation", { method: "POST", body: form });
     if (!res.ok) throw new Error("upload failed");
     const data = await res.json();
     const id = data.photo?.id;

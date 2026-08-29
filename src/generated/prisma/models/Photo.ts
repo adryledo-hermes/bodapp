@@ -40,6 +40,7 @@ export type PhotoMinAggregateOutputType = {
   filename: string | null
   mimeType: string | null
   size: number | null
+  purpose: string | null
   createdAt: Date | null
 }
 
@@ -49,6 +50,7 @@ export type PhotoMaxAggregateOutputType = {
   filename: string | null
   mimeType: string | null
   size: number | null
+  purpose: string | null
   createdAt: Date | null
 }
 
@@ -58,6 +60,7 @@ export type PhotoCountAggregateOutputType = {
   filename: number
   mimeType: number
   size: number
+  purpose: number
   createdAt: number
   _all: number
 }
@@ -77,6 +80,7 @@ export type PhotoMinAggregateInputType = {
   filename?: true
   mimeType?: true
   size?: true
+  purpose?: true
   createdAt?: true
 }
 
@@ -86,6 +90,7 @@ export type PhotoMaxAggregateInputType = {
   filename?: true
   mimeType?: true
   size?: true
+  purpose?: true
   createdAt?: true
 }
 
@@ -95,6 +100,7 @@ export type PhotoCountAggregateInputType = {
   filename?: true
   mimeType?: true
   size?: true
+  purpose?: true
   createdAt?: true
   _all?: true
 }
@@ -191,6 +197,7 @@ export type PhotoGroupByOutputType = {
   filename: string
   mimeType: string
   size: number
+  purpose: string
   createdAt: Date
   _count: PhotoCountAggregateOutputType | null
   _avg: PhotoAvgAggregateOutputType | null
@@ -223,6 +230,7 @@ export type PhotoWhereInput = {
   filename?: Prisma.StringFilter<"Photo"> | string
   mimeType?: Prisma.StringFilter<"Photo"> | string
   size?: Prisma.IntFilter<"Photo"> | number
+  purpose?: Prisma.StringFilter<"Photo"> | string
   createdAt?: Prisma.DateTimeFilter<"Photo"> | Date | string
   wedding?: Prisma.XOR<Prisma.WeddingScalarRelationFilter, Prisma.WeddingWhereInput>
 }
@@ -233,6 +241,7 @@ export type PhotoOrderByWithRelationInput = {
   filename?: Prisma.SortOrder
   mimeType?: Prisma.SortOrder
   size?: Prisma.SortOrder
+  purpose?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   wedding?: Prisma.WeddingOrderByWithRelationInput
 }
@@ -246,6 +255,7 @@ export type PhotoWhereUniqueInput = Prisma.AtLeast<{
   filename?: Prisma.StringFilter<"Photo"> | string
   mimeType?: Prisma.StringFilter<"Photo"> | string
   size?: Prisma.IntFilter<"Photo"> | number
+  purpose?: Prisma.StringFilter<"Photo"> | string
   createdAt?: Prisma.DateTimeFilter<"Photo"> | Date | string
   wedding?: Prisma.XOR<Prisma.WeddingScalarRelationFilter, Prisma.WeddingWhereInput>
 }, "id">
@@ -256,6 +266,7 @@ export type PhotoOrderByWithAggregationInput = {
   filename?: Prisma.SortOrder
   mimeType?: Prisma.SortOrder
   size?: Prisma.SortOrder
+  purpose?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.PhotoCountOrderByAggregateInput
   _avg?: Prisma.PhotoAvgOrderByAggregateInput
@@ -273,6 +284,7 @@ export type PhotoScalarWhereWithAggregatesInput = {
   filename?: Prisma.StringWithAggregatesFilter<"Photo"> | string
   mimeType?: Prisma.StringWithAggregatesFilter<"Photo"> | string
   size?: Prisma.IntWithAggregatesFilter<"Photo"> | number
+  purpose?: Prisma.StringWithAggregatesFilter<"Photo"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Photo"> | Date | string
 }
 
@@ -281,6 +293,7 @@ export type PhotoCreateInput = {
   filename: string
   mimeType: string
   size: number
+  purpose?: string
   createdAt?: Date | string
   wedding: Prisma.WeddingCreateNestedOneWithoutPhotosInput
 }
@@ -291,6 +304,7 @@ export type PhotoUncheckedCreateInput = {
   filename: string
   mimeType: string
   size: number
+  purpose?: string
   createdAt?: Date | string
 }
 
@@ -299,6 +313,7 @@ export type PhotoUpdateInput = {
   filename?: Prisma.StringFieldUpdateOperationsInput | string
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.IntFieldUpdateOperationsInput | number
+  purpose?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   wedding?: Prisma.WeddingUpdateOneRequiredWithoutPhotosNestedInput
 }
@@ -309,6 +324,7 @@ export type PhotoUncheckedUpdateInput = {
   filename?: Prisma.StringFieldUpdateOperationsInput | string
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.IntFieldUpdateOperationsInput | number
+  purpose?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -318,6 +334,7 @@ export type PhotoCreateManyInput = {
   filename: string
   mimeType: string
   size: number
+  purpose?: string
   createdAt?: Date | string
 }
 
@@ -326,6 +343,7 @@ export type PhotoUpdateManyMutationInput = {
   filename?: Prisma.StringFieldUpdateOperationsInput | string
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.IntFieldUpdateOperationsInput | number
+  purpose?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -335,6 +353,7 @@ export type PhotoUncheckedUpdateManyInput = {
   filename?: Prisma.StringFieldUpdateOperationsInput | string
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.IntFieldUpdateOperationsInput | number
+  purpose?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -354,6 +373,7 @@ export type PhotoCountOrderByAggregateInput = {
   filename?: Prisma.SortOrder
   mimeType?: Prisma.SortOrder
   size?: Prisma.SortOrder
+  purpose?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -367,6 +387,7 @@ export type PhotoMaxOrderByAggregateInput = {
   filename?: Prisma.SortOrder
   mimeType?: Prisma.SortOrder
   size?: Prisma.SortOrder
+  purpose?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -376,6 +397,7 @@ export type PhotoMinOrderByAggregateInput = {
   filename?: Prisma.SortOrder
   mimeType?: Prisma.SortOrder
   size?: Prisma.SortOrder
+  purpose?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -430,6 +452,7 @@ export type PhotoCreateWithoutWeddingInput = {
   filename: string
   mimeType: string
   size: number
+  purpose?: string
   createdAt?: Date | string
 }
 
@@ -438,6 +461,7 @@ export type PhotoUncheckedCreateWithoutWeddingInput = {
   filename: string
   mimeType: string
   size: number
+  purpose?: string
   createdAt?: Date | string
 }
 
@@ -476,6 +500,7 @@ export type PhotoScalarWhereInput = {
   filename?: Prisma.StringFilter<"Photo"> | string
   mimeType?: Prisma.StringFilter<"Photo"> | string
   size?: Prisma.IntFilter<"Photo"> | number
+  purpose?: Prisma.StringFilter<"Photo"> | string
   createdAt?: Prisma.DateTimeFilter<"Photo"> | Date | string
 }
 
@@ -484,6 +509,7 @@ export type PhotoCreateManyWeddingInput = {
   filename: string
   mimeType: string
   size: number
+  purpose?: string
   createdAt?: Date | string
 }
 
@@ -492,6 +518,7 @@ export type PhotoUpdateWithoutWeddingInput = {
   filename?: Prisma.StringFieldUpdateOperationsInput | string
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.IntFieldUpdateOperationsInput | number
+  purpose?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -500,6 +527,7 @@ export type PhotoUncheckedUpdateWithoutWeddingInput = {
   filename?: Prisma.StringFieldUpdateOperationsInput | string
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.IntFieldUpdateOperationsInput | number
+  purpose?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -508,6 +536,7 @@ export type PhotoUncheckedUpdateManyWithoutWeddingInput = {
   filename?: Prisma.StringFieldUpdateOperationsInput | string
   mimeType?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.IntFieldUpdateOperationsInput | number
+  purpose?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -519,6 +548,7 @@ export type PhotoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   filename?: boolean
   mimeType?: boolean
   size?: boolean
+  purpose?: boolean
   createdAt?: boolean
   wedding?: boolean | Prisma.WeddingDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["photo"]>
@@ -529,6 +559,7 @@ export type PhotoSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   filename?: boolean
   mimeType?: boolean
   size?: boolean
+  purpose?: boolean
   createdAt?: boolean
   wedding?: boolean | Prisma.WeddingDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["photo"]>
@@ -539,6 +570,7 @@ export type PhotoSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   filename?: boolean
   mimeType?: boolean
   size?: boolean
+  purpose?: boolean
   createdAt?: boolean
   wedding?: boolean | Prisma.WeddingDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["photo"]>
@@ -549,10 +581,11 @@ export type PhotoSelectScalar = {
   filename?: boolean
   mimeType?: boolean
   size?: boolean
+  purpose?: boolean
   createdAt?: boolean
 }
 
-export type PhotoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "weddingId" | "filename" | "mimeType" | "size" | "createdAt", ExtArgs["result"]["photo"]>
+export type PhotoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "weddingId" | "filename" | "mimeType" | "size" | "purpose" | "createdAt", ExtArgs["result"]["photo"]>
 export type PhotoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   wedding?: boolean | Prisma.WeddingDefaultArgs<ExtArgs>
 }
@@ -574,6 +607,7 @@ export type $PhotoPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     filename: string
     mimeType: string
     size: number
+    purpose: string
     createdAt: Date
   }, ExtArgs["result"]["photo"]>
   composites: {}
@@ -1004,6 +1038,7 @@ export interface PhotoFieldRefs {
   readonly filename: Prisma.FieldRef<"Photo", 'String'>
   readonly mimeType: Prisma.FieldRef<"Photo", 'String'>
   readonly size: Prisma.FieldRef<"Photo", 'Int'>
+  readonly purpose: Prisma.FieldRef<"Photo", 'String'>
   readonly createdAt: Prisma.FieldRef<"Photo", 'DateTime'>
 }
     

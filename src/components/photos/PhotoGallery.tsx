@@ -59,7 +59,7 @@ export default function PhotoGallery({
     try {
       const fd = new FormData();
       fd.append("photo", file);
-      const res = await fetch("/api/photos", { method: "POST", body: fd });
+      const res = await fetch("/api/photos?purpose=gallery", { method: "POST", body: fd });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(t(uploadErrorKey(data.error || "")));

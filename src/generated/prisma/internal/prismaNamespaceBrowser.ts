@@ -234,6 +234,7 @@ export const PhotoScalarFieldEnum = {
   filename: 'filename',
   mimeType: 'mimeType',
   size: 'size',
+  purpose: 'purpose',
   createdAt: 'createdAt'
 } as const
 

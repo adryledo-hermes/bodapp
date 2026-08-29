@@ -245,6 +245,10 @@ model Photo {
   filename  String
   mimeType  String
   size      Int
+  // Origin of the upload: "gallery" (Upload-photo button in the photos panel
+  // or the future guest upload page) vs "profile"/"invitation" references.
+  // Only gallery photos appear in the photos panel.
+  purpose   String   @default("gallery")
   createdAt DateTime @default(now())
 
   wedding Wedding @relation(fields: [weddingId], references: [id])
