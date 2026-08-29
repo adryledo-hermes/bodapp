@@ -277,8 +277,8 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
 
             {(content.directions || content.accommodation) ? (
               <div className="grid gap-4 sm:grid-cols-2">
-                {content.directions ? <section className="rounded-2xl bg-[#F3EFE8] p-5 text-center"><h2 className="inv-serif text-xl italic font-normal">{t("inv.directionsTitle")}</h2><p className="mt-2 whitespace-pre-line text-sm leading-6 text-[#5D554D]">{content.directions}</p></section> : null}
-                {content.accommodation ? <section className="rounded-2xl bg-[#F3EFE8] p-5 text-center"><h2 className="inv-serif text-xl italic font-normal">{t("inv.accommodationTitle")}</h2><p className="mt-2 whitespace-pre-line text-sm leading-6 text-[#5D554D]">{content.accommodation}</p></section> : null}
+                {content.directions ? <section className="min-w-0 rounded-2xl bg-[#F3EFE8] p-5 text-center"><h2 className="inv-serif text-xl italic font-normal">{t("inv.directionsTitle")}</h2><p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-[#5D554D]">{content.directions}</p></section> : null}
+                {content.accommodation ? <section className="min-w-0 rounded-2xl bg-[#F3EFE8] p-5 text-center"><h2 className="inv-serif text-xl italic font-normal">{t("inv.accommodationTitle")}</h2><p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-[#5D554D]">{content.accommodation}</p></section> : null}
               </div>
             ) : null}
 
