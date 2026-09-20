@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { normalizeInvitationContent, type InvitationContent } from "@/lib/invitation-inline";
 import { translate, type Locale } from "@/lib/i18n";
+import { buildInvitationUrl } from "@/lib/qr";
 
 export interface InvitationDetailBase {
   id: string;
@@ -18,12 +19,16 @@ const inputClassName =
 export default function InvitationDetail({
   invitation,
   venue,
+  slug,
+  baseUrl,
   locale,
   onClose,
   onSaved,
 }: {
   invitation: InvitationDetailBase;
   venue: string;
+  slug: string;
+  baseUrl: string;
   locale: Locale;
   onClose: () => void;
   onSaved?: (updated: { id: string; content?: unknown; guests?: InvitationDetailBase["guests"] }) => void;
@@ -45,6 +50,21 @@ export default function InvitationDetail({
   const t = (key: string, vars?: Record<string, string | number>) =>
     translate(locale, key, vars);
   const qrUrl = `/api/invitation/${invitation.id}/qr`;
+
+  /** Build a wa.me deep link prefilling the message with the invitation link. */
+  function whatsappShareLink(): string | null {
+    const firstWithPhone = invitation.guests.find(
+      (g) => g.phone && g.phone.trim().length > 0
+    );
+    if (!firstWithPhone?.phone || !slug) return null;
+    const url = buildInvitationUrl({
+      baseUrl,
+      slug,
+      invitationId: invitation.id,
+    });
+    const text = t("invman.whatsappMessage", { url });
+    return `https://wa.me/${firstWithPhone.phone.replace(/[^\d]/g, "")}?text=${encodeURIComponent(text)}`;
+  }
 
   function set<K extends keyof InvitationContent>(key: K, value: InvitationContent[K]) {
     setContent((c) => ({ ...c, [key]: value }));
@@ -246,9 +266,19 @@ export default function InvitationDetail({
               <p className="text-sm font-semibold text-slate-800">{t("invman.qr")}</p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={qrUrl} alt={t("invman.qr")} className="h-36 w-36 rounded-lg border border-slate-100 bg-white object-contain" />
-              <a href={qrUrl} download={`qr-${invitation.id}.png`} className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700">
-                {t("invman.qrDownload")}
-              </a>
+              {(() => {
+                const wa = whatsappShareLink();
+                return (
+                  <a
+                    href={wa ?? qrUrl}
+                    target="_blank"
+                    rel="noopener"
+                    className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700"
+                  >
+                    {wa ? t("invman.sendInvitation") : t("invman.qr")}
+                  </a>
+                );
+              })()}
             </div>
           </div>
         </div>

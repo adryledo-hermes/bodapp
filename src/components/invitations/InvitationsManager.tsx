@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { translate, type Locale } from "@/lib/i18n";
+import { buildInvitationUrl } from "@/lib/qr";
 import InvitationDetail from "./InvitationDetail";
 
 /** A guest selectable for grouping into an invitation. */
@@ -32,11 +33,15 @@ export default function InvitationsManager({
   invitations: initial,
   guests,
   venue,
+  slug,
+  baseUrl,
   locale,
 }: {
   invitations: ManagerInvitation[];
   guests: InviteeOption[];
   venue: string;
+  slug: string;
+  baseUrl: string;
   locale: Locale;
 }) {
   const router = useRouter();
@@ -52,6 +57,21 @@ export default function InvitationsManager({
     translate(locale, key, vars);
   const inputClassName =
     "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none";
+
+  /** Build a wa.me deep link prefilling the message with the invitation link. */
+  function whatsappShareLink(inv: ManagerInvitation): string | null {
+    const firstWithPhone = inv.guests.find(
+      (g) => g.phone && g.phone.trim().length > 0
+    );
+    if (!firstWithPhone?.phone || !slug) return null;
+    const url = buildInvitationUrl({
+      baseUrl,
+      slug,
+      invitationId: inv.id,
+    });
+    const text = t("invman.whatsappMessage", { url });
+    return `https://wa.me/${firstWithPhone.phone.replace(/[^\d]/g, "")}?text=${encodeURIComponent(text)}`;
+  }
 
   function toggleGuest(id: string) {
     setSelected((prev) => {
@@ -249,13 +269,22 @@ export default function InvitationsManager({
                   ))}
                 </ul>
               )}
-              <a
-                href={`/api/invitation/${inv.id}/qr`}
-                download={`qr-${inv.id}.png`}
-                className="mt-4 inline-flex justify-center rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700"
-              >
-                {t("invman.qrDownload")}
-              </a>
+              {(() => {
+                const wa = whatsappShareLink(inv);
+                const fallback = slug
+                  ? buildInvitationUrl({ baseUrl, slug, invitationId: inv.id })
+                  : null;
+                return (
+                  <a
+                    href={wa ?? fallback ?? "#"}
+                    target="_blank"
+                    rel="noopener"
+                    className="mt-4 inline-flex justify-center rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700"
+                  >
+                    {t("invman.sendInvitation")}
+                  </a>
+                );
+              })()}
             </li>
           ))}
         </ul>
@@ -265,6 +294,8 @@ export default function InvitationsManager({
         <InvitationDetail
           invitation={detail}
           venue={venue}
+          slug={slug}
+          baseUrl={baseUrl}
           locale={locale}
           onClose={() => setDetail(null)}
           onSaved={(updated) => {

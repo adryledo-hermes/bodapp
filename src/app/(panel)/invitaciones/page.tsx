@@ -7,6 +7,8 @@ import { translate } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
+const DEFAULT_BASE_URL = "http://localhost:3000";
+
 export default async function InvitacionesPage() {
   const auth = await requireSession();
   if (auth.error) redirect("/login");
@@ -37,9 +39,14 @@ export default async function InvitacionesPage() {
     }),
     prisma.wedding.findUnique({
       where: { id: auth.session.weddingId },
-      select: { venue: true },
+      select: { venue: true, slug: true },
     }),
   ]);
+
+  // Public base URL for building shareable invitation links (server env).
+  const baseUrl = (
+    process.env.PUBLIC_BASE_URL ?? DEFAULT_BASE_URL
+  ).replace(/\/+$/, "");
 
   return (
     <main className="mx-auto max-w-6xl p-4 sm:p-6">
@@ -60,6 +67,8 @@ export default async function InvitacionesPage() {
         }))}
         venue={wedding?.venue ?? ""}
         guests={guests}
+        slug={wedding?.slug ?? ""}
+        baseUrl={baseUrl}
         locale={locale}
       />
     </main>
