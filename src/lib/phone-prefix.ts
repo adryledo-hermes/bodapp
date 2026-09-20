@@ -147,3 +147,26 @@ export function joinPhone(prefix: string, number: string): string {
   if (!digits) return ""; // a prefix with no number is not a stored phone
   return p ? `+${p} ${digits}` : digits;
 }
+
+/**
+ * Ensure a phone has an international country code before it's handed to an
+ * external service (Twilio / wa.me). If the stored value already starts with
+ * "+" (e.g. "+34 600 000 000") it is returned E.164-normalised as-is.
+ * Legacy records saved before the prefix field (e.g. "698754321") get the
+ * default dial code prepended so providers never reject them. Fail-safe: never
+ * mutates storage — this is a use-site normalisation only.
+ */
+export function ensureInternational(
+  phone: string | null | undefined,
+  defaultDial: string = DEFAULT_DIAL_CODE
+): string {
+  const raw = String(phone ?? "").trim();
+  if (!raw) return "";
+  const digits = raw.replace(/[^\d]/g, "");
+  if (!digits) return "";
+  if (raw.startsWith("+")) return "+" + digits;
+  // Legacy formats: "00..." (IDD escape) → "+". Bare national → prepend default.
+  if (digits.startsWith("00")) return "+" + digits.slice(2);
+  const def = defaultDial.replace(/\D/g, "");
+  return def ? `+${def}${digits}` : digits;
+}

@@ -13,6 +13,8 @@
  * descriptive error and never attempt a network call.
  */
 
+import { ensureInternational } from "./phone-prefix";
+
 export interface SmsResult {
   ok: boolean;
   error?: string;
@@ -42,7 +44,9 @@ export function buildSmsBody(code: string): string {
 
 /**
  * Real Twilio transport. Never called from tests — the routes inject a mock.
- * Credentials come from env and are never logged.
+ * Credentials come from env and are never logged. The recipient is normalised
+ * to E.164 via ensureInternational so a legacy number stored without a country
+ * code is never rejected by Twilio.
  */
 export const twilioTransport: OtpSmsTransport = async (phone, code) => {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -51,6 +55,11 @@ export const twilioTransport: OtpSmsTransport = async (phone, code) => {
 
   if (!accountSid || !authToken || !fromNumber) {
     return { ok: false, error: "sms not configured" };
+  }
+
+  const to = ensureInternational(phone, process.env.DEFAULT_DIAL_CODE ?? undefined);
+  if (!to) {
+    return { ok: false, error: "invalid phone" };
   }
 
   const auth = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
@@ -65,7 +74,7 @@ export const twilioTransport: OtpSmsTransport = async (phone, code) => {
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: new URLSearchParams({
-          To: phone,
+          To: to,
           From: fromNumber,
           Body: buildSmsBody(code),
         }),

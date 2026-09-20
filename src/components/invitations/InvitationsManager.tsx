@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { translate, type Locale } from "@/lib/i18n";
 import { buildInvitationUrl } from "@/lib/qr";
+import { ensureInternational } from "@/lib/phone-prefix";
 import InvitationDetail from "./InvitationDetail";
 
 /** A guest selectable for grouping into an invitation. */
@@ -70,7 +71,10 @@ export default function InvitationsManager({
       invitationId: inv.id,
     });
     const text = t("invman.whatsappMessage", { url });
-    return `https://wa.me/${firstWithPhone.phone.replace(/[^\d]/g, "")}?text=${encodeURIComponent(text)}`;
+    const e164 = ensureInternational(firstWithPhone.phone);
+    if (!e164) return null;
+    // wa.me expects just the digits (no leading "+").
+    return `https://wa.me/${encodeURIComponent(e164.replace(/^\+/, ""))}?text=${encodeURIComponent(text)}`;
   }
 
   function toggleGuest(id: string) {

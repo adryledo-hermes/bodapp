@@ -3,6 +3,7 @@ import {
   dialCodeForRegion,
   splitPhone,
   joinPhone,
+  ensureInternational,
   DEFAULT_DIAL_CODE,
 } from "@/lib/phone-prefix";
 
@@ -63,5 +64,30 @@ describe("joinPhone", () => {
     expect(joinPhone("", "")).toBe("");
     expect(joinPhone("+34", "")).toBe("");
     expect(joinPhone("", "600")).toBe("600");
+  });
+});
+
+describe("ensureInternational", () => {
+  it("keeps an already-international number", () => {
+    expect(ensureInternational("+34 600 000 000")).toBe("+34600000000");
+    expect(ensureInternational("+34600000000")).toBe("+34600000000");
+  });
+
+  it("prepends the default dial code to a legacy bare national number", () => {
+    expect(ensureInternational("698754321")).toBe("+34698754321");
+    expect(ensureInternational("600 000 000")).toBe("+34600000000");
+  });
+
+  it("supports a custom default dial code", () => {
+    expect(ensureInternational("600123456", "+44")).toBe("+44600123456");
+  });
+
+  it("treats a 00 IDD escape as a leading +", () => {
+    expect(ensureInternational("0044 12345")).toBe("+4412345");
+  });
+
+  it("returns empty for empty input", () => {
+    expect(ensureInternational("")).toBe("");
+    expect(ensureInternational(null)).toBe("");
   });
 });

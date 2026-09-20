@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { normalizeInvitationContent, type InvitationContent } from "@/lib/invitation-inline";
 import { translate, type Locale } from "@/lib/i18n";
 import { buildInvitationUrl } from "@/lib/qr";
+import { ensureInternational } from "@/lib/phone-prefix";
 
 export interface InvitationDetailBase {
   id: string;
@@ -63,7 +64,10 @@ export default function InvitationDetail({
       invitationId: invitation.id,
     });
     const text = t("invman.whatsappMessage", { url });
-    return `https://wa.me/${firstWithPhone.phone.replace(/[^\d]/g, "")}?text=${encodeURIComponent(text)}`;
+    const e164 = ensureInternational(firstWithPhone.phone);
+    if (!e164) return null;
+    // wa.me expects just the digits (no leading "+").
+    return `https://wa.me/${encodeURIComponent(e164.replace(/^\+/, ""))}?text=${encodeURIComponent(text)}`;
   }
 
   function set<K extends keyof InvitationContent>(key: K, value: InvitationContent[K]) {
