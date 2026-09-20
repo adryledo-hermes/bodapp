@@ -8,6 +8,7 @@ import {
   incrementVersion,
   normalizeTemplateContent,
 } from "@/lib/invitation";
+import { resolveMapEmbedUrl } from "@/lib/maps-url";
 
 // GET /api/invitation-template — return the wedding's latest published template
 // (content + version) plus the couple's bank account from the Wedding row. The
@@ -68,6 +69,13 @@ export async function POST(req: Request) {
   }
 
   const content = normalizeTemplateContent(parsed.data.content ?? {});
+
+  // Resolve mapUrl (e.g. a maps.app.goo.gl short link) into an embeddable
+  // Google Maps URL before persisting. Fail-open: if it can't be resolved the
+  // original value is kept and the public page simply leaves the iframe empty.
+  if (content.mapUrl && content.mapUrl.trim()) {
+    content.mapUrl = await resolveMapEmbedUrl(content.mapUrl.trim());
+  }
 
   const template = await prisma.$transaction(async (tx) => {
     // Persist the bank account on the Wedding (tenant-scoped by session.weddingId).
