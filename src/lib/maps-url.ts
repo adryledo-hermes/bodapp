@@ -74,8 +74,36 @@ export async function resolveMapEmbedUrl(
     return `https://maps.google.com/maps?q=${coords.lat},${coords.lng}&z=16&output=embed`;
   }
 
+  // No coordinates — Google's redirect may still carry the place NAME in the
+  // `/maps/place/<encoded name>` path segment (common for venue short links).
+  // Embedding by name works and is frame-safe, so prefer it over the raw
+  // short link.
+  const placeName = extractPlaceName(finalUrl);
+  if (placeName) {
+    return `https://maps.google.com/maps?q=${encodeURIComponent(placeName)}&output=embed`;
+  }
+
   // Unresolvable → leave untouched.
   return raw;
+}
+
+/**
+ * Pull an embeddable place name from a Google Maps place URL's path segment:
+ * ``/maps/place/Central+Mosque+of+Melilla,+C.+Garc%C3%ADa+Cabrelles,+...+Melilla``
+ * Returns the URL-decoded name, or null when there's no usable segment.
+ */
+export function extractPlaceName(url: string): string | null {
+  try {
+    // The path segment after /maps/place/, ending before "?" or "/data" or "#".
+    const m = /\/(maps\/place\/)([^?#/]+)/.exec(url);
+    if (!m) return null;
+    // The encoded name uses "+" for spaces; commas are literal.
+    const decoded = decodeURIComponent(m[2].replace(/\+/g, " ")).trim();
+    if (decoded) return decoded;
+  } catch {
+    return null;
+  }
+  return null;
 }
 
 /** Race a promise against a deadline; rejects if it doesn't finish in time. */
