@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { translate, type Locale } from "@/lib/i18n";
+import { browserDialCode, joinPhone } from "@/lib/phone-prefix";
 import {
   GUEST_CONTEXTS,
   ALLERGY_OPTIONS,
@@ -21,7 +22,8 @@ export default function GuestForm({ locale }: { locale: Locale }) {
   const [alias, setAlias] = useState("");
   const [contextSelect, setContextSelect] = useState("");
   const [contextOther, setContextOther] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phonePrefix, setPhonePrefix] = useState(browserDialCode());
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [plusOneAllowed, setPlusOneAllowed] = useState(false);
   const [plusOneName, setPlusOneName] = useState("");
   const [isChild, setIsChild] = useState(false);
@@ -44,7 +46,8 @@ export default function GuestForm({ locale }: { locale: Locale }) {
     setAlias("");
     setContextSelect("");
     setContextOther("");
-    setPhone("");
+    setPhonePrefix(browserDialCode());
+    setPhoneNumber("");
     setPlusOneAllowed(false);
     setPlusOneName("");
     setPaperInvitation(false);
@@ -80,7 +83,7 @@ export default function GuestForm({ locale }: { locale: Locale }) {
             contextSelect === "Otro"
               ? contextOther.trim() || null
               : contextSelect || null,
-          phone: isChild ? null : phone.trim(),
+          phone: isChild ? null : joinPhone(phonePrefix, phoneNumber),
           plusOneAllowed,
           plusOneName:
             plusOneAllowed && plusOneName.trim() ? plusOneName.trim() : null,
@@ -222,19 +225,29 @@ export default function GuestForm({ locale }: { locale: Locale }) {
             <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="guestPhone">
               {t("guest.phone")} {isChild ? "" : "*"}
             </label>
-            <input
-              id="guestPhone"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder={t("guest.phoneHint")}
-              pattern="\+?[0-9 ]{5,20}"
-              minLength={5}
-              maxLength={21}
-              className={inputClassName}
-              autoComplete="tel"
-              required={!isChild}
-            />
+            <div className="flex items-center gap-2">
+              <input
+                id="guestPhonePrefix"
+                type="tel"
+                value={phonePrefix}
+                onChange={(e) => setPhonePrefix(e.target.value)}
+                placeholder="+34"
+                aria-label={t("guest.phonePrefix")}
+                className="w-24 rounded-lg border border-slate-300 px-2 py-2 text-sm focus:border-indigo-400 focus:outline-none"
+                inputMode="tel"
+                autoComplete="tel-country-code"
+              />
+              <input
+                id="guestPhone"
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder={t("guest.phoneHint")}
+                className={`flex-1 ${inputClassName}`}
+                autoComplete="tel-national"
+                required={!isChild}
+              />
+            </div>
           </div>
         )}
 

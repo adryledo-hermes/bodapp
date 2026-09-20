@@ -12,6 +12,7 @@ import {
 } from "@/lib/guests";
 import type { GuestCardData } from "@/lib/guest-view";
 import { translate, type Locale } from "@/lib/i18n";
+import { browserDialCode, joinPhone, splitPhone } from "@/lib/phone-prefix";
 
 type GuestEditFormProps = {
   guest: GuestCardData;
@@ -36,7 +37,13 @@ export default function GuestEditForm({ guest, locale, onClose }: GuestEditFormP
       ? ""
       : initialContext
   );
-  const [phone, setPhone] = useState(guest.phone);
+  const { prefix: phonePrefixInit, number: phoneNumberInit } = splitPhone(
+    guest.phone
+  );
+  const [phonePrefix, setPhonePrefix] = useState(
+    phonePrefixInit || browserDialCode()
+  );
+  const [phoneNumber, setPhoneNumber] = useState(phoneNumberInit);
   const [selectedAllergies, setSelectedAllergies] = useState<string[]>(
     guest.allergies.filter((a) =>
       (ALLERGY_OPTIONS as readonly string[]).includes(a)
@@ -115,7 +122,9 @@ export default function GuestEditForm({ guest, locale, onClose }: GuestEditFormP
         contextSelect === "Otro"
           ? contextOther.trim() || null
           : contextSelect || null,
-      phone: isChild ? null : (phone?.trim() || null),
+      phone: isChild
+        ? null
+        : (joinPhone(phonePrefix, phoneNumber) || null),
       allergies: mergeCustomTags(selectedAllergies, allergyOther),
       musicPrefs: mergeCustomTags(selectedGenres, genreOther),
       favoriteSong: favoriteSong.trim() || null,
@@ -264,14 +273,36 @@ export default function GuestEditForm({ guest, locale, onClose }: GuestEditFormP
             <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="ef-phone">
               {t("guest.phone")}
             </label>
-            <input
-              id="ef-phone"
-              type="tel"
-              value={phone ?? ""}
-              onChange={(e) => setPhone(e.target.value)}
-              className={`mb-1 ${inputClassName}`}
-              required
-            />
+            <div className="mb-1 flex items-center gap-2">
+              <label className="sr-only" htmlFor="ef-phone-prefix">
+                {t("guest.phonePrefix")}
+              </label>
+              <input
+                id="ef-phone-prefix"
+                type="tel"
+                value={phonePrefix}
+                onChange={(e) => setPhonePrefix(e.target.value)}
+                aria-label={t("guest.phonePrefix")}
+                placeholder="+34"
+                className="w-24 rounded-lg border border-slate-300 px-2 py-2 text-sm focus:border-indigo-400 focus:outline-none"
+                inputMode="tel"
+                autoComplete="tel-country-code"
+              />
+              <label className="sr-only" htmlFor="ef-phone">
+                {t("guest.phone")}
+              </label>
+              <input
+                id="ef-phone"
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                className={`flex-1 ${inputClassName}`}
+                required
+                inputMode="tel"
+                autoComplete="tel-national"
+                placeholder="600 000 000"
+              />
+            </div>
             <p className="mb-4 text-xs text-slate-400">{t("guest.phoneHint")}</p>
           </>
         )}
