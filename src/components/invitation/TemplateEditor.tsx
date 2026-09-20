@@ -27,6 +27,7 @@ interface DraftState {
   imageUrl: string | null;
   schedule: string;
   directions: string;
+  mapUrl: string;
   accommodation: string;
 }
 
@@ -42,6 +43,7 @@ function toDraft(content: TemplateContent, bankAccount: string): DraftState {
     imageUrl: content.imageUrl ?? null,
     schedule: content.schedule ?? "",
     directions: content.directions ?? "",
+    mapUrl: content.mapUrl ?? "",
     accommodation: content.accommodation ?? "",
   };
 }
@@ -116,6 +118,7 @@ export default function TemplateEditor({
             dressCode: draft.dressCode,
             schedule: draft.schedule,
             directions: draft.directions,
+            mapUrl: draft.mapUrl,
             accommodation: draft.accommodation,
             colors: { primary: draft.primary, accent: draft.accent },
             imageUrl: draft.imageUrl,
@@ -222,6 +225,14 @@ export default function TemplateEditor({
             <label className="block text-sm font-medium text-slate-700 sm:col-span-1">
               {t("tpl.directionsLabel")}
               <textarea className={`mt-1 ${inputCls}`} rows={3} value={draft.directions} onChange={(e) => set("directions", e.target.value)} placeholder="Carretera M-... / mapa" />
+              <input
+                className={`mt-2 ${inputCls}`}
+                value={draft.mapUrl}
+                onChange={(e) => set("mapUrl", e.target.value)}
+                placeholder={t("tpl.mapUrlPlaceholder")}
+                aria-label={t("tpl.mapUrlLabel")}
+              />
+              <span className="mt-1 block text-xs text-slate-500">{t("tpl.mapUrlHelp")}</span>
             </label>
             <label className="block text-sm font-medium text-slate-700 sm:col-span-1">
               {t("tpl.accommodationLabel")}

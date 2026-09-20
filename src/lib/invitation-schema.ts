@@ -22,6 +22,19 @@ export const templateUpdateSchema = z.object({
   dressCode: z.string().max(200).optional(),
   schedule: z.string().max(3000).optional(),
   directions: z.string().max(2000).optional(),
+  mapUrl: z
+    .string()
+    .max(2000)
+    .optional()
+    .refine(
+      (v) =>
+        v === undefined ||
+        v.trim() === "" ||
+        /^https?:\/\/.+/.test(v.trim()),
+      {
+        message: "mapUrl must be an absolute http(s) URL",
+      },
+    ),
   accommodation: z.string().max(2000).optional(),
   imageUrl: z.string().max(500).nullable().optional(),
   sections: z.array(z.string().max(500)).optional(),

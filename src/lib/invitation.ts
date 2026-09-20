@@ -23,6 +23,8 @@ export interface TemplateContent {
   dressCode: string;
   schedule: string;
   directions: string;
+  /** Google Maps embed URL shown in the "How to get there" section. */
+  mapUrl: string;
   accommodation: string;
   bankAccount: string;
   sections: string[];
@@ -42,6 +44,7 @@ export const DEFAULT_TEMPLATE: TemplateContent = {
   dressCode: "",
   schedule: "",
   directions: "",
+  mapUrl: "",
   accommodation: "",
   bankAccount: "",
   sections: [],
@@ -82,6 +85,7 @@ export function normalizeTemplateContent(raw: unknown): TemplateContent {
     dressCode: pickString("dressCode", DEFAULT_TEMPLATE.dressCode),
     schedule: pickString("schedule", DEFAULT_TEMPLATE.schedule),
     directions: pickString("directions", DEFAULT_TEMPLATE.directions),
+    mapUrl: pickString("mapUrl", DEFAULT_TEMPLATE.mapUrl),
     accommodation: pickString("accommodation", DEFAULT_TEMPLATE.accommodation),
     bankAccount: pickString("bankAccount", DEFAULT_TEMPLATE.bankAccount),
     sections: Array.isArray(r.sections)

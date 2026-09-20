@@ -275,10 +275,24 @@ export default function InvitationPage({ view, locale }: InvitationPageProps) {
               </section>
             ) : null}
 
-            {(content.directions || content.accommodation) ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {content.directions ? <section className="min-w-0 rounded-2xl bg-[#F3EFE8] p-5 text-center"><h2 className="inv-serif text-xl italic font-normal">{t("inv.directionsTitle")}</h2><p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-[#5D554D]">{content.directions}</p></section> : null}
-                {content.accommodation ? <section className="min-w-0 rounded-2xl bg-[#F3EFE8] p-5 text-center"><h2 className="inv-serif text-xl italic font-normal">{t("inv.accommodationTitle")}</h2><p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-[#5D554D]">{content.accommodation}</p></section> : null}
+            {(content.directions || content.accommodation || content.mapUrl) ? (
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {content.directions ? <section className="min-w-0 rounded-2xl bg-[#F3EFE8] p-5 text-center"><h2 className="inv-serif text-xl italic font-normal">{t("inv.directionsTitle")}</h2><p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-[#5D554D]">{content.directions}</p></section> : null}
+                  {content.accommodation ? <section className="min-w-0 rounded-2xl bg-[#F3EFE8] p-5 text-center"><h2 className="inv-serif text-xl italic font-normal">{t("inv.accommodationTitle")}</h2><p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-[#5D554D]">{content.accommodation}</p></section> : null}
+                </div>
+                {content.mapUrl ? (
+                  <div className="overflow-hidden rounded-2xl border border-[#D8D1C7] bg-[#FCFAF6]">
+                    <iframe
+                      src={content.mapUrl}
+                      title={t("inv.mapTitle")}
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                      className="h-72 w-full border-0"
+                      allowFullScreen
+                    />
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
