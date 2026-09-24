@@ -21,6 +21,8 @@ export interface ManagerInvitation {
   id: string;
   title: string;
   content?: unknown;
+  /** Manual "sent" tracking set from the panel. */
+  sent: boolean;
   guests: Array<{ id: string; fullName: string; phone: string | null; plusOneAllowed: boolean; plusOneName: string | null }>;
 }
 
@@ -138,6 +140,32 @@ export default function InvitationsManager({
     } catch {
       // silent — list refresh on next interaction covers it
     }
+  }
+
+  /** Optimistically flip the manual "sent" flag for an invitation. */
+  function toggleSent(id: string) {
+    const target = invitations.find((i) => i.id === id);
+    if (!target) return;
+    const next = !target.sent;
+    // Optimistic update, then persist; revert on failure.
+    setInvitations((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, sent: next } : i))
+    );
+    void fetch(`/api/invitations/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sent: next }),
+    })
+      .then((res) => {
+        if (!res.ok) revertSent(id);
+      })
+      .catch(() => revertSent(id));
+  }
+
+  function revertSent(id: string) {
+    setInvitations((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, sent: !i.sent } : i))
+    );
   }
 
   return (
@@ -289,6 +317,30 @@ export default function InvitationsManager({
                   </a>
                 );
               })()}
+              <label className="mt-2 flex cursor-pointer items-center justify-between gap-2 text-sm">
+                <span className="text-xs text-slate-600">{t("invman.sentLabel")}</span>
+                <span className="flex items-center gap-2">
+                  <span className={`text-xs font-medium ${inv.sent ? "text-emerald-600" : "text-slate-400"}`}>
+                    {inv.sent ? t("invman.sentYes") : t("invman.sentNo")}
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={inv.sent}
+                    aria-label={t("invman.sentAria")}
+                    onClick={() => toggleSent(inv.id)}
+                    className={`relative h-6 w-11 rounded-full transition-colors ${
+                      inv.sent ? "bg-emerald-500" : "bg-slate-300"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                        inv.sent ? "translate-x-5" : "translate-x-0.5"
+                      }`}
+                    />
+                  </button>
+                </span>
+              </label>
             </li>
           ))}
         </ul>

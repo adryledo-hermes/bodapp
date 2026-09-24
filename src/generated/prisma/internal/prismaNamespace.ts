@@ -1353,6 +1353,7 @@ export const InvitationScalarFieldEnum = {
   title: 'title',
   acceptedPhones: 'acceptedPhones',
   content: 'content',
+  sent: 'sent',
   createdAt: 'createdAt'
 } as const
 

@@ -93,6 +93,7 @@ export async function POST(req: Request) {
     dressCode: pick("dressCode") || null,
     schedule: pick("schedule") || null,
     directions: pick("directions") || null,
+    mapUrl: typeof raw.mapUrl === "string" ? raw.mapUrl.trim() : null,
     accommodation: pick("accommodation") || null,
     imageUrl: typeof raw.imageUrl === "string" ? raw.imageUrl : null,
   };

@@ -22,6 +22,7 @@ export default async function InvitacionesPage() {
         id: true,
         title: true,
         content: true,
+        sent: true,
         guests: { select: { id: true, fullName: true, phone: true, plusOneAllowed: true, plusOneName: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -63,6 +64,7 @@ export default async function InvitacionesPage() {
           id: inv.id,
           title: inv.title,
           content: inv.content,
+          sent: inv.sent,
           guests: inv.guests,
         }))}
         venue={wedding?.venue ?? ""}

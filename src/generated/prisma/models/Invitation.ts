@@ -28,6 +28,7 @@ export type InvitationMinAggregateOutputType = {
   id: string | null
   weddingId: string | null
   title: string | null
+  sent: boolean | null
   createdAt: Date | null
 }
 
@@ -35,6 +36,7 @@ export type InvitationMaxAggregateOutputType = {
   id: string | null
   weddingId: string | null
   title: string | null
+  sent: boolean | null
   createdAt: Date | null
 }
 
@@ -44,6 +46,7 @@ export type InvitationCountAggregateOutputType = {
   title: number
   acceptedPhones: number
   content: number
+  sent: number
   createdAt: number
   _all: number
 }
@@ -53,6 +56,7 @@ export type InvitationMinAggregateInputType = {
   id?: true
   weddingId?: true
   title?: true
+  sent?: true
   createdAt?: true
 }
 
@@ -60,6 +64,7 @@ export type InvitationMaxAggregateInputType = {
   id?: true
   weddingId?: true
   title?: true
+  sent?: true
   createdAt?: true
 }
 
@@ -69,6 +74,7 @@ export type InvitationCountAggregateInputType = {
   title?: true
   acceptedPhones?: true
   content?: true
+  sent?: true
   createdAt?: true
   _all?: true
 }
@@ -151,6 +157,7 @@ export type InvitationGroupByOutputType = {
   title: string
   acceptedPhones: string[]
   content: runtime.JsonValue | null
+  sent: boolean
   createdAt: Date
   _count: InvitationCountAggregateOutputType | null
   _min: InvitationMinAggregateOutputType | null
@@ -181,6 +188,7 @@ export type InvitationWhereInput = {
   title?: Prisma.StringFilter<"Invitation"> | string
   acceptedPhones?: Prisma.StringNullableListFilter<"Invitation">
   content?: Prisma.JsonNullableFilter<"Invitation">
+  sent?: Prisma.BoolFilter<"Invitation"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Invitation"> | Date | string
   wedding?: Prisma.XOR<Prisma.WeddingScalarRelationFilter, Prisma.WeddingWhereInput>
   otpCodes?: Prisma.OtpCodeListRelationFilter
@@ -193,6 +201,7 @@ export type InvitationOrderByWithRelationInput = {
   title?: Prisma.SortOrder
   acceptedPhones?: Prisma.SortOrder
   content?: Prisma.SortOrderInput | Prisma.SortOrder
+  sent?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   wedding?: Prisma.WeddingOrderByWithRelationInput
   otpCodes?: Prisma.OtpCodeOrderByRelationAggregateInput
@@ -208,6 +217,7 @@ export type InvitationWhereUniqueInput = Prisma.AtLeast<{
   title?: Prisma.StringFilter<"Invitation"> | string
   acceptedPhones?: Prisma.StringNullableListFilter<"Invitation">
   content?: Prisma.JsonNullableFilter<"Invitation">
+  sent?: Prisma.BoolFilter<"Invitation"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Invitation"> | Date | string
   wedding?: Prisma.XOR<Prisma.WeddingScalarRelationFilter, Prisma.WeddingWhereInput>
   otpCodes?: Prisma.OtpCodeListRelationFilter
@@ -220,6 +230,7 @@ export type InvitationOrderByWithAggregationInput = {
   title?: Prisma.SortOrder
   acceptedPhones?: Prisma.SortOrder
   content?: Prisma.SortOrderInput | Prisma.SortOrder
+  sent?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.InvitationCountOrderByAggregateInput
   _max?: Prisma.InvitationMaxOrderByAggregateInput
@@ -235,6 +246,7 @@ export type InvitationScalarWhereWithAggregatesInput = {
   title?: Prisma.StringWithAggregatesFilter<"Invitation"> | string
   acceptedPhones?: Prisma.StringNullableListFilter<"Invitation">
   content?: Prisma.JsonNullableWithAggregatesFilter<"Invitation">
+  sent?: Prisma.BoolWithAggregatesFilter<"Invitation"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Invitation"> | Date | string
 }
 
@@ -243,6 +255,7 @@ export type InvitationCreateInput = {
   title: string
   acceptedPhones?: Prisma.InvitationCreateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: boolean
   createdAt?: Date | string
   wedding: Prisma.WeddingCreateNestedOneWithoutInvitationsInput
   otpCodes?: Prisma.OtpCodeCreateNestedManyWithoutInvitationInput
@@ -255,6 +268,7 @@ export type InvitationUncheckedCreateInput = {
   title: string
   acceptedPhones?: Prisma.InvitationCreateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: boolean
   createdAt?: Date | string
   otpCodes?: Prisma.OtpCodeUncheckedCreateNestedManyWithoutInvitationInput
   guests?: Prisma.GuestUncheckedCreateNestedManyWithoutInvitationInput
@@ -265,6 +279,7 @@ export type InvitationUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   acceptedPhones?: Prisma.InvitationUpdateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   wedding?: Prisma.WeddingUpdateOneRequiredWithoutInvitationsNestedInput
   otpCodes?: Prisma.OtpCodeUpdateManyWithoutInvitationNestedInput
@@ -277,6 +292,7 @@ export type InvitationUncheckedUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   acceptedPhones?: Prisma.InvitationUpdateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   otpCodes?: Prisma.OtpCodeUncheckedUpdateManyWithoutInvitationNestedInput
   guests?: Prisma.GuestUncheckedUpdateManyWithoutInvitationNestedInput
@@ -288,6 +304,7 @@ export type InvitationCreateManyInput = {
   title: string
   acceptedPhones?: Prisma.InvitationCreateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: boolean
   createdAt?: Date | string
 }
 
@@ -296,6 +313,7 @@ export type InvitationUpdateManyMutationInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   acceptedPhones?: Prisma.InvitationUpdateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -305,6 +323,7 @@ export type InvitationUncheckedUpdateManyInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   acceptedPhones?: Prisma.InvitationUpdateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -329,6 +348,7 @@ export type InvitationCountOrderByAggregateInput = {
   title?: Prisma.SortOrder
   acceptedPhones?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  sent?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -336,6 +356,7 @@ export type InvitationMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   weddingId?: Prisma.SortOrder
   title?: Prisma.SortOrder
+  sent?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -343,6 +364,7 @@ export type InvitationMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   weddingId?: Prisma.SortOrder
   title?: Prisma.SortOrder
+  sent?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -437,6 +459,7 @@ export type InvitationCreateWithoutWeddingInput = {
   title: string
   acceptedPhones?: Prisma.InvitationCreateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: boolean
   createdAt?: Date | string
   otpCodes?: Prisma.OtpCodeCreateNestedManyWithoutInvitationInput
   guests?: Prisma.GuestCreateNestedManyWithoutInvitationInput
@@ -447,6 +470,7 @@ export type InvitationUncheckedCreateWithoutWeddingInput = {
   title: string
   acceptedPhones?: Prisma.InvitationCreateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: boolean
   createdAt?: Date | string
   otpCodes?: Prisma.OtpCodeUncheckedCreateNestedManyWithoutInvitationInput
   guests?: Prisma.GuestUncheckedCreateNestedManyWithoutInvitationInput
@@ -487,6 +511,7 @@ export type InvitationScalarWhereInput = {
   title?: Prisma.StringFilter<"Invitation"> | string
   acceptedPhones?: Prisma.StringNullableListFilter<"Invitation">
   content?: Prisma.JsonNullableFilter<"Invitation">
+  sent?: Prisma.BoolFilter<"Invitation"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Invitation"> | Date | string
 }
 
@@ -495,6 +520,7 @@ export type InvitationCreateWithoutGuestsInput = {
   title: string
   acceptedPhones?: Prisma.InvitationCreateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: boolean
   createdAt?: Date | string
   wedding: Prisma.WeddingCreateNestedOneWithoutInvitationsInput
   otpCodes?: Prisma.OtpCodeCreateNestedManyWithoutInvitationInput
@@ -506,6 +532,7 @@ export type InvitationUncheckedCreateWithoutGuestsInput = {
   title: string
   acceptedPhones?: Prisma.InvitationCreateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: boolean
   createdAt?: Date | string
   otpCodes?: Prisma.OtpCodeUncheckedCreateNestedManyWithoutInvitationInput
 }
@@ -531,6 +558,7 @@ export type InvitationUpdateWithoutGuestsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   acceptedPhones?: Prisma.InvitationUpdateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   wedding?: Prisma.WeddingUpdateOneRequiredWithoutInvitationsNestedInput
   otpCodes?: Prisma.OtpCodeUpdateManyWithoutInvitationNestedInput
@@ -542,6 +570,7 @@ export type InvitationUncheckedUpdateWithoutGuestsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   acceptedPhones?: Prisma.InvitationUpdateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   otpCodes?: Prisma.OtpCodeUncheckedUpdateManyWithoutInvitationNestedInput
 }
@@ -551,6 +580,7 @@ export type InvitationCreateWithoutOtpCodesInput = {
   title: string
   acceptedPhones?: Prisma.InvitationCreateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: boolean
   createdAt?: Date | string
   wedding: Prisma.WeddingCreateNestedOneWithoutInvitationsInput
   guests?: Prisma.GuestCreateNestedManyWithoutInvitationInput
@@ -562,6 +592,7 @@ export type InvitationUncheckedCreateWithoutOtpCodesInput = {
   title: string
   acceptedPhones?: Prisma.InvitationCreateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: boolean
   createdAt?: Date | string
   guests?: Prisma.GuestUncheckedCreateNestedManyWithoutInvitationInput
 }
@@ -587,6 +618,7 @@ export type InvitationUpdateWithoutOtpCodesInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   acceptedPhones?: Prisma.InvitationUpdateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   wedding?: Prisma.WeddingUpdateOneRequiredWithoutInvitationsNestedInput
   guests?: Prisma.GuestUpdateManyWithoutInvitationNestedInput
@@ -598,6 +630,7 @@ export type InvitationUncheckedUpdateWithoutOtpCodesInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   acceptedPhones?: Prisma.InvitationUpdateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   guests?: Prisma.GuestUncheckedUpdateManyWithoutInvitationNestedInput
 }
@@ -607,6 +640,7 @@ export type InvitationCreateManyWeddingInput = {
   title: string
   acceptedPhones?: Prisma.InvitationCreateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: boolean
   createdAt?: Date | string
 }
 
@@ -615,6 +649,7 @@ export type InvitationUpdateWithoutWeddingInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   acceptedPhones?: Prisma.InvitationUpdateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   otpCodes?: Prisma.OtpCodeUpdateManyWithoutInvitationNestedInput
   guests?: Prisma.GuestUpdateManyWithoutInvitationNestedInput
@@ -625,6 +660,7 @@ export type InvitationUncheckedUpdateWithoutWeddingInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   acceptedPhones?: Prisma.InvitationUpdateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   otpCodes?: Prisma.OtpCodeUncheckedUpdateManyWithoutInvitationNestedInput
   guests?: Prisma.GuestUncheckedUpdateManyWithoutInvitationNestedInput
@@ -635,6 +671,7 @@ export type InvitationUncheckedUpdateManyWithoutWeddingInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   acceptedPhones?: Prisma.InvitationUpdateacceptedPhonesInput | string[]
   content?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  sent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -684,6 +721,7 @@ export type InvitationSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   title?: boolean
   acceptedPhones?: boolean
   content?: boolean
+  sent?: boolean
   createdAt?: boolean
   wedding?: boolean | Prisma.WeddingDefaultArgs<ExtArgs>
   otpCodes?: boolean | Prisma.Invitation$otpCodesArgs<ExtArgs>
@@ -697,6 +735,7 @@ export type InvitationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   title?: boolean
   acceptedPhones?: boolean
   content?: boolean
+  sent?: boolean
   createdAt?: boolean
   wedding?: boolean | Prisma.WeddingDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["invitation"]>
@@ -707,6 +746,7 @@ export type InvitationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   title?: boolean
   acceptedPhones?: boolean
   content?: boolean
+  sent?: boolean
   createdAt?: boolean
   wedding?: boolean | Prisma.WeddingDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["invitation"]>
@@ -717,10 +757,11 @@ export type InvitationSelectScalar = {
   title?: boolean
   acceptedPhones?: boolean
   content?: boolean
+  sent?: boolean
   createdAt?: boolean
 }
 
-export type InvitationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "weddingId" | "title" | "acceptedPhones" | "content" | "createdAt", ExtArgs["result"]["invitation"]>
+export type InvitationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "weddingId" | "title" | "acceptedPhones" | "content" | "sent" | "createdAt", ExtArgs["result"]["invitation"]>
 export type InvitationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   wedding?: boolean | Prisma.WeddingDefaultArgs<ExtArgs>
   otpCodes?: boolean | Prisma.Invitation$otpCodesArgs<ExtArgs>
@@ -747,6 +788,7 @@ export type $InvitationPayload<ExtArgs extends runtime.Types.Extensions.Internal
     title: string
     acceptedPhones: string[]
     content: runtime.JsonValue | null
+    sent: boolean
     createdAt: Date
   }, ExtArgs["result"]["invitation"]>
   composites: {}
@@ -1179,6 +1221,7 @@ export interface InvitationFieldRefs {
   readonly title: Prisma.FieldRef<"Invitation", 'String'>
   readonly acceptedPhones: Prisma.FieldRef<"Invitation", 'String[]'>
   readonly content: Prisma.FieldRef<"Invitation", 'Json'>
+  readonly sent: Prisma.FieldRef<"Invitation", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"Invitation", 'DateTime'>
 }
     

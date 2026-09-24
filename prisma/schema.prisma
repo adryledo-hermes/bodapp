@@ -143,6 +143,10 @@ model Invitation {
   // message?, date?, time?, venue?, dressCode? }. Null = fall back to the
   // wedding-wide template. Edited from the Invitations panel.
   content   Json?
+  // Manual tracking of whether the invitation has been sent to the guests (set
+  // from the Invitations panel). Not derived automatically — the couple marks
+  // it once they've dispatched the WhatsApp / paper invite.
+  sent      Boolean   @default(false)
   createdAt DateTime @default(now())
 
   wedding  Wedding   @relation(fields: [weddingId], references: [id])

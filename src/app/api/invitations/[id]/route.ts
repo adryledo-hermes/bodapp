@@ -52,6 +52,13 @@ export async function PATCH(req: Request, { params }: Ctx) {
   } catch {
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
+  const bodyObj =
+    body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+
+  // `sent` is a manual boolean toggle tracked on the invitation row itself
+  // (not part of the JSON content), updated independently of content.
+  const hasSent = typeof bodyObj.sent === "boolean";
+
   const parsed = invitationContentSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid input" }, { status: 400 });
@@ -66,7 +73,10 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
   const invitation = await prisma.invitation.update({
     where: { id },
-    data: { content },
+    data: {
+      content,
+      ...(hasSent ? { sent: bodyObj.sent } : {}),
+    },
     include: {
       guests: { select: { id: true, fullName: true, phone: true } },
     },
