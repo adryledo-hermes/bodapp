@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { filterGuests, type GuestCardData, type RsvpStatus } from "@/lib/guest-view";
+import { ALLERGY_OPTIONS } from "@/lib/guests";
 import GuestCard from "./GuestCard";
 import GuestForm from "./GuestForm";
 import GuestEditForm from "./GuestEditForm";
@@ -9,6 +10,9 @@ import { translate, type Locale } from "@/lib/i18n";
 
 const inputClassName =
   "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none";
+
+/** Sentinel value for the allergy dropdown's custom free-text entry. */
+const ALLERGY_CUSTOM = "__custom__";
 
 export default function GuestBoard({
   guests,
@@ -19,10 +23,17 @@ export default function GuestBoard({
 }) {
   const [search, setSearch] = useState("");
   const [rsvpStatus, setRsvpStatus] = useState<RsvpStatus | "">("");
-  const [allergy, setAllergy] = useState("");
+  // allergySel tracks the selected option ("" = all, a known allergy, or the
+  // custom sentinel); allergyCustom holds the free text when "Custom…" is active.
+  const [allergySel, setAllergySel] = useState("");
+  const [allergyCustom, setAllergyCustom] = useState("");
   const [editing, setEditing] = useState<GuestCardData | null>(null);
 
   const t = (key: string) => translate(locale, key);
+
+  // The effective allergy filter term: the chosen option, or the free text when
+  // the custom entry is selected.
+  const allergy = allergySel === ALLERGY_CUSTOM ? allergyCustom : allergySel;
 
   const filtered = useMemo(
     () => filterGuests(guests, { search, rsvpStatus, allergy }),
@@ -62,14 +73,33 @@ export default function GuestBoard({
             </option>
           ))}
         </select>
-        <input
-          type="search"
-          placeholder={t("guest.allergyPlaceholder")}
-          value={allergy}
-          onChange={(e) => setAllergy(e.target.value)}
-          className={inputClassName}
-          aria-label={t("guest.allergyAria")}
-        />
+        <div>
+          <select
+            value={allergySel}
+            onChange={(e) => setAllergySel(e.target.value)}
+            className={inputClassName}
+            aria-label={t("guest.allergyAria")}
+          >
+            <option value="">{t("guest.allAllergies")}</option>
+            {ALLERGY_OPTIONS.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+            <option value={ALLERGY_CUSTOM}>{t("guest.allergyCustom")}</option>
+          </select>
+          {allergySel === ALLERGY_CUSTOM && (
+            <input
+              type="search"
+              placeholder={t("guest.allergyPlaceholder")}
+              value={allergyCustom}
+              onChange={(e) => setAllergyCustom(e.target.value)}
+              className={inputClassName}
+              aria-label={t("guest.allergyCustom")}
+              autoFocus
+            />
+          )}
+        </div>
       </div>
 
       {filtered.length === 0 ? (
