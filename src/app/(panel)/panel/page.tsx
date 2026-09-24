@@ -39,7 +39,7 @@ export default async function DashboardPage() {
     }),
     prisma.invitation.findMany({
       where,
-      select: { id: true, _count: { select: { otpCodes: true } } },
+      select: { id: true, sent: true },
     }),
     prisma.task.findMany({
       where,
@@ -58,7 +58,7 @@ export default async function DashboardPage() {
   const tables: DashboardTable[] = tableRows;
   const invitations: DashboardInvitation[] = invitationRows.map((inv) => ({
     id: inv.id,
-    otpCodeCount: inv._count.otpCodes,
+    sent: inv.sent,
   }));
   const tasks: DashboardTask[] = taskRows;
 

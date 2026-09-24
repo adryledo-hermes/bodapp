@@ -26,17 +26,14 @@ export interface DashboardTable {
 /**
  * Minimum fields the helper needs from each hydrated invitation row.
  *
- * The Invitation model has NO "sent" column and NO relation to Guest (guests
- * use their own `invitationToken`), so there is no way to know whether the
- * couple "sent" a link. We use OTP-code engagement as the closest proxy: an
- * invitation is considered "sent" once someone has requested a code against it
- * (i.e. a guest opened the link and engaged with it). This is the cleanest
- * realistic signal available from the current schema.
+ * The couple manually marks each invitation as "sent" from the Invitations
+ * panel (`Invitation.sent`). The dashboard reads that flag directly — no
+ * OTP-engagement proxy is needed now that the column exists.
  */
 export interface DashboardInvitation {
   id: string;
-  /** Number of OTP codes issued against this invitation (engagement). */
-  otpCodeCount: number;
+  /** Manually-set "sent" flag (from the Invitations panel). */
+  sent: boolean;
 }
 
 /** Minimum fields the helper needs from each hydrated task row. */
@@ -76,8 +73,8 @@ export interface DashboardCounts {
  * Interpretations (documented):
  * - guests   : counted by rsvpStatus (pending/confirmed/declined).
  * - tables   : total count.
- * - invitations: `sent` = invitation with ≥1 OTP code issued (engagement
- *   proxy; there is no explicit sends-tracking column), `pending` = the rest.
+ * - invitations: `sent` = invitations the couple manually marked as sent (reads
+ *   the `Invitation.sent` flag), `pending` = the rest.
  * - tasks    : `done` = status "done"; `pending` = todo + in_progress + blocked.
  *   `nextTitle`/`nextDueAt` = the first non-done task under the canonical
  *   ordering (due date asc, ties by priority high>medium>low — mirrors
@@ -104,7 +101,7 @@ export function computeDashboardCounts(
     else adults += 1;
   }
 
-  const sent = invitationRows.filter((i) => i.otpCodeCount > 0).length;
+  const sent = invitationRows.filter((i) => i.sent).length;
 
   const pendingTasks = taskRows.filter((t) => t.status !== "done");
   const done = taskRows.length - pendingTasks.length;

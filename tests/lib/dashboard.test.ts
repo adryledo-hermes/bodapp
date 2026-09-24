@@ -17,9 +17,9 @@ const tables = (n: number): DashboardTable[] =>
   Array.from({ length: n }, (_, i) => ({ id: `t${i}` }));
 
 const invitations = (
-  rows: Array<{ otpCodeCount?: number }>
+  rows: Array<{ sent?: boolean }>
 ): DashboardInvitation[] =>
-  rows.map((r, i) => ({ id: `inv${i}`, otpCodeCount: r.otpCodeCount ?? 0 }));
+  rows.map((r, i) => ({ id: `inv${i}`, sent: r.sent ?? false }));
 
 const tasks = (
   rows: Array<{
@@ -74,11 +74,11 @@ describe("computeDashboardCounts — tables", () => {
 });
 
 describe("computeDashboardCounts — invitations (sent/pending)", () => {
-  it("treats an invitation with ≥1 OTP code as sent, the rest as pending", () => {
+  it("counts invitations the couple manually marked as sent, the rest as pending", () => {
     const invs = invitations([
-      { otpCodeCount: 3 }, // engaged -> sent
-      { otpCodeCount: 0 }, // not engaged -> pending
-      { otpCodeCount: 1 }, // engaged -> sent
+      { sent: true },
+      { sent: false },
+      { sent: true },
     ]);
     const { invitations: res } = computeDashboardCounts([], [], invs, []);
     expect(res.total).toBe(3);

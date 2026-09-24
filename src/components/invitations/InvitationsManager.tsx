@@ -56,6 +56,11 @@ export default function InvitationsManager({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Group invitations by sent status: unsent first (actionable), then sent.
+  const sortedInvitations = invitations.slice().sort((a, b) =>
+    Number(a.sent) - Number(b.sent)
+  );
+
   const t = (key: string, vars?: Record<string, string | number>) =>
     translate(locale, key, vars);
   const inputClassName =
@@ -264,7 +269,7 @@ export default function InvitationsManager({
         </div>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {invitations.map((inv) => (
+          {sortedInvitations.map((inv) => (
             <li
               key={inv.id}
               className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
@@ -329,14 +334,14 @@ export default function InvitationsManager({
                     aria-checked={inv.sent}
                     aria-label={t("invman.sentAria")}
                     onClick={() => toggleSent(inv.id)}
-                    className={`relative h-6 w-11 rounded-full transition-colors ${
+                    className={`relative h-6 w-11 cursor-pointer rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${
                       inv.sent ? "bg-emerald-500" : "bg-slate-300"
                     }`}
                   >
                     <span
-                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                        inv.sent ? "translate-x-5" : "translate-x-0.5"
-                      }`}
+                      aria-hidden
+                      className="absolute top-0 left-0 block h-6 w-6 rounded-full bg-white shadow transition-transform"
+                      style={{ transform: `translateX(${inv.sent ? 20 : 2}px)` }}
                     />
                   </button>
                 </span>
