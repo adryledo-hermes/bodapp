@@ -8,9 +8,16 @@ and it:
 1. Connects to the VPS over SSH.
 2. Ensures the repo is cloned (or clones it) into `REPO_DIR`.
 3. Writes the server `.env` from a GitHub **secret** (`ENV_FILE`).
-4. Runs `deploy/deploy.sh`: fetches latest code → `docker compose up -d --build`
-   (which also runs `prisma migrate deploy` automatically, then starts the app) →
-   probes `http://127.0.0.1:<APP_PORT>/login` and reports health.
+4. Runs `deploy/deploy.sh`: fetches latest code → builds the new image **while
+   the old container keeps serving** → runs `prisma migrate deploy` →
+   gracefully recreates **only the app container** (Postgres keeps running;
+   the app is loopback-only on `127.0.0.1:3001`) → gates on
+   `http://127.0.0.1:3001/healthz`, rolls the image back if the gate fails,
+   and warns (never fails) if Caddy/HTTPS is unreachable.
+
+**Scope:** only the Bodapp stack is ever rebuilt/restarted. **Caddy** (the
+host systemd service terminating TLS) is installed once and never touched by
+this pipeline — see [`migrate-to-https.md`](migrate-to-https.md).
 
 ## 0. What you need beforehand
 
@@ -71,7 +78,7 @@ add each of these:
 | `DEPLOY_HOST` | VPS IP or hostname, e.g. `116.203.12.34` |
 | `DEPLOY_USER` | SSH user you added the public key to (e.g. `deploy` or `root`) |
 | `DEPLOY_SSH_KEY` | **Private** key content of `~/.ssh/bodapp_deploy` (the PEM/OpenSSH text) |
-| `ENV_FILE` | The **entire contents of your server `.env`** — copy the `.env` you'd create from `.env.example` with all real values (DATABASE_URL/POSTGRES_*, TWILIO_ACCOUNT_SID/AUTH_TOKEN/PHONE_NUMBER, SESSION_SECRET, PUBLIC_BASE_URL, …). Keep this in sync with what the app needs. |
+| `ENV_FILE` | The **entire contents of your server `.env`** — copy the `.env` you'd create from `.env.example` with all real values (DATABASE_URL/POSTGRES_*, TWILIO_ACCOUNT_SID/AUTH_TOKEN/PHONE_NUMBER, SESSION_SECRET, PUBLIC_BASE_URL, …). Keep this in sync with what the app needs. **`PUBLIC_BASE_URL` must be `https://<domain>`** once Caddy is in front (see migrate-to-https.md); delete any obsolete `APP_PORT` line. |
 
 Optional:
 
@@ -90,11 +97,14 @@ Optional:
 
 ## 5. Verify
 
-The run shows the app health probe. Then in a browser:
-- `http://<VPS_IP>:<APP_PORT>/login` — panel should load (default `APP_PORT` is `8080`;
-  set it in `ENV_FILE` if you prefer another host port, e.g. if 3000 is taken).
-- `PUBLIC_BASE_URL` in `ENV_FILE` must use the **same** host port + IP so QR codes
-  point at the right URL (e.g. `http://<VPS_IP>:8080` when `APP_PORT=8080`).
+The run prints the health gate (`http://127.0.0.1:3001/healthz`), the
+loopback-only port assertion and, when configured, the end-to-end https probe.
+Then in a browser:
+- `https://<your-domain>/login` — panel loads over TLS with a valid certificate.
+- `http://<your-domain>` — must **redirect** to https.
+- `PUBLIC_BASE_URL` inside `ENV_FILE` must be exactly `https://<your-domain>`
+  (it builds invite/QR links and enables secure session cookies). The app port
+  is fixed at loopback `127.0.0.1:3001`; `APP_PORT` no longer exists.
 
 ## Troubleshooting
 
@@ -103,9 +113,16 @@ The run shows the app health probe. Then in a browser:
 - **SSH permission denied** → confirm `DEPLOY_SSH_KEY` is the **private** key and
   its **public** half is in the `DEPLOY_USER`'s `authorized_keys`; check `DEPLOY_HOST`
   / `DEPLOY_USER` / `DEPLOY_PORT`.
-- **App comes up but health probe fails** → SSH in and run
-  `cd /opt/bodapp && docker compose logs --tail=100 app` ; the pipeline also prints
-  logs on failure.
+- **App comes up but health probe fails** → the pipeline prints logs on
+  failure and rolls back to the previous image; SSH in and run
+  `cd /opt/bodapp && docker compose logs --tail=100 app`.
+- **`502 Bad Gateway` from https://** → Caddy is up but the app container is
+  down/unhealthy: `cd /opt/bodapp && docker compose ps && docker compose logs --tail=100 app`.
+- **Certificate error / `curl: (60)`** → Let's Encrypt issuance failed:
+  `caddy validate --config /etc/caddy/Caddyfile`, `journalctl -u caddy -n 100`,
+  and confirm the DNS A record + firewall ports 80/443 — see
+  [`migrate-to-https.md`](migrate-to-https.md) and
+  [`hetzner-firewall.md`](hetzner-firewall.md).
 - **`ENV_FILE` secret not available / empty on manual run from a non-default branch** →
   the job is guarded with `if: github.ref == 'refs/heads/main'`, so a manual "Run workflow"
   from another branch is skipped (not executed). Always deploy `main`. If you need other

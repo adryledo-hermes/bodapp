@@ -1,0 +1,38 @@
+# Bodapp — systemd unit for Caddy (reverse proxy).
+#
+# You normally do NOT need this file: the official Caddy package (see
+# deploy/migrate-to-https.md) installs and enables its own equivalent unit.
+# It is kept in the repo for reference and for manual installs where the
+# caddy binary is simply copied to /usr/bin/caddy:
+#
+#   sudo cp deploy/caddy/caddy.service /etc/systemd/system/caddy.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now caddy
+#
+# Config it serves: /etc/caddy/Caddyfile  (repo: deploy/caddy/Caddyfile)
+# Never started/stopped by deploy/deploy.sh — Caddy is host infrastructure.
+
+[Unit]
+Description=Caddy web server (Bodapp reverse proxy)
+Documentation=https://caddyserver.com/docs/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=caddy
+Group=caddy
+ExecStart=/usr/bin/caddy run --environ --config /etc/caddy/Caddyfile --adapter caddyfile
+ExecReload=/usr/bin/caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=5s
+LimitNOFILE=1048576
+# Hardening (mirrors the official unit): private tmp, read-only system dirs,
+# capability to bind 80/443 without running as root.
+PrivateTmp=true
+ProtectSystem=full
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

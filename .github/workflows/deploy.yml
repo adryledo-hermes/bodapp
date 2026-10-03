@@ -6,9 +6,15 @@
 # trigger below if you prefer manual-only).
 #
 # Strategy: SSH into the Hetzner VPS, write .env from a GitHub secret,
-# then run deploy/deploy.sh which fetches latest code, builds via
-# docker compose (running prisma migrations automatically) and probes
-# /login for health.
+# then run deploy/deploy.sh which fetches latest code, builds the image
+# WHILE the old container keeps serving, applies prisma migrations,
+# gracefully recreates ONLY the app container (loopback 127.0.0.1:3001),
+# gates on http://127.0.0.1:3001/healthz and rolls the image back on
+# failure.
+#
+# SCOPE: this workflow never touches Caddy. The reverse proxy is a host
+# systemd service installed once (see deploy/migrate-to-https.md), so TLS
+# keeps running through every app deploy — no Caddy redeploys, no cert churn.
 #
 # REQUIRED secrets (create a GitHub **environment** named `prod` and add these
 # as Environment secrets — Settings → Environments → prod → Environment secrets):
@@ -30,7 +36,9 @@
 #        sudo mkdir -p /opt/bodapp && sudo chown $USER /opt/bodapp
 #        git clone https://github.com/<you>/bodapp.git /opt/bodapp
 #   3. Give this workflow's public key SSH access (authorized_keys).
-#   4. Done — the workflow handles everything else.
+#   4. Install Caddy + DNS + firewall for HTTPS — once, manually
+#      (see deploy/migrate-to-https.md). Never touched by this workflow.
+#   5. Done — the workflow handles the app container only.
 # ------------------------------------------------------------------
 name: Deploy to Hetzner
 
