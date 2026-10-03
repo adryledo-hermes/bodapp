@@ -93,6 +93,9 @@ add each of these:
 
 **HTTPS — set both and the Infrastructure pipeline owns Caddy end-to-end** (install, Caddyfile render from the secrets, `caddy validate`, start/reload, end-to-end `https://…/healthz` gate — no manual Caddy steps):
 
+> Ready-to-fill catalog of exactly the infrastructure pipeline's secrets:
+> [`infra.env.example`](infra.env.example).
+
 | Secret | Example | Notes |
 |---|---|---|
 | `CADDY_DOMAIN` | `app.yourdomain.com` | Public hostname. Consumed by **both** pipelines: `deploy.yml` forces `PUBLIC_BASE_URL=https://$CADDY_DOMAIN` into the server `.env` on every app deploy (invite/QR links never drift); `infra.yml` renders it into the Caddyfile and drives the TLS gate. |

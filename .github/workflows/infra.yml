@@ -23,13 +23,14 @@
 #      status proves DNS + firewall + certificate + proxy are fine; a 502
 #      only means the app container is down, which is deploy.yml's job.
 #
-# REQUIRED secrets (GitHub environment `prod`):
+# REQUIRED secrets (GitHub environment `prod`) — ready-to-fill catalog:
+#   deploy/infra.env.example
 #   DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY  (same as deploy.yml)
 #   CADDY_DOMAIN  - public hostname, e.g. app.example.com
 #   CADDY_EMAIL   - ACME/Let's Encrypt contact email
-# Optional: DEPLOY_PORT (22), REPO_DIR (unused here — assets come from the
-# runner checkout), REPO_URL (only used to clone the repo on a brand-new box
-# that has never been deployed to).
+# Optional: DEPLOY_PORT (22).
+# NOT read here (business-logic only, see deploy.yml): ENV_FILE, REPO_DIR,
+# REPO_URL — infra assets come from the runner checkout via scp.
 # ------------------------------------------------------------------
 name: Infrastructure — Caddy (HTTPS)
 
