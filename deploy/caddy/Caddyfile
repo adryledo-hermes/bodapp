@@ -1,25 +1,30 @@
 # ===========================================================================
 # Bodapp — Caddy reverse proxy (production, Hetzner)
+# TEMPLATE — never hand-edit /etc/caddy/Caddyfile on the server.
 #
-# Location on the server : /etc/caddy/Caddyfile
-# Managed by             : systemd `caddy` service (host-level, NOT Docker)
-# Deployed by            : manually, ONCE (deploy/migrate-to-https.md).
-#                          deploy/deploy.sh never writes or reloads this file,
-#                          so app deploys never touch TLS.
+# This file is rendered automatically by deploy/caddy/setup-caddy.sh, which
+# replaces the two tokens below with the GitHub secrets:
+#   app.yourdomain.com   →  $CADDY_DOMAIN   (site address)
+#   admin@yourdomain.com →  $CADDY_EMAIL     (ACME contact)
+# The deploy workflow runs that script after every app swap:
+# install-if-missing → render → `caddy validate` → start, or graceful reload
+# ONLY if the rendered config changed. deploy/deploy.sh never writes or
+# reloads Caddy, and certificates (/var/lib/caddy) are never touched by app
+# deploys.
 #
-# BEFORE FIRST START:
-#   1. Replace `app.yourdomain.com` with your real domain (site address below).
-#   2. Replace the email in the global options block.
-#   3. Point a DNS A/AAAA record for the domain at the server IP — Let's
-#      Encrypt cannot issue a certificate otherwise.
+#   1. DNS A/AAAA record for the domain → server IP (required BEFORE the
+#      first start — Let's Encrypt cannot issue a certificate otherwise).
+#   2. Secrets CADDY_DOMAIN + CADDY_EMAIL (Settings → Environments → prod),
+#      or a manual run:
+#        CADDY_DOMAIN=… CADDY_EMAIL=… sudo -E bash deploy/caddy/setup-caddy.sh
 #
 # Automatic HTTPS: Caddy provisions and renews Let's Encrypt certificates by
 # itself and redirects every plain-HTTP request to HTTPS (implicit for each
 # site address — no explicit redirect block needed). Caddy binds ports 80
 # (HTTP redirect + ACME HTTP-01 challenge) and 443 (HTTPS) itself.
 #
-# Validate after edits:  caddy validate --config /etc/caddy/Caddyfile
-# Apply after edits:     systemctl reload caddy
+# Manual edits + validate: caddy validate --config /etc/caddy/Caddyfile
+# Apply:                    systemctl reload caddy
 # ===========================================================================
 {
 	# ACME registration contact — Let's Encrypt sends expiry/failure mail here.

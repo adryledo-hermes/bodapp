@@ -224,10 +224,14 @@ IP/HTTP setup — lives in:
 - [`migrate-to-https.md`](migrate-to-https.md) — install + migration plan
 - [`hetzner-firewall.md`](hetzner-firewall.md) — allow only 80/443
 
-Caddy is installed **once** and is never touched by `deploy/deploy.sh` or the
-GitHub workflow — app deploys rebuild only the `bodapp-app` container.
-After any schema change, `docker compose run --rm migrate` is still safe to
-re-run.
+On a fresh server you don't touch any of this by hand: set the
+`CADDY_DOMAIN`/`CADDY_EMAIL` GitHub secrets and the workflow runs
+[`caddy/setup-caddy.sh`](caddy/setup-caddy.sh) after every app swap
+(install-if-missing → render from the secrets → `caddy validate` →
+start/reload), then verifies `https://<domain>/healthz` end-to-end. App
+deploys rebuild only the `bodapp-app` container — Caddy is config-only
+(reloaded only when the secrets change). After any schema change,
+`docker compose run --rm migrate` is still safe to re-run.
 
 ---
 

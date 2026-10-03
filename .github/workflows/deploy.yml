@@ -12,9 +12,11 @@
 # gates on http://127.0.0.1:3001/healthz and rolls the image back on
 # failure.
 #
-# SCOPE: this workflow never touches Caddy. The reverse proxy is a host
-# systemd service installed once (see deploy/migrate-to-https.md), so TLS
-# keeps running through every app deploy — no Caddy redeploys, no cert churn.
+# SCOPE: the app container is rebuilt/restarted per deploy. Caddy is
+# config-only: provisioned by deploy/caddy/setup-caddy.sh (idempotent —
+# install once, re-render + graceful reload ONLY when the
+# CADDY_DOMAIN/CADDY_EMAIL secrets change) and verified end-to-end;
+# certificates are never touched by app deploys.
 #
 # REQUIRED secrets (create a GitHub **environment** named `prod` and add these
 # as Environment secrets — Settings → Environments → prod → Environment secrets):
@@ -24,6 +26,10 @@
 #   ENV_FILE          - the ENTIRE contents of your server .env (all
 #                       secrets: DATABASE_URL/POSTGRES_*, TWILIO_*,
 #                       SESSION_SECRET, PUBLIC_BASE_URL, ...)
+# HTTPS (set BOTH → Caddy fully automated, incl. on fresh servers):
+#   CADDY_DOMAIN      - public hostname, e.g. app.example.com
+#                       (also forces PUBLIC_BASE_URL=https://$CADDY_DOMAIN)
+#   CADDY_EMAIL       - ACME/Let's Encrypt contact email
 # Optional:
 #   DEPLOY_PORT       - SSH port (default 22)
 #   REPO_DIR          - path on the server hosting the repo
@@ -36,9 +42,12 @@
 #        sudo mkdir -p /opt/bodapp && sudo chown $USER /opt/bodapp
 #        git clone https://github.com/<you>/bodapp.git /opt/bodapp
 #   3. Give this workflow's public key SSH access (authorized_keys).
-#   4. Install Caddy + DNS + firewall for HTTPS — once, manually
-#      (see deploy/migrate-to-https.md). Never touched by this workflow.
-#   5. Done — the workflow handles the app container only.
+#   4. DNS A record for CADDY_DOMAIN → server IP + a Hetzner firewall
+#      allowing only TCP 80/443 (and SSH) — the two console steps:
+#      deploy/migrate-to-https.md, deploy/hetzner-firewall.md.
+#   5. Set the CADDY_DOMAIN/CADDY_EMAIL secrets below — the workflow then
+#      provisions and verifies Caddy itself (no manual Caddy steps).
+#   6. Done — the workflow handles the app container + Caddy config.
 # ------------------------------------------------------------------
 name: Deploy to Hetzner
 
@@ -75,13 +84,15 @@ jobs:
           ENV_FILE: ${{ secrets.ENV_FILE }}
           REPO_DIR: ${{ secrets.REPO_DIR }}
           REPO_URL: ${{ secrets.REPO_URL }}
+          CADDY_DOMAIN: ${{ secrets.CADDY_DOMAIN }}
+          CADDY_EMAIL: ${{ secrets.CADDY_EMAIL }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           port: ${{ secrets.DEPLOY_PORT || '22' }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script_stop: true
-          envs: ENV_FILE,REPO_DIR,BRANCH,REPO_URL
+          envs: ENV_FILE,REPO_DIR,BRANCH,REPO_URL,CADDY_DOMAIN,CADDY_EMAIL
           script: |
             set -euo pipefail
             REPO_DIR="${REPO_DIR:-/opt/bodapp}"
@@ -100,6 +111,46 @@ jobs:
             printf '%s\n' "$ENV_FILE" > "$REPO_DIR/.env"
             chmod 600 "$REPO_DIR/.env"
 
-            echo "==> running deploy script on $REPO_DIR (branch $BRANCH)"
+            # Single source of truth for the public origin: derive
+            # PUBLIC_BASE_URL from the CADDY_DOMAIN secret when set, so the
+            # app, invite/QR links and Caddy can never drift apart.
+            if [ -n "$CADDY_DOMAIN" ]; then
+              grep -v '^PUBLIC_BASE_URL=' "$REPO_DIR/.env" > "$REPO_DIR/.env.tmp" || true
+              printf 'PUBLIC_BASE_URL="https://%s"\n' "$CADDY_DOMAIN" >> "$REPO_DIR/.env.tmp"
+              mv "$REPO_DIR/.env.tmp" "$REPO_DIR/.env"
+              chmod 600 "$REPO_DIR/.env"
+              echo "==> PUBLIC_BASE_URL forced to https://$CADDY_DOMAIN"
+            fi
+
+            echo "==> running deploy script (app only) on $REPO_DIR (branch $BRANCH)"
             cd "$REPO_DIR"
             BRANCH="$BRANCH" bash deploy/deploy.sh
+
+            # --- Caddy: idempotent provisioning AFTER the app swap -------------
+            # Order matters: on a migrating server the legacy container may
+            # still hold :80 until deploy.sh swaps the app to 127.0.0.1:3001.
+            if [ -n "$CADDY_DOMAIN" ] && [ -n "$CADDY_EMAIL" ]; then
+              echo "==> provisioning Caddy for $CADDY_DOMAIN"
+              CADDY_DOMAIN="$CADDY_DOMAIN" CADDY_EMAIL="$CADDY_EMAIL" \
+                bash deploy/caddy/setup-caddy.sh
+
+              echo "==> verifying end-to-end HTTPS (first run includes cert issuance)..."
+              ok=0
+              for i in $(seq 1 36); do
+                if curl -fsS --max-time 10 -o /dev/null "https://$CADDY_DOMAIN/healthz"; then
+                  echo "==> HTTPS OK (try $i)"
+                  ok=1
+                  break
+                fi
+                sleep 5
+              done
+              if [ "$ok" != 1 ]; then
+                echo "FATAL: https://$CADDY_DOMAIN/healthz unreachable after ~3min." >&2
+                echo "Check: DNS A record, firewall 80/443 (deploy/hetzner-firewall.md)," >&2
+                echo "       systemctl status caddy && journalctl -u caddy -n 50" >&2
+                exit 1
+              fi
+            else
+              echo "==> WARNING: CADDY_DOMAIN/CADDY_EMAIL secrets not set — skipping Caddy provisioning and the HTTPS gate."
+              echo "    Set both (Settings -> Environments -> prod) for zero-touch HTTPS on new servers."
+            fi

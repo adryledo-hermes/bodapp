@@ -1,6 +1,6 @@
 # Migrating Bodapp to HTTPS (Caddy reverse proxy)
 
-One-time migration from *"app served directly on a port over HTTP"* to:
+Target architecture:
 
 ```
   Internet                    Hetzner CX22 (Ubuntu)
@@ -16,141 +16,99 @@ One-time migration from *"app served directly on a port over HTTP"* to:
   removed: browser ──► TCP 80/<old-port> ──► 0.0.0.0 ──► bodapp-app
 ```
 
+## What is automated vs manual
+
+| Step | Who does it |
+|---|---|
+| Caddy install + Caddyfile render (domain/email) + `validate` + start/reload | **Automatic** — [`caddy/setup-caddy.sh`](caddy/setup-caddy.sh), run by the deploy workflow from the `CADDY_DOMAIN` / `CADDY_EMAIL` secrets |
+| `PUBLIC_BASE_URL=https://<domain>` in the server `.env` | **Automatic** — derived from `CADDY_DOMAIN` every deploy (cannot drift from Caddy) |
+| App swap to `127.0.0.1:3001`, migrations, health gate, rollback | **Automatic** — [`deploy.sh`](deploy.sh) |
+| End-to-end `https://<domain>/healthz` verification | **Automatic** — hard CI gate after provisioning |
+| DNS A record for the domain | **Manual** (your DNS provider) |
+| Firewall: open 80/443, lock SSH | **Manual, once per server** ([`hetzner-firewall.md`](hetzner-firewall.md)) |
+| Docker + repo clone + deploy SSH key | **Manual, once per server** ([`hetzner-setup.md`](hetzner-setup.md) steps 1–3, [`github-actions-deploy.md`](github-actions-deploy.md)) |
+| Re-sharing invite QR codes after the domain change | **Manual, once** (last step below) |
+
 **Principles**
 
 - **Caddy lives on the host as a systemd service** — never in the app
-  container, never in `docker-compose.yml`. `deploy/deploy.sh` therefore
-  cannot restart or break TLS during app deploys (it only *warns*, read-only,
-  if it sees Caddy is down).
+  container, never in `docker-compose.yml`. It is *config-only*
+  infrastructure: `setup-caddy.sh` installs it once and re-renders/reloads it
+  only when the domain/email secrets change; app deploys never restart it and
+  never touch certificates (`/var/lib/caddy`).
 - **The app is loopback-only** (`127.0.0.1:3001`) — not reachable from any
   network even if a firewall rule is wrong.
-- **Firewall opens only 80 + 443** (plus SSH for you).
+- **Firewall opens only 80 + 443** (plus SSH for you) — the one console step.
 
-**Why the order below matters:** your current setup holds port **80**, which
-Caddy needs. So Caddy is *installed and configured first but not started*;
-the moment the app swap frees port 80, Caddy is started by hand (one-time).
-App deploys after that never involve Caddy at all.
+## Fresh server: zero manual Caddy steps
 
----
+1. DNS: `A app.example.com → <SERVER_IP>`.
+2. Firewall: attach the rule set from [`hetzner-firewall.md`](hetzner-firewall.md) (80/443 + SSH).
+3. Server basics once: Docker + repo clone + deploy key
+   ([`hetzner-setup.md`](hetzner-setup.md), [`github-actions-deploy.md`](github-actions-deploy.md)).
+4. GitHub `prod` environment secrets: `DEPLOY_HOST` / `DEPLOY_USER` /
+   `DEPLOY_SSH_KEY` / `ENV_FILE` **plus `CADDY_DOMAIN` and `CADDY_EMAIL`**.
+5. Push `main` (or *Run workflow*). The pipeline deploys the app, provisions
+   Caddy, obtains the certificate and turns **green only when
+   `https://<domain>/healthz` answers.**
 
-## Step 0 — Prerequisites
+No Caddy file is ever hand-edited on the server.
 
-- A domain (e.g. `app.yourdomain.com`) with DNS access.
-- SSH access to the server as a sudo-capable user.
-- The HTTPS branch of this repo merged to `main` **last** (Step 6) — not before.
+## Migrating the EXISTING server (port 80 currently held by the app)
 
-## Step 1 — DNS
-
-Create the record **before** requesting certificates:
+The workflow order is chosen so ONE run performs the whole cutover:
 
 ```
-A    app.yourdomain.com    →    <SERVER_IP>
-AAAA app.yourdomain.com    →    <SERVER_IPV6>     (only if you have IPv6)
+write .env → force PUBLIC_BASE_URL → deploy.sh (swap app to 127.0.0.1:3001,
+freeing :80) → setup-caddy.sh (install/render/validate/start) → HTTPS gate
 ```
 
-```bash
-dig +short app.yourdomain.com     # must print <SERVER_IP>
-```
+Before merging, do the manual bits:
 
-## Step 2 — Install Caddy on the server (once, not started yet)
+1. **DNS** — `dig +short app.example.com` must print your server IP
+   (Let's Encrypt cannot issue without it).
+2. **Firewall** — open TCP 80/443, lock SSH ([`hetzner-firewall.md`](hetzner-firewall.md)).
+3. **Secrets** — set `CADDY_DOMAIN` + `CADDY_EMAIL`. `PUBLIC_BASE_URL` is now
+   derived automatically (you may drop it from `ENV_FILE` — it is overridden
+   anyway). Delete any obsolete `APP_PORT` line. Keep the rest of `ENV_FILE`.
 
-```bash
-sudo apt update
-sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
-  | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' \
-  | sudo tee /etc/apt/sources.list.d/caddy-stable.list >/dev/null
-sudo apt update && sudo apt install -y caddy
-sudo systemctl stop caddy      # port 80 is still held by the old app setup
-```
+Then **merge the branch / push `main`** and watch the run: app swap → Caddy
+provisioning → HTTPS gate. Expect a **brief window (roughly 10–60 s)** between
+the app swap and certificate issuance — the one-time cutover.
 
-> The package ships its own unit (equivalent to the repo's
-> [`caddy/caddy.service`](caddy/caddy.service)) and creates the `caddy` user.
-> `systemctl stop` right after install is expected — the old app still owns
-> port 80, so Caddy would fail to bind until Step 7.
+> **Edge:** if the legacy app was started by a raw `docker run -p 80:3000`
+> (not compose), it still holds :80 after the swap and Caddy's start fails
+> with a clear port diagnostic from `setup-caddy.sh`. Remove it —
+> `docker ps` → `docker rm -f <container>` — and re-run the workflow.
 
-## Step 3 — Put the real Caddyfile in place and validate
+## Manual fallback (no CI / debugging)
 
-```bash
-sudo nano /etc/caddy/Caddyfile      # paste deploy/caddy/Caddyfile, then:
-#   - replace app.yourdomain.com with your domain
-#   - replace admin@yourdomain.com with your email
-
-sudo caddy validate --config /etc/caddy/Caddyfile
-# expect: "Valid configuration"
-sudo systemctl enable caddy         # enable now, START comes in Step 7
-```
-
-## Step 4 — Update the pipeline secret (`ENV_FILE`)
-
-The workflow rewrites the server's `.env` from the GitHub secret **on every
-deploy**, so change the secret **before** merging (or the old URL comes back):
-
-GitHub → **Settings → Environments → prod → `ENV_FILE` → Update**:
-
-- `PUBLIC_BASE_URL="https://app.yourdomain.com"` (no trailing slash, no port)
-  — this also flips session cookies to `Secure` automatically.
-- **Delete** the obsolete `APP_PORT` line (the port is fixed at loopback
-  `127.0.0.1:3001` now).
-
-## Step 5 — Firewall: allow 80/443, retire the old app port
-
-Full rules: [`hetzner-firewall.md`](hetzner-firewall.md). Summary — inbound
-**TCP 80** and **TCP 443** from `0.0.0.0/0`, **TCP 22** from your IP only,
-outbound allow-all, everything else denied. **Do not open 3001.** Any rule for
-the old app port (3000/8080, if it exists and isn't 80) can be removed after
-Step 7 succeeds.
-
-## Step 6 — Merge the HTTPS branch → pipeline swaps the app to `127.0.0.1:3001`
-
-Merge the PR / push `main`. CI then runs `deploy/deploy.sh`, which:
-
-1. builds the new image **while the old container still serves**,
-2. runs `prisma migrate deploy`,
-3. recreates **only the app container** with `-p 127.0.0.1:3001:3001`
-   (Postgres untouched) — **this is the moment the old port-80 binding is
-   released,**
-4. gates on `GET http://127.0.0.1:3001/healthz` and asserts the port is
-   still loopback-only (rolls the image back if the gate fails).
-
-Manual alternative (no CI):
+Everything the pipeline does can be run by hand on the server:
 
 ```bash
 cd /opt/bodapp
 git pull
-docker compose up -d --build
-# → old public port dies here; go straight to Step 7
+docker compose up -d --build                                   # app → 127.0.0.1:3001
+CADDY_DOMAIN=app.example.com CADDY_EMAIL=ops@example.com \
+  sudo -E bash deploy/caddy/setup-caddy.sh                     # Caddy end-to-end
+curl -fsS https://app.example.com/healthz
 ```
 
-> ⚠️ Expect a **brief window (roughly 10–60 s)** between the swap and Step 7 in
-> which the site is unreachable — this is the one-time cutover. If the old
-> container was started by a raw `docker run -p 80:3000` (not compose), remove
-> it first: `docker ps` → `docker rm -f <that-container>`.
+`setup-caddy.sh` is idempotent: re-running changes nothing unless the
+domain/email (or the template) changed, in which case it validates the new
+config first and then does a graceful reload.
 
-## Step 7 — Start Caddy (one-time, immediately after Step 6)
-
-```bash
-sudo systemctl start caddy
-systemctl is-active --quiet caddy && echo caddy up
-sudo journalctl -u caddy -n 50 -f      # watch the certificate being obtained
-```
-
-Caddy binds 80/443, obtains the Let's Encrypt certificate (seconds) and starts
-proxying to `127.0.0.1:3001`. From here on, **nothing in the deploy pipeline
-ever touches Caddy again.**
-
-## Step 8 — Verify
+## Verify
 
 ```bash
-# Liveness, bypassing Caddy (on the server):
-curl -I http://127.0.0.1:3001/healthz            # 200
+# Liveness on the server, bypassing Caddy:
+curl -I http://127.0.0.1:3001/healthz            # expect HTTP 200
 
-# End-to-end:
-curl -I http://app.yourdomain.com                # 308 → https://
-curl -I https://app.yourdomain.com/healthz       # 200
-curl -sI https://app.yourdomain.com/healthz | grep -i strict-transport  # HSTS present
-openssl s_client -connect app.yourdomain.com:443 -servername app.yourdomain.com </dev/null 2>/dev/null \
+# End-to-end through Caddy (from anywhere):
+curl -I https://app.example.com/healthz          # expect 200
+curl -I https://app.example.com/healthz | grep -i strict-transport   # HSTS present
+curl -I http://app.example.com                   # expect redirect → https://
+openssl s_client -connect app.example.com:443 -servername app.example.com </dev/null 2>/dev/null \
   | openssl x509 -noout -subject -enddate        # issuer Let's Encrypt, ~90 days out
 
 # Port exposure from outside (must FAIL):
@@ -161,29 +119,28 @@ docker compose ps
 journalctl -u caddy -n 20
 ```
 
-In a browser: padlock on `https://app.yourdomain.com/login`, and a redirect
-from `http://app.yourdomain.com`.
+In a browser: padlock on `https://<domain>/login`.
 
-## Step 9 — Regenerate invite links / QR codes
+## Regenerate invite links / QR codes
 
 Old invitations embed the previous `http://<IP>:<port>` origin; those links
-**die when the old port is closed** (there is nothing listening to redirect
-them). After `PUBLIC_BASE_URL` changes:
+**die when the old port is closed** (nothing is listening to redirect them).
+After the domain change:
 
 - Re-open each invitation in the panel and re-download its **QR code** /
-  copy the fresh link (they are built from the current `PUBLIC_BASE_URL`).
+  copy the fresh link (built from the current `PUBLIC_BASE_URL`).
 - Existing couple/guest **sessions are invalidated in practice**: cookies now
   carry `Secure` and the origin changed — everyone just logs in again.
 
-## Rollback plan (if Step 7/8 fails)
+## Rollback plan (if the cutover fails)
 
-1. `sudo systemctl stop caddy` (frees 80/443).
-2. GitHub secret `ENV_FILE`: restore the old `PUBLIC_BASE_URL`
-   (e.g. `http://<SERVER_IP>:80`) and old `APP_PORT` if you had one.
-3. Revert the merge commit on `main` (pipeline redeploys the old compose,
-   which re-opens the old host port), or on the server:
-   `git checkout <old-sha> && docker compose up -d --build`.
+1. Revert the merge on `main` (or on the server: `git checkout <old-sha> &&
+   docker compose up -d --build`) → the app reopens its old host port.
+2. `sudo systemctl stop caddy` (frees 80/443) if it got that far.
+3. GitHub secrets: unset `CADDY_DOMAIN`/`CADDY_EMAIL` (the pipeline then
+   skips Caddy) and restore the old `PUBLIC_BASE_URL` in `ENV_FILE`.
 4. Re-open the old app port in the firewall.
+   The pipeline then behaves exactly as before the migration.
 
 ## Appendix — equivalent plain `docker run` (no compose)
 
@@ -204,8 +161,9 @@ port 3001 on both sides. Never publish it as `-p 3001:3001` or `-p 0.0.0.0:…`.
 
 | Task | What you do |
 |---|---|
-| App deploy | Push `main` / run the workflow — **only the app container** is rebuilt and restarted; Caddy untouched. |
-| Certificate renewal | Nothing — Caddy renews automatically (~30 days before expiry). |
-| Caddyfile change | Edit `/etc/caddy/Caddyfile`, `caddy validate …`, `systemctl reload caddy`. Never via the app pipeline. |
-| Caddy upgrade | `apt update && apt upgrade caddy` — rare, manual. |
+| App deploy | Push `main` / run the workflow — app container only; Caddy untouched unless the secrets changed |
+| Change domain or ACME email | Update the `CADDY_DOMAIN`/`CADDY_EMAIL` secrets → next deploy re-renders + gracefully reloads Caddy (or run `setup-caddy.sh` by hand) |
+| Certificate renewal | Nothing — Caddy renews automatically (~30 days before expiry) |
+| Hand-edit Caddyfile | Only for changes not expressible in the template — and note the next deploy re-renders the template over it. Template changes belong in `deploy/caddy/Caddyfile` |
+| Caddy upgrade | `apt update && apt upgrade caddy` — rare, manual |
 | Check proxy health | `systemctl status caddy`, `journalctl -u caddy -f` |

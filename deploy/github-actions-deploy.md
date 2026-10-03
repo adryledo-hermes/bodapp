@@ -12,12 +12,19 @@ and it:
    the old container keeps serving** → runs `prisma migrate deploy` →
    gracefully recreates **only the app container** (Postgres keeps running;
    the app is loopback-only on `127.0.0.1:3001`) → gates on
-   `http://127.0.0.1:3001/healthz`, rolls the image back if the gate fails,
-   and warns (never fails) if Caddy/HTTPS is unreachable.
+   `http://127.0.0.1:3001/healthz` and rolls the image back on failure.
+5. If the `CADDY_DOMAIN`/`CADDY_EMAIL` secrets are set: forces
+   `PUBLIC_BASE_URL=https://$CADDY_DOMAIN` in `.env`, then runs
+   [`caddy/setup-caddy.sh`](caddy/setup-caddy.sh) — **idempotent Caddy
+   provisioning** (install if missing → render `/etc/caddy/Caddyfile` from the
+   secrets → `caddy validate` → start, or reload only if the config changed) —
+   and finishes with a hard **end-to-end HTTPS gate** on
+   `https://$CADDY_DOMAIN/healthz` (red build ⇒ cert/DNS/firewall trouble).
 
-**Scope:** only the Bodapp stack is ever rebuilt/restarted. **Caddy** (the
-host systemd service terminating TLS) is installed once and never touched by
-this pipeline — see [`migrate-to-https.md`](migrate-to-https.md).
+**Scope:** the app container is rebuilt/restarted per deploy. **Caddy** is
+config-only: installed once, re-rendered/reloaded only when those two secrets
+change, certificates never touched by app deploys — see
+[`migrate-to-https.md`](migrate-to-https.md).
 
 ## 0. What you need beforehand
 
@@ -78,7 +85,14 @@ add each of these:
 | `DEPLOY_HOST` | VPS IP or hostname, e.g. `116.203.12.34` |
 | `DEPLOY_USER` | SSH user you added the public key to (e.g. `deploy` or `root`) |
 | `DEPLOY_SSH_KEY` | **Private** key content of `~/.ssh/bodapp_deploy` (the PEM/OpenSSH text) |
-| `ENV_FILE` | The **entire contents of your server `.env`** — copy the `.env` you'd create from `.env.example` with all real values (DATABASE_URL/POSTGRES_*, TWILIO_ACCOUNT_SID/AUTH_TOKEN/PHONE_NUMBER, SESSION_SECRET, PUBLIC_BASE_URL, …). Keep this in sync with what the app needs. **`PUBLIC_BASE_URL` must be `https://<domain>`** once Caddy is in front (see migrate-to-https.md); delete any obsolete `APP_PORT` line. |
+| `ENV_FILE` | The **entire contents of your server `.env`** — copy the `.env` you'd create from `.env.example` with all real values (DATABASE_URL/POSTGRES_*, TWILIO_ACCOUNT_SID/AUTH_TOKEN/PHONE_NUMBER, SESSION_SECRET, …). Keep this in sync with what the app needs. `PUBLIC_BASE_URL` is derived from `CADDY_DOMAIN` automatically; delete any obsolete `APP_PORT` line. |
+
+**HTTPS — set both and Caddy is fully automated on any server** (install, Caddyfile render from the secrets, `caddy validate`, start/reload, end-to-end `https://…/healthz` gate — no manual Caddy steps):
+
+| Secret | Example | Notes |
+|---|---|---|
+| `CADDY_DOMAIN` | `app.yourdomain.com` | Public hostname. Also forces `PUBLIC_BASE_URL=https://$CADDY_DOMAIN` into the server `.env` on every deploy, so app links and Caddy can never drift. Unset = the Caddy step and HTTPS gate are skipped (with a warning). |
+| `CADDY_EMAIL` | `ops@yourdomain.com` | ACME / Let's Encrypt contact email (certificate expiry notices). |
 
 Optional:
 
@@ -98,13 +112,15 @@ Optional:
 ## 5. Verify
 
 The run prints the health gate (`http://127.0.0.1:3001/healthz`), the
-loopback-only port assertion and, when configured, the end-to-end https probe.
-Then in a browser:
+loopback-only port assertion, the Caddy provisioning output and — when
+`CADDY_DOMAIN`/`CADDY_EMAIL` are set — finishes with a hard **end-to-end
+HTTPS gate** on `https://$CADDY_DOMAIN/healthz` (a red build means TLS, DNS
+or firewall trouble). Then in a browser:
 - `https://<your-domain>/login` — panel loads over TLS with a valid certificate.
 - `http://<your-domain>` — must **redirect** to https.
-- `PUBLIC_BASE_URL` inside `ENV_FILE` must be exactly `https://<your-domain>`
-  (it builds invite/QR links and enables secure session cookies). The app port
-  is fixed at loopback `127.0.0.1:3001`; `APP_PORT` no longer exists.
+- `PUBLIC_BASE_URL` is derived from `CADDY_DOMAIN` on every deploy (no need
+  to keep it in `ENV_FILE`; it is overridden). The app port is fixed at
+  loopback `127.0.0.1:3001`; `APP_PORT` no longer exists.
 
 ## Troubleshooting
 
@@ -118,11 +134,14 @@ Then in a browser:
   `cd /opt/bodapp && docker compose logs --tail=100 app`.
 - **`502 Bad Gateway` from https://** → Caddy is up but the app container is
   down/unhealthy: `cd /opt/bodapp && docker compose ps && docker compose logs --tail=100 app`.
-- **Certificate error / `curl: (60)`** → Let's Encrypt issuance failed:
-  `caddy validate --config /etc/caddy/Caddyfile`, `journalctl -u caddy -n 100`,
-  and confirm the DNS A record + firewall ports 80/443 — see
-  [`migrate-to-https.md`](migrate-to-https.md) and
-  [`hetzner-firewall.md`](hetzner-firewall.md).
+- **HTTPS gate red / `curl: (60)` certificate error** → TLS end-to-end failed:
+  confirm the `CADDY_DOMAIN`/`CADDY_EMAIL` secrets match the DNS A record, the
+  firewall allows 80/443 ([`hetzner-firewall.md`](hetzner-firewall.md)), then
+  run `caddy validate --config /etc/caddy/Caddyfile` and
+  `journalctl -u caddy -n 100` — see [`migrate-to-https.md`](migrate-to-https.md).
+- **"skipping Caddy provisioning" warning** → the `CADDY_DOMAIN`/`CADDY_EMAIL`
+  secrets are not set, so the pipeline skips the Caddy step and the HTTPS gate;
+  add both under Settings → Environments → prod.
 - **`ENV_FILE` secret not available / empty on manual run from a non-default branch** →
   the job is guarded with `if: github.ref == 'refs/heads/main'`, so a manual "Run workflow"
   from another branch is skipped (not executed). Always deploy `main`. If you need other
