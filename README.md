@@ -71,12 +71,12 @@ Deployment instructions: [`deploy/hetzner-setup.md`](deploy/hetzner-setup.md).
 - **One-click CI/CD deploy:** GitHub Actions → [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) (SSH deploy: click *Run workflow* on the Actions tab, or auto on push to `main`). Configure the required secrets + one-time server setup in [`deploy/github-actions-deploy.md`](deploy/github-actions-deploy.md).
 - **Manual runbook:** [`deploy/hetzner-setup.md`](deploy/hetzner-setup.md).
 - **Reverse proxy / HTTPS:** **Caddy runs on the host as a systemd service**
-  (never inside the app container): automatic Let's Encrypt certs,
-  HTTP→HTTPS redirect, security headers — **fully automated by CI** via the
-  `CADDY_DOMAIN` + `CADDY_EMAIL` GitHub secrets:
+  (never inside the app container), on its **own separate pipeline** —
+  [`infra.yml`](.github/workflows/infra.yml) *"Infrastructure — Caddy (HTTPS)"* —
+  driven by the `CADDY_DOMAIN` + `CADDY_EMAIL` GitHub secrets:
   [`deploy/caddy/setup-caddy.sh`](deploy/caddy/setup-caddy.sh) installs it
-  (once) and reconfigures it idempotently on every deploy. Config:
-  [`deploy/caddy/Caddyfile`](deploy/caddy/Caddyfile); details:
+  (once) and reconfigures it idempotently, then an end-to-end TLS gate.
+  Config: [`deploy/caddy/Caddyfile`](deploy/caddy/Caddyfile); details:
   [`deploy/migrate-to-https.md`](deploy/migrate-to-https.md); firewall (only
   80/443): [`deploy/hetzner-firewall.md`](deploy/hetzner-firewall.md).
 - **Image:** multi-stage `Dockerfile` — `node:20-alpine`, webpack build
@@ -85,10 +85,12 @@ Deployment instructions: [`deploy/hetzner-setup.md`](deploy/hetzner-setup.md).
 - **Compose:** `docker-compose.yml` stacks `postgres` (healthchecked) +
   `migrate` (one-shot) + `app` (healthchecked on `/healthz`, graceful
   `stop_grace_period`); photos mount `./storage:/app/storage`.
-- **Pipeline:** `deploy/deploy.sh` builds while the old container serves,
-  migrates, swaps **only the app container**, gates on `/healthz`, asserts the
-  loopback bind and rolls back the image on failure; the workflow then
-  provisions Caddy and gates on end-to-end HTTPS (when the secrets are set).
+- **Pipelines (strictly separated):** [`deploy.yml`](.github/workflows/deploy.yml)
+  = business logic — builds while the old container serves, migrates, swaps
+  **only the app container**, gates on `/healthz`, asserts the loopback bind,
+  rolls back the image on failure. [`infra.yml`](.github/workflows/infra.yml)
+  = infrastructure — Caddy config/certs + TLS gate. Neither touches the
+  other's domain.
 
 ```bash
 cp .env.example .env          # fill real values (see runbook Step 4)

@@ -1,0 +1,125 @@
+# ------------------------------------------------------------------
+# Bodapp → Hetzner INFRASTRUCTURE (Caddy / HTTPS)
+#
+# STRICT SEPARATION OF PIPELINES:
+#   .github/workflows/deploy.yml  = business logic (app image, migrations,
+#                                   the bodapp-app container, .env)
+#   .github/workflows/infra.yml   = infrastructure (this file: Caddy,
+#                                   /etc/caddy/Caddyfile, certificates,
+#                                   end-to-end TLS verification)
+# This workflow never builds or restarts the app; deploy.yml never touches
+# Caddy. State does not overlap either: this workflow copies its assets to
+# /tmp on the server and does NOT touch the /opt/bodapp working tree.
+#
+# Triggers:
+#   - workflow_dispatch ("Run workflow" = explicit infra change)
+#   - push to main touching deploy/caddy/** (Caddyfile/template/script)
+#
+# What it does over SSH:
+#   1. runs deploy/caddy/setup-caddy.sh with the CADDY_DOMAIN/CADDY_EMAIL
+#      secrets (idempotent: install-if-missing → render template →
+#      `caddy validate` → start, or reload only if config changed)
+#   2. end-to-end TLS GATE on https://$CADDY_DOMAIN/healthz — ANY HTTP
+#      status proves DNS + firewall + certificate + proxy are fine; a 502
+#      only means the app container is down, which is deploy.yml's job.
+#
+# REQUIRED secrets (GitHub environment `prod`):
+#   DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY  (same as deploy.yml)
+#   CADDY_DOMAIN  - public hostname, e.g. app.example.com
+#   CADDY_EMAIL   - ACME/Let's Encrypt contact email
+# Optional: DEPLOY_PORT (22), REPO_DIR (unused here — assets come from the
+# runner checkout), REPO_URL (only used to clone the repo on a brand-new box
+# that has never been deployed to).
+# ------------------------------------------------------------------
+name: Infrastructure — Caddy (HTTPS)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - deploy/caddy/**
+
+concurrency:
+  group: infra-caddy
+  cancel-in-progress: false
+
+jobs:
+  caddy:
+    name: Provision Caddy + TLS gate
+    runs-on: ubuntu-latest
+    environment: prod
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Assets come from the RUNNER checkout and land in /tmp on the server:
+      # the infra pipeline never runs git or writes inside /opt/bodapp, so it
+      # cannot race with the business-logic pipeline's checkout.
+      - name: Copy Caddy assets to the server
+        uses: appleboy/scp-action@v0.3.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: "deploy/caddy/*"
+          target: "/tmp/bodapp-caddy"
+          overwrite: true
+
+      - name: Provision Caddy and verify TLS
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          CADDY_DOMAIN: ${{ secrets.CADDY_DOMAIN }}
+          CADDY_EMAIL: ${{ secrets.CADDY_EMAIL }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          envs: CADDY_DOMAIN,CADDY_EMAIL
+          script: |
+            set -euo pipefail
+
+            if [ -z "$CADDY_DOMAIN" ] || [ -z "$CADDY_EMAIL" ]; then
+              echo "FATAL: CADDY_DOMAIN and CADDY_EMAIL secrets are required by the infrastructure pipeline." >&2
+              exit 1
+            fi
+
+            SETUP="$(find /tmp/bodapp-caddy -name setup-caddy.sh 2>/dev/null | head -1)"
+            if [ -z "$SETUP" ]; then
+              echo "FATAL: setup-caddy.sh not found under /tmp/bodapp-caddy" >&2
+              exit 1
+            fi
+            chmod +x "$SETUP"
+
+            echo "==> provisioning Caddy for $CADDY_DOMAIN"
+            CADDY_DOMAIN="$CADDY_DOMAIN" CADDY_EMAIL="$CADDY_EMAIL" bash "$SETUP"
+
+            echo "==> end-to-end TLS gate (first run includes certificate issuance)..."
+            tls=0
+            for i in $(seq 1 36); do
+              # NOTE: no -f on purpose — any HTTP status proves TLS/proxy work;
+              # only DNS/firewall/certificate/connection failures keep retrying.
+              if curl -sS --max-time 10 -o /dev/null "https://$CADDY_DOMAIN/healthz"; then
+                echo "==> TLS OK (try $i)"
+                tls=1
+                break
+              fi
+              sleep 5
+            done
+            if [ "$tls" != 1 ]; then
+              echo "FATAL: https://$CADDY_DOMAIN unreachable after ~3min." >&2
+              echo "Check: DNS A record, firewall 80/443 (deploy/hetzner-firewall.md)," >&2
+              echo "       systemctl status caddy && journalctl -u caddy -n 50" >&2
+              exit 1
+            fi
+
+            code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 "https://$CADDY_DOMAIN/healthz" || echo 000)"
+            case "$code" in
+              2*) echo "==> INFRA OK — HTTPS healthy end-to-end (app: $code)" ;;
+              5*) echo "==> INFRA OK — TLS/proxy verified; app returned $code (business logic: run the Deploy workflow)" ;;
+              *)  echo "==> INFRA OK — TLS verified; app status $code" ;;
+            esac

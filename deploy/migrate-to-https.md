@@ -20,14 +20,23 @@ Target architecture:
 
 | Step | Who does it |
 |---|---|
-| Caddy install + Caddyfile render (domain/email) + `validate` + start/reload | **Automatic** — [`caddy/setup-caddy.sh`](caddy/setup-caddy.sh), run by the deploy workflow from the `CADDY_DOMAIN` / `CADDY_EMAIL` secrets |
-| `PUBLIC_BASE_URL=https://<domain>` in the server `.env` | **Automatic** — derived from `CADDY_DOMAIN` every deploy (cannot drift from Caddy) |
-| App swap to `127.0.0.1:3001`, migrations, health gate, rollback | **Automatic** — [`deploy.sh`](deploy.sh) |
-| End-to-end `https://<domain>/healthz` verification | **Automatic** — hard CI gate after provisioning |
+| Caddy install + Caddyfile render (domain/email) + `validate` + start/reload | **Automatic** — [`caddy/setup-caddy.sh`](caddy/setup-caddy.sh), run by the **Infrastructure pipeline** (`.github/workflows/infra.yml`) from the `CADDY_DOMAIN` / `CADDY_EMAIL` secrets |
+| `PUBLIC_BASE_URL=https://<domain>` in the server `.env` | **Automatic** — the business-logic pipeline derives it from `CADDY_DOMAIN` on every deploy (cannot drift from Caddy) |
+| App swap to `127.0.0.1:3001`, migrations, health gate, rollback | **Automatic** — the business-logic pipeline ([`deploy.sh`](deploy.sh), `.github/workflows/deploy.yml`) |
+| End-to-end `https://<domain>/healthz` verification | **Automatic** — hard TLS gate in the Infrastructure pipeline |
 | DNS A record for the domain | **Manual** (your DNS provider) |
 | Firewall: open 80/443, lock SSH | **Manual, once per server** ([`hetzner-firewall.md`](hetzner-firewall.md)) |
 | Docker + repo clone + deploy SSH key | **Manual, once per server** ([`hetzner-setup.md`](hetzner-setup.md) steps 1–3, [`github-actions-deploy.md`](github-actions-deploy.md)) |
 | Re-sharing invite QR codes after the domain change | **Manual, once** (last step below) |
+
+**Two pipelines, strictly separated** — they never build, restart or verify
+each other's components, and share no server-side working state:
+
+- **Business logic** — `deploy.yml`: app image, migrations, the `bodapp-app`
+  container, `.env`. Writes only `/opt/bodapp` + Docker.
+- **Infrastructure** — `infra.yml`: Caddy, `/etc/caddy/Caddyfile`,
+  certificates, the TLS gate. Writes only `/etc/caddy` + `/tmp` (its assets
+  are copied from the runner checkout, never via git on the server).
 
 **Principles**
 
@@ -48,19 +57,25 @@ Target architecture:
    ([`hetzner-setup.md`](hetzner-setup.md), [`github-actions-deploy.md`](github-actions-deploy.md)).
 4. GitHub `prod` environment secrets: `DEPLOY_HOST` / `DEPLOY_USER` /
    `DEPLOY_SSH_KEY` / `ENV_FILE` **plus `CADDY_DOMAIN` and `CADDY_EMAIL`**.
-5. Push `main` (or *Run workflow*). The pipeline deploys the app, provisions
-   Caddy, obtains the certificate and turns **green only when
-   `https://<domain>/healthz` answers.**
+5. **Business logic:** push `main` (or *Run workflow* on `deploy.yml`) → the
+   app deploys onto loopback `127.0.0.1:3001`, green on `/healthz`.
+6. **Infrastructure:** run *Infrastructure — Caddy* (`infra.yml` — it also
+   auto-triggers whenever `deploy/caddy/**` changes) → Caddy installed,
+   certificate obtained, green only when the end-to-end TLS gate passes.
 
-No Caddy file is ever hand-edited on the server.
+Either order works on a fresh server — the two runs share no state. No Caddy
+file is ever hand-edited on the server.
 
 ## Migrating the EXISTING server (port 80 currently held by the app)
 
-The workflow order is chosen so ONE run performs the whole cutover:
+The two pipelines are run **in order** (strict separation — one workflow
+each, never a combined run):
 
 ```
-write .env → force PUBLIC_BASE_URL → deploy.sh (swap app to 127.0.0.1:3001,
-freeing :80) → setup-caddy.sh (install/render/validate/start) → HTTPS gate
+1. deploy.yml (business logic): write .env → force PUBLIC_BASE_URL →
+   deploy.sh swaps the app to 127.0.0.1:3001, freeing :80
+2. infra.yml (Infrastructure — Caddy): setup-caddy.sh
+   install/render/validate/start → end-to-end TLS gate
 ```
 
 Before merging, do the manual bits:
@@ -72,14 +87,18 @@ Before merging, do the manual bits:
    derived automatically (you may drop it from `ENV_FILE` — it is overridden
    anyway). Delete any obsolete `APP_PORT` line. Keep the rest of `ENV_FILE`.
 
-Then **merge the branch / push `main`** and watch the run: app swap → Caddy
-provisioning → HTTPS gate. Expect a **brief window (roughly 10–60 s)** between
-the app swap and certificate issuance — the one-time cutover.
+Then **merge the branch / push `main`**: `deploy.yml` runs automatically.
+When it is green, start the **Infrastructure — Caddy** workflow (*Run
+workflow*). Expect a **brief window (roughly 10–60 s)** between the app swap
+and certificate issuance — the one-time cutover. If `infra.yml` raced ahead
+and failed on the port-80 conflict, that is expected: once `deploy.yml` is
+green, *Re-run failed jobs* on `infra.yml` and it will succeed behind the
+swapped app.
 
 > **Edge:** if the legacy app was started by a raw `docker run -p 80:3000`
 > (not compose), it still holds :80 after the swap and Caddy's start fails
 > with a clear port diagnostic from `setup-caddy.sh`. Remove it —
-> `docker ps` → `docker rm -f <container>` — and re-run the workflow.
+> `docker ps` → `docker rm -f <container>` — and re-run `infra.yml`.
 
 ## Manual fallback (no CI / debugging)
 
@@ -161,8 +180,9 @@ port 3001 on both sides. Never publish it as `-p 3001:3001` or `-p 0.0.0.0:…`.
 
 | Task | What you do |
 |---|---|
-| App deploy | Push `main` / run the workflow — app container only; Caddy untouched unless the secrets changed |
-| Change domain or ACME email | Update the `CADDY_DOMAIN`/`CADDY_EMAIL` secrets → next deploy re-renders + gracefully reloads Caddy (or run `setup-caddy.sh` by hand) |
+| App deploy | Push `main` / run `deploy.yml` — business logic only; Caddy untouched |
+| Caddy / Caddyfile change | Edit `deploy/caddy/**` → `infra.yml` auto-triggers on push (or run it manually); it re-renders + gracefully reloads only if the config changed |
+| Change domain or ACME email | Update the `CADDY_DOMAIN`/`CADDY_EMAIL` secrets → run `infra.yml` (or `setup-caddy.sh` by hand) |
 | Certificate renewal | Nothing — Caddy renews automatically (~30 days before expiry) |
 | Hand-edit Caddyfile | Only for changes not expressible in the template — and note the next deploy re-renders the template over it. Template changes belong in `deploy/caddy/Caddyfile` |
 | Caddy upgrade | `apt update && apt upgrade caddy` — rare, manual |

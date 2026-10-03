@@ -18,9 +18,12 @@
 #   6. fails with port/journal diagnostics if the service is not active
 #
 # It NEVER touches the app container, docker-compose, or the database.
-# Called by CI AFTER deploy/deploy.sh (on a migrating server the legacy
-# container may hold :80 until the app swap), or by hand:
-#   CADDY_DOMAIN=app.example.com CADDY_EMAIL=ops@example.com sudo -E ./deploy/caddy/setup-caddy.sh
+# Called ONLY by the separate Infrastructure pipeline
+# (.github/workflows/infra.yml, which copies this script + template to /tmp
+# on the server) or by hand — the business-logic pipeline
+# (deploy.yml / deploy.sh) never runs it. On a migrating server, run it
+# AFTER the app deploy (the legacy container may hold :80 until the swap):
+#   CADDY_DOMAIN=app.example.com CADDY_EMAIL=ops@example.com sudo -E ./setup-caddy.sh
 # ---------------------------------------------------------------------------
 set -euo pipefail
 

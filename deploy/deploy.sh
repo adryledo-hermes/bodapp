@@ -3,11 +3,10 @@
 # Bodapp deploy-to-Hetzner script — invoked by the GitHub Actions
 # workflow (deploy.yml) over SSH, or run manually on the VPS.
 #
-# Scope: ONLY the Bodapp compose stack (postgres + migrate + app).
-# Caddy — the host's systemd reverse proxy that terminates TLS — is
-# installed ONCE (see deploy/migrate-to-https.md) and is NEVER
-# rebuilt, restarted or reconfigured by this script. TLS keeps
-# running through every app deploy.
+# Scope: BUSINESS LOGIC ONLY — the Bodapp compose stack (postgres +
+# migrate + app). Infrastructure (Caddy / TLS / firewall) lives in the
+# SEPARATE pipeline .github/workflows/infra.yml + deploy/caddy/
+# setup-caddy.sh and is never invoked, checked or probed from here.
 #
 # Strategy (zero build-downtime, graceful swap, health-gated rollback):
 #   1. fetch code (storage/ photos preserved)
@@ -15,8 +14,7 @@
 #   3. run prisma migrations against the new image
 #   4. recreate ONLY the app container — postgres stays up untouched
 #   5. gate on health: GET http://127.0.0.1:3001/healthz, then assert
-#      the port is still bound loopback-only (+ warn-only probes of
-#      Caddy itself and the public https:// URL)
+#      the port is still bound loopback-only
 #   6. on failure: re-tag the previous image and roll the app back
 #
 # Network contract: compose publishes the app loopback-only
@@ -37,12 +35,6 @@ APP_PORT="3001"   # compose publishes 127.0.0.1:3001:3001 (loopback-only)
 
 cd "$REPO_DIR"
 echo "==> [deploy] working in $REPO_DIR (branch $BRANCH)"
-
-# --- 0. Caddy pre-flight (READ-ONLY: warn, never start/restart it) --------
-if command -v systemctl >/dev/null 2>&1 && ! systemctl is-active --quiet caddy; then
-  echo "==> [deploy] WARN — the 'caddy' service is NOT active; https:// will fail." >&2
-  echo "    Inspect with: systemctl status caddy && journalctl -u caddy -n 50" >&2
-fi
 
 # --- 1. Fetch latest code --------------------------------------------------
 git fetch --all --tags
@@ -144,33 +136,4 @@ case "$published" in
 esac
 
 docker compose ps
-
-# --- 9. Warn-only end-to-end probes (never fail the deploy) -----------------
-# (a) Caddy itself — read-only check; this script never restarts it.
-if command -v systemctl >/dev/null 2>&1 && ! systemctl is-active --quiet caddy; then
-  echo "==> [deploy] WARN — caddy is not active; the app is fine but HTTPS is down." >&2
-fi
-
-# (b) The public URL (https://… from .env PUBLIC_BASE_URL), through Caddy.
-# Warn-only: the FIRST deploy after the migration may still be waiting on the
-# initial Let's Encrypt issuance, or DNS may not be pointed here yet.
-PUBLIC_BASE_URL=""
-if [ -f .env ]; then
-  PUBLIC_BASE_URL="$(grep -E '^PUBLIC_BASE_URL=' .env | tail -1 | cut -d= -f2- | tr -d '"' || true)"
-fi
-case "$PUBLIC_BASE_URL" in
-  https://*)
-    if http_get "${PUBLIC_BASE_URL%/}/healthz"; then
-      echo "==> [deploy] OK — end-to-end https probe through Caddy"
-    else
-      echo "==> [deploy] WARN — ${PUBLIC_BASE_URL} did not answer /healthz." >&2
-      echo "    Check: caddy validate --config /etc/caddy/Caddyfile && systemctl status caddy" >&2
-    fi
-    ;;
-  *)
-    echo "==> [deploy] note — PUBLIC_BASE_URL is not https yet (${PUBLIC_BASE_URL:-unset})." >&2
-    echo "    Behind Caddy it must be https://<domain> (see deploy/migrate-to-https.md)." >&2
-    ;;
-esac
-
 echo "==> [deploy] done."

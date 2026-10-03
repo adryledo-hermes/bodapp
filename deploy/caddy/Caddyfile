@@ -6,11 +6,12 @@
 # replaces the two tokens below with the GitHub secrets:
 #   app.yourdomain.com   →  $CADDY_DOMAIN   (site address)
 #   admin@yourdomain.com →  $CADDY_EMAIL     (ACME contact)
-# The deploy workflow runs that script after every app swap:
-# install-if-missing → render → `caddy validate` → start, or graceful reload
-# ONLY if the rendered config changed. deploy/deploy.sh never writes or
-# reloads Caddy, and certificates (/var/lib/caddy) are never touched by app
-# deploys.
+# The separate Infrastructure workflow (.github/workflows/infra.yml) runs
+# that script (workflow_dispatch, or on pushes touching deploy/caddy/):
+# install-if-missing → render → `caddy validate` → start, or graceful
+# reload ONLY if the rendered config changed. The business-logic pipeline
+# (deploy.yml / deploy.sh) never writes or reloads Caddy, and certificates
+# (/var/lib/caddy) are never touched by app deploys.
 #
 #   1. DNS A/AAAA record for the domain → server IP (required BEFORE the
 #      first start — Let's Encrypt cannot issue a certificate otherwise).

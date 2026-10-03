@@ -225,10 +225,12 @@ IP/HTTP setup — lives in:
 - [`hetzner-firewall.md`](hetzner-firewall.md) — allow only 80/443
 
 On a fresh server you don't touch any of this by hand: set the
-`CADDY_DOMAIN`/`CADDY_EMAIL` GitHub secrets and the workflow runs
-[`caddy/setup-caddy.sh`](caddy/setup-caddy.sh) after every app swap
+`CADDY_DOMAIN`/`CADDY_EMAIL` GitHub secrets and run the two pipelines —
+business logic (`deploy.yml`) and, separately, **Infrastructure — Caddy**
+(`infra.yml`, also auto-triggered by changes under `deploy/caddy/`). The
+infrastructure workflow runs [`caddy/setup-caddy.sh`](caddy/setup-caddy.sh)
 (install-if-missing → render from the secrets → `caddy validate` →
-start/reload), then verifies `https://<domain>/healthz` end-to-end. App
+start/reload) and verifies `https://<domain>/healthz` end-to-end. App
 deploys rebuild only the `bodapp-app` container — Caddy is config-only
 (reloaded only when the secrets change). After any schema change,
 `docker compose run --rm migrate` is still safe to re-run.
