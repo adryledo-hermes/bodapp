@@ -26,7 +26,7 @@ Target architecture:
 | End-to-end `https://<domain>/healthz` verification | **Automatic** — hard TLS gate in the Infrastructure pipeline |
 | DNS A record for the domain | **Manual** (your DNS provider) |
 | Firewall: 80/443 public; SSH never public (tailnet only) | **Manual, once per server** ([`hetzner-firewall.md`](hetzner-firewall.md)) |
-| Tailnet for CI/user SSH | **Manual, once per server** — box joined to your tailnet; both pipelines join it from the runner with the ephemeral `TAILSCALE_AUTHKEY` secret |
+| Tailnet for CI/user SSH | **Manual, once per server. :warning: Renew every 90 days** — box joined to your tailnet; both pipelines join it from the runner with the ephemeral `TAILSCALE_AUTHKEY` secret |
 | Docker + repo clone + deploy SSH key | **Manual, once per server** ([`hetzner-setup.md`](hetzner-setup.md) steps 1–3, [`github-actions-deploy.md`](github-actions-deploy.md)) |
 | Re-sharing invite QR codes after the domain change | **Manual, once** (last step below) |
 
