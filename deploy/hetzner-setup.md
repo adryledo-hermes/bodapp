@@ -1,7 +1,10 @@
 # Bodapp — Hetzner CX22 Deployment Runbook
 
-v1 serves **over HTTP on an IP/port (port 3000), no domain**. Invitations are
-distributed by QR/link that point at `http://<SERVER_IP>:3000`.
+Production serves **HTTPS via Caddy** (host systemd service, automatic
+Let's Encrypt): the world hits `https://<domain>` on ports 80/443 → Caddy →
+the app published **loopback-only on `127.0.0.1:3001`**. Invitations are
+distributed by QR/link pointing at `https://<domain>` (from `PUBLIC_BASE_URL`).
+Migrating from the old IP/HTTP setup? Follow [`migrate-to-https.md`](migrate-to-https.md).
 
 This runbook takes you from a fresh Hetzner **CX22** (Ubuntu 22.04, ~2GB RAM,
 40GB disk) to a running app + Postgres via Docker Compose.
@@ -18,7 +21,7 @@ This runbook takes you from a fresh Hetzner **CX22** (Ubuntu 22.04, ~2GB RAM,
 - A project with an SSH key added. Grab the server IP from the console.
 - A **Twilio** account: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and a
   verified SMS-capable `TWILIO_PHONE_NUMBER` (E.164, e.g. `+1234567890`).
-- (Recommended) Two DNS A records, e.g. `app.yourdomain.com` → server IP.
+- A DNS **A record** for your domain, e.g. `app.yourdomain.com` → server IP (required: Let's Encrypt needs it to issue a certificate).
 
 ## 1. Connect
 
@@ -85,7 +88,7 @@ Fill these values (never commit `.env`):
 | `TWILIO_AUTH_TOKEN` | `...` | From Twilio console |
 | `TWILIO_PHONE_NUMBER` | `+123****7890` | Verified SMS-capable number |
 | `SESSION_SECRET` | `hex from openssl` | 32+ random bytes |
-| `PUBLIC_BASE_URL` | `http://<SERVER_IP>:3000` | Used to build invite/QR links |
+| `PUBLIC_BASE_URL` | `https://app.yourdomain.com` | Builds invite/QR links; the https scheme also turns on secure session cookies. |
 | `PHOTO_STORAGE_DIR` | *(leave unset)* | Optional. Unset = app default `/app/storage/photos` (matches the `photos/` subdir under the compose mount). If you set it, use `/app/storage/photos`. |
 
 ## 5. Prepare the photo storage directory
@@ -125,36 +128,46 @@ docker compose run --rm app npx --no-install prisma db seed
 > If you don't want the demo seed, skip it and create the wedding + couple via
 > the `/login` → signup flow once the app is up (Step 9).
 
-## 8. Open the firewall
+## 8. Open the firewall (80/443 only)
 
-The default Hetzner firewall (or your `ufw`) must allow **TCP 3000** from the
-public internet:
+The app is published **loopback-only** (`127.0.0.1:3001`) — it must NOT be
+firewalled open. Only Caddy needs the public internet: **TCP 80** (HTTP→HTTPS
+redirect + Let's Encrypt challenge) and **TCP 443** (HTTPS). Full rules,
+including SSH hardening and the ufw alternative:
+[`hetzner-firewall.md`](hetzner-firewall.md).
 
 ```bash
-# Hetzner Cloud Console → Server → Firewalls → add inbound rule:
-#   Type: TCP   Source: 0.0.0.0/0   Port: 3000
-# ...or with ufw:
-ufw allow 3000/tcp
-ufw reload || true
+# Hetzner Cloud Console → server → Firewalls → Create firewall, inbound:
+#   TCP 80   from 0.0.0.0/0
+#   TCP 443  from 0.0.0.0/0
+#   TCP 22   from <YOUR_IP>/32      (SSH — your IP only)
+# Outbound: allow all (default). Then attach the firewall to the server.
+# Do NOT open 3000/3001/8080/5432.
 ```
 
 ## 9. Verify
 
 ```bash
-# Health (app returns the login page):
-curl -I http://$SERVER_IP:3000/login          # expect HTTP 200
+# Liveness on the server, bypassing Caddy:
+curl -I http://127.0.0.1:3001/healthz            # expect HTTP 200
+
+# End-to-end through Caddy (from anywhere):
+curl -I https://app.yourdomain.com/healthz       # expect 200
+curl -I https://app.yourdomain.com/healthz | grep -i strict-transport  # HSTS header present
+curl -I http://app.yourdomain.com                # expect redirect → https://
 
 # Logs:
 docker compose logs -f app
+journalctl -u caddy -f
 
 # Create the wedding + couple account through the UI:
-#   http://$SERVER_IP:3000/login
+#   https://app.yourdomain.com/login
 ```
 
 **Verify the public invite flow end-to-end:**
 1. In the panel, add **guests** with their phone numbers (E.164) and attach them
    to an **invitation** with the matching `acceptedPhones`.
-2. From `http://$SERVER_IP:3000/w/<slug>/invite` get the public invite link/QR.
+2. From `https://app.yourdomain.com/w/<slug>/invite` get the public invite link/QR.
 3. Open the invite on a phone, enter a guest's number → **Twilio SMS OTP** →
    personalized invitation + RSVP.
 4. Check `docker compose logs app` for OTP send/verify activity.
@@ -198,21 +211,29 @@ echo "0 3 * * * /usr/local/bin/bodapp-backup.sh >> /var/log/bodapp-backup.log 2>
 Photos live on `/opt/bodapp/storage` — back that directory up too (e.g. rsync
 to the Storage Box), or move it onto the mounted Storage Box.
 
-## 11. (Later) Serve on port 80 + HTTPS behind a reverse proxy
+## 11. HTTPS behind Caddy (reverse proxy)
 
-You can keep running on port 3000 indefinitely. When you want port 80/443 and a
-real domain, put a reverse proxy (Caddy is the easiest — it auto-provisions
-Let's Encrypt certs) in front:
+Production topology: **Caddy (host systemd service, ports 80/443, automatic
+Let's Encrypt) → 127.0.0.1:3001 → app container**. The full setup — Caddyfile,
+systemd unit, firewall rules and a step-by-step migration from the old
+IP/HTTP setup — lives in:
 
-```
-server <SERVER_IP> {
-    reverse_proxy localhost:3000
-}
-```
+- [`caddy/Caddyfile`](caddy/Caddyfile) — the proxy config (validated, production)
+- [`caddy/caddy.service`](caddy/caddy.service) — systemd unit (the official
+  Caddy package ships an equivalent one)
+- [`migrate-to-https.md`](migrate-to-https.md) — install + migration plan
+- [`hetzner-firewall.md`](hetzner-firewall.md) — allow only 80/443
 
-Then set `PUBLIC_BASE_URL=https://app.yourdomain.com` in `.env`, rebuild, and
-update invite/QR links. `docker compose run --rm migrate` is still safe to
-re-run after any schema change.
+On a fresh server you don't touch any of this by hand: set the
+`CADDY_DOMAIN`/`CADDY_EMAIL` GitHub secrets and run the two pipelines —
+business logic (`deploy.yml`) and, separately, **Infrastructure — Caddy**
+(`infra.yml`, also auto-triggered by changes under `deploy/caddy/`). The
+infrastructure workflow runs [`caddy/setup-caddy.sh`](caddy/setup-caddy.sh)
+(install-if-missing → render from the secrets → `caddy validate` →
+start/reload) and verifies `https://<domain>/healthz` end-to-end. App
+deploys rebuild only the `bodapp-app` container — Caddy is config-only
+(reloaded only when the secrets change). After any schema change,
+`docker compose run --rm migrate` is still safe to re-run.
 
 ---
 

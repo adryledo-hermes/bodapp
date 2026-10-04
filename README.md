@@ -14,10 +14,10 @@ Two surfaces:
 - Couple's **bank account** shown on invitations.
 - Photo upload: couple in v1, guests in v1.1 (guest photos now supported).
 - **No menu selection**, no CSV import, no 2FA, no GDPR tooling (all deferred to v2).
-- No domain — served on IP/port over HTTP; invitations distributed by QR/link.
+- HTTPS via **Caddy** (host systemd service, automatic Let's Encrypt) in front of the app, which is loopback-only on `127.0.0.1:3001`; invitations distributed by QR/link.
 
 ## Stack
-Next.js 16 (App Router, webpack build), TypeScript, Tailwind + shadcn/ui, Framer Motion, Prisma + PostgreSQL, dnd-kit, Twilio, `qrcode`, next-intl, Docker Compose.
+Next.js 16 (App Router, webpack build), TypeScript, Tailwind + shadcn/ui, Framer Motion, Prisma + PostgreSQL, dnd-kit, Twilio, `qrcode`, next-intl, Docker Compose, Caddy (reverse proxy / TLS).
 
 ## Get started
 ```bash
@@ -66,15 +66,31 @@ npm run typecheck
 
 Deployment instructions: [`deploy/hetzner-setup.md`](deploy/hetzner-setup.md).
 
-## Deploy (Docker Compose on Hetzner VPS)
+## Deploy (Docker Compose on Hetzner VPS, HTTPS via Caddy)
 
 - **One-click CI/CD deploy:** GitHub Actions → [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) (SSH deploy: click *Run workflow* on the Actions tab, or auto on push to `main`). Configure the required secrets + one-time server setup in [`deploy/github-actions-deploy.md`](deploy/github-actions-deploy.md).
 - **Manual runbook:** [`deploy/hetzner-setup.md`](deploy/hetzner-setup.md).
+- **Reverse proxy / HTTPS:** **Caddy runs on the host as a systemd service**
+  (never inside the app container), on its **own separate pipeline** —
+  [`infra.yml`](.github/workflows/infra.yml) *"Infrastructure — Caddy (HTTPS)"* —
+  driven by the `CADDY_DOMAIN` + `CADDY_EMAIL` GitHub secrets:
+  [`deploy/caddy/setup-caddy.sh`](deploy/caddy/setup-caddy.sh) installs it
+  (once) and reconfigures it idempotently, then an end-to-end TLS gate.
+  Config: [`deploy/caddy/Caddyfile`](deploy/caddy/Caddyfile); details:
+  [`deploy/migrate-to-https.md`](deploy/migrate-to-https.md); firewall (only
+  80/443): [`deploy/hetzner-firewall.md`](deploy/hetzner-firewall.md).
 - **Image:** multi-stage `Dockerfile` — `node:20-alpine`, webpack build
   (`next build --webpack`), Next.js standalone `server.js`, runs as non-root,
-  serves HTTP on port 3000.
+  listens on port **3001**, published **loopback-only** (`127.0.0.1:3001`).
 - **Compose:** `docker-compose.yml` stacks `postgres` (healthchecked) +
-  `migrate` (one-shot) + `app`; photos mount `./storage:/app/storage`.
+  `migrate` (one-shot) + `app` (healthchecked on `/healthz`, graceful
+  `stop_grace_period`); photos mount `./storage:/app/storage`.
+- **Pipelines (strictly separated):** [`deploy.yml`](.github/workflows/deploy.yml)
+  = business logic — builds while the old container serves, migrates, swaps
+  **only the app container**, gates on `/healthz`, asserts the loopback bind,
+  rolls back the image on failure. [`infra.yml`](.github/workflows/infra.yml)
+  = infrastructure — Caddy config/certs + TLS gate. Neither touches the
+  other's domain.
 
 ```bash
 cp .env.example .env          # fill real values (see runbook Step 4)

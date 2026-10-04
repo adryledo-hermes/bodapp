@@ -1,0 +1,98 @@
+# ===========================================================================
+# Bodapp — Caddy reverse proxy (production, Hetzner)
+# TEMPLATE — never hand-edit /etc/caddy/Caddyfile on the server.
+#
+# This file is rendered automatically by deploy/caddy/setup-caddy.sh, which
+# replaces the two tokens below with the GitHub secrets:
+#   app.yourdomain.com   →  $CADDY_DOMAIN   (site address)
+#   admin@yourdomain.com →  $CADDY_EMAIL     (ACME contact)
+# The separate Infrastructure workflow (.github/workflows/infra.yml) runs
+# that script (workflow_dispatch, or on pushes touching deploy/caddy/):
+# install-if-missing → render → `caddy validate` → start, or graceful
+# reload ONLY if the rendered config changed. The business-logic pipeline
+# (deploy.yml / deploy.sh) never writes or reloads Caddy, and certificates
+# (/var/lib/caddy) are never touched by app deploys.
+#
+#   1. DNS A/AAAA record for the domain → server IP (required BEFORE the
+#      first start — Let's Encrypt cannot issue a certificate otherwise).
+#   2. Secrets CADDY_DOMAIN + CADDY_EMAIL (Settings → Environments → prod),
+#      or a manual run:
+#        CADDY_DOMAIN=… CADDY_EMAIL=… sudo -E bash deploy/caddy/setup-caddy.sh
+#
+# Automatic HTTPS: Caddy provisions and renews Let's Encrypt certificates by
+# itself and redirects every plain-HTTP request to HTTPS (implicit for each
+# site address — no explicit redirect block needed). Caddy binds ports 80
+# (HTTP redirect + ACME HTTP-01 challenge) and 443 (HTTPS) itself.
+#
+# Manual edits + validate: caddy validate --config /etc/caddy/Caddyfile
+# Apply:                    systemctl reload caddy
+# ===========================================================================
+{
+	# ACME registration contact — Let's Encrypt sends expiry/failure mail here.
+	email admin@yourdomain.com
+}
+
+# ---------------------------------------------------------------------------
+# Site: HTTPS frontend for Bodapp
+# ---------------------------------------------------------------------------
+app.yourdomain.com {
+	# --- Compression -------------------------------------------------------
+	encode zstd gzip
+
+	# --- Security headers (every response) ---------------------------------
+	header {
+		# HSTS: browsers pin this site to HTTPS for 1 year (+subdomains).
+		# Only keep `preload` after confirming every subdomain serves HTTPS.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		Cross-Origin-Resource-Policy "same-origin"
+		X-Permitted-Cross-Domain-Policies "none"
+		# Hide the proxy banner.
+		-Server
+
+		# CSP is intentionally NOT enabled by default: Next.js emits inline
+		# scripts/hashes, so a strict policy breaks the app until it is tuned
+		# against real traffic. Start in report-only mode to learn the policy:
+		# Content-Security-Policy-Report-Only "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+	}
+
+	# --- Backend ------------------------------------------------------------
+	# The Bodapp container, published loopback-only by docker-compose
+	# (127.0.0.1:3001:3001) — unreachable from any network, only from this host.
+	reverse_proxy 127.0.0.1:3001 {
+		# Active health checks against the app's DB-free liveness route.
+		health_uri /healthz
+		health_interval 10s
+		health_timeout 2s
+		health_status 200
+
+		# Passive safety net: 3 failures inside 10s → stop routing for 10s
+		# (covers the brief gap while the deploy pipeline swaps containers).
+		fail_duration 10s
+		max_fails 3
+
+		transport http {
+			dial_timeout 5s
+			read_timeout 60s
+			write_timeout 60s
+		}
+	}
+
+	# --- Access log (JSON to stdout → journald via the systemd unit) --------
+	log {
+		output stdout
+		format json
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Optional: force-redirect the bare apex domain to the app subdomain.
+# Uncomment and adjust if the zone apex also points at this server.
+# ---------------------------------------------------------------------------
+# yourdomain.com {
+#	redir https://app.yourdomain.com{uri} permanent
+# }

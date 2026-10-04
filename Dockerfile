@@ -7,7 +7,7 @@
 # Generated client : npx prisma generate → src/generated/prisma
 # Build script     : npm run build = next build --webpack  (Turbopack OOM-kills
 #                    on the 1.9GB target box, so we pin the webpack build)
-# Runtime          : Next.js standalone server.js, HTTP on port 3000, no DB at
+# Runtime          : Next.js standalone server.js, HTTP on port 3001, no DB at
 #                    compile time. `prisma migrate deploy` runs at boot (see the
 #                    `migrate` service in docker-compose.yml).
 # ---------------------------------------------------------------------------
@@ -49,7 +49,12 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3000
+# Port 3001 — internal only. docker-compose publishes it loopback-only
+# (127.0.0.1:3001:3001) so only the host's Caddy reverse proxy can reach the
+# app; it is never exposed to the network. HOSTNAME stays 0.0.0.0 because
+# Docker's port forwarding delivers traffic to the container interface —
+# binding loopback inside the container would make the published port dead.
+ENV PORT=3001
 ENV HOSTNAME="0.0.0.0"
 # Pin photo storage path so it's always /app/storage/photos regardless of cwd
 # in Next.js standalone mode. Matches the compose bind-mount ./storage:/app/storage.
@@ -83,7 +88,7 @@ RUN mkdir -p /app/storage/photos && chown -R nextjs:nodejs /app/storage
 
 USER nextjs
 
-EXPOSE 3000
+EXPOSE 3001
 
 # Self-contained standalone server — no `next start` or node_modules gymnastics.
 CMD ["node", "server.js"]

@@ -42,8 +42,15 @@ services:
 
   app:
     build: .
+    # Explicit tag: deploy/deploy.sh snapshots this image id before a rebuild
+    # and re-tags it to roll back if the new build fails its health gate.
+    image: bodapp-app:latest
     container_name: bodapp-app
     restart: unless-stopped
+    # PID 1 init: forwards signals (graceful SIGTERM shutdown) and reaps zombies.
+    init: true
+    # Graceful restarts: in-flight requests get up to 30s to drain after SIGTERM.
+    stop_grace_period: 30s
     env_file: .env
     environment:
       # Postgres host is the compose service name, not localhost.
@@ -53,14 +60,25 @@ services:
       migrate:
         condition: service_completed_successfully
     ports:
-      # Host port is configurable (APP_PORT, default 8080) because 3000 may be
-      # taken by another app on the VPS. The container still listens on 3000
-      # internally (Dockerfile PORT=3000). Match this port in PUBLIC_BASE_URL.
-      - "${APP_PORT:-8080}:3000"
+      # Loopback-only publish: the app is reachable ONLY from this host (by
+      # the Caddy reverse proxy, a host systemd service) and never from the
+      # network. The container listens on 0.0.0.0:3001 internally — required
+      # for Docker's port forwarding; this 127.0.0.1 bind IS the security
+      # boundary. Do NOT publish 0.0.0.0 or drop the 127.0.0.1 prefix.
+      - "127.0.0.1:3001:3001"
     volumes:
       # Photo storage: host dir ./storage → /app/storage (must be writable by
       # the container's non-root user, uid 1001 — see deploy/hetzner-setup.md).
       - ./storage:/app/storage
+    healthcheck:
+      # Liveness: the app's DB-free /healthz route (busybox wget on alpine).
+      # Also probed by deploy.sh's health gate and by Caddy's active
+      # reverse_proxy health checks.
+      test: ["CMD-SHELL", "wget -q -O /dev/null -T 5 http://127.0.0.1:3001/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s     # generous: cold Next.js start after a swap
 
 volumes:
   bodapp-pgdata:

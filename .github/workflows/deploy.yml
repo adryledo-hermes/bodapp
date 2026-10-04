@@ -5,10 +5,17 @@
 # also runs automatically on every push to `main` (remove the push
 # trigger below if you prefer manual-only).
 #
-# Strategy: SSH into the Hetzner VPS, write .env from a GitHub secret,
-# then run deploy/deploy.sh which fetches latest code, builds via
-# docker compose (running prisma migrations automatically) and probes
-# /login for health.
+# Strategy: SSH into the Hetzner VPS, write .env from a GitHub secret
+# (PUBLIC_BASE_URL derived from CADDY_DOMAIN), then run deploy/deploy.sh
+# which fetches latest code, builds the image WHILE the old container keeps
+# serving, applies prisma migrations, gracefully recreates ONLY the app
+# container (loopback 127.0.0.1:3001), gates on
+# http://127.0.0.1:3001/healthz and rolls the image back on failure.
+#
+# SCOPE: BUSINESS LOGIC ONLY (app image, migrations, container, .env). This
+# workflow never installs, reloads, restarts or verifies Caddy —
+# infrastructure has its own separate pipeline: .github/workflows/infra.yml
+# ("Infrastructure — Caddy (HTTPS)").
 #
 # REQUIRED secrets (create a GitHub **environment** named `prod` and add these
 # as Environment secrets — Settings → Environments → prod → Environment secrets):
@@ -18,6 +25,9 @@
 #   ENV_FILE          - the ENTIRE contents of your server .env (all
 #                       secrets: DATABASE_URL/POSTGRES_*, TWILIO_*,
 #                       SESSION_SECRET, PUBLIC_BASE_URL, ...)
+#   CADDY_DOMAIN      - public hostname, e.g. app.example.com — used ONLY
+#                       to force PUBLIC_BASE_URL=https://$CADDY_DOMAIN into
+#                       .env (Caddy itself is infra.yml's job)
 # Optional:
 #   DEPLOY_PORT       - SSH port (default 22)
 #   REPO_DIR          - path on the server hosting the repo
@@ -30,7 +40,12 @@
 #        sudo mkdir -p /opt/bodapp && sudo chown $USER /opt/bodapp
 #        git clone https://github.com/<you>/bodapp.git /opt/bodapp
 #   3. Give this workflow's public key SSH access (authorized_keys).
-#   4. Done — the workflow handles everything else.
+#   4. DNS A record for CADDY_DOMAIN → server IP + a Hetzner firewall
+#      allowing only TCP 80/443 (and SSH) — the two console steps:
+#      deploy/migrate-to-https.md, deploy/hetzner-firewall.md.
+#   5. Secrets CADDY_DOMAIN + CADDY_EMAIL, then run BOTH pipelines in order:
+#      this workflow (app) and the Infrastructure — Caddy workflow (infra.yml).
+#   6. Done — business logic here; infrastructure in infra.yml.
 # ------------------------------------------------------------------
 name: Deploy to Hetzner
 
@@ -67,13 +82,14 @@ jobs:
           ENV_FILE: ${{ secrets.ENV_FILE }}
           REPO_DIR: ${{ secrets.REPO_DIR }}
           REPO_URL: ${{ secrets.REPO_URL }}
+          CADDY_DOMAIN: ${{ secrets.CADDY_DOMAIN }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           port: ${{ secrets.DEPLOY_PORT || '22' }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script_stop: true
-          envs: ENV_FILE,REPO_DIR,BRANCH,REPO_URL
+          envs: ENV_FILE,REPO_DIR,BRANCH,REPO_URL,CADDY_DOMAIN
           script: |
             set -euo pipefail
             REPO_DIR="${REPO_DIR:-/opt/bodapp}"
@@ -92,6 +108,19 @@ jobs:
             printf '%s\n' "$ENV_FILE" > "$REPO_DIR/.env"
             chmod 600 "$REPO_DIR/.env"
 
-            echo "==> running deploy script on $REPO_DIR (branch $BRANCH)"
+            # Single source of truth for the public origin: derive
+            # PUBLIC_BASE_URL from the CADDY_DOMAIN secret when set, so the
+            # app, invite/QR links and Caddy can never drift apart.
+            if [ -n "$CADDY_DOMAIN" ]; then
+              grep -v '^PUBLIC_BASE_URL=' "$REPO_DIR/.env" > "$REPO_DIR/.env.tmp" || true
+              printf 'PUBLIC_BASE_URL="https://%s"\n' "$CADDY_DOMAIN" >> "$REPO_DIR/.env.tmp"
+              mv "$REPO_DIR/.env.tmp" "$REPO_DIR/.env"
+              chmod 600 "$REPO_DIR/.env"
+              echo "==> PUBLIC_BASE_URL forced to https://$CADDY_DOMAIN"
+            fi
+
+            echo "==> running deploy script (app only) on $REPO_DIR (branch $BRANCH)"
             cd "$REPO_DIR"
             BRANCH="$BRANCH" bash deploy/deploy.sh
+            # Infrastructure (Caddy / TLS) is a SEPARATE pipeline — see
+            # .github/workflows/infra.yml. Nothing else runs here.

@@ -52,7 +52,7 @@ npm audit                           # 0 vulnerabilities
 
 ## Docker deploy artifacts
 
-- Multi-stage **Dockerfile** (node:20-alpine, webpack build, standalone `server.js`, non-root, HTTP :3000).
+- Multi-stage **Dockerfile** (node:20-alpine, webpack build, standalone `server.js`, non-root, HTTP :3001 published loopback-only behind Caddy).
 - **docker-compose.yml** (postgres healthchecked + one-shot migrate + app; photos volume `./storage:/app/storage`).
 - **Runbook:** `deploy/hetzner-setup.md`.
 - **Live deploy is pending** — needs the Hetzner server provisioned and real credentials in `.env` (DB, Twilio, app base URL). No live DB / no Docker was available in the build environment, so deployment has not yet been exercised end-to-end.

@@ -3,90 +3,137 @@
 # Bodapp deploy-to-Hetzner script — invoked by the GitHub Actions
 # workflow (deploy.yml) over SSH, or run manually on the VPS.
 #
-# Assumes the repo is already cloned into $REPO_DIR on the server
-# (see deploy/hetzner-setup.md one-time setup) and that .env has
-# already been written by the pipeline (from GH secret ENV_FILE).
+# Scope: BUSINESS LOGIC ONLY — the Bodapp compose stack (postgres +
+# migrate + app). Infrastructure (Caddy / TLS / firewall) lives in the
+# SEPARATE pipeline .github/workflows/infra.yml + deploy/caddy/
+# setup-caddy.sh and is never invoked, checked or probed from here.
+#
+# Strategy (zero build-downtime, graceful swap, health-gated rollback):
+#   1. fetch code (storage/ photos preserved)
+#   2. build the new image WHILE the old container keeps serving
+#   3. run prisma migrations against the new image
+#   4. recreate ONLY the app container — postgres stays up untouched
+#   5. gate on health: GET http://127.0.0.1:3001/healthz, then assert
+#      the port is still bound loopback-only
+#   6. on failure: re-tag the previous image and roll the app back
+#
+# Network contract: compose publishes the app loopback-only
+# (127.0.0.1:3001:3001) — reachable only from this host, never from
+# a network.
 #
 # Env vars read:
-#   REPO_DIR   - absolute path to the checked-out repo on the server
-#                (default /opt/bodapp)
-#   BRANCH     - git branch to deploy (default main)
-#   APP_PORT   - HOST port the app is published on (compose maps
-#                ${APP_PORT:-8080}:3000; must match PUBLIC_BASE_URL)
+#   REPO_DIR - absolute path to the checked-out repo (default /opt/bodapp)
+#   BRANCH   - git branch to deploy (default main)
+#   APP_PORT - obsolete, ignored. The port is fixed at 3001.
 # ------------------------------------------------------------------
 set -euo pipefail
 
 REPO_DIR="${REPO_DIR:-/opt/bodapp}"
-# APP_PORT: default 8080, but honour one set in the repo .env so the health
-# probe matches the host port compose actually publishes.
-if [ -z "${APP_PORT:-}" ] && [ -f "$REPO_DIR/.env" ]; then
-  APP_PORT="$(grep -E '^APP_PORT=' "$REPO_DIR/.env" 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '"' || true)"
-fi
-APP_PORT="${APP_PORT:-8080}"
+BRANCH="${BRANCH:-main}"
+APP_HOST="127.0.0.1"
+APP_PORT="3001"   # compose publishes 127.0.0.1:3001:3001 (loopback-only)
+
 cd "$REPO_DIR"
+echo "==> [deploy] working in $REPO_DIR (branch $BRANCH)"
 
-echo "==> [deploy] working in $REPO_DIR"
-
-# 1. Fetch latest code (the pipeline already did git pull, but be safe)
+# --- 1. Fetch latest code --------------------------------------------------
 git fetch --all --tags
-git reset --hard origin/"${BRANCH:-main}"
+git reset --hard origin/"$BRANCH"
 # CRITICAL: git clean -fd removes untracked files, which would delete the
 # storage/ directory (not git-tracked) and ALL uploaded photos. Exclude it.
-# The directory is re-created below anyway, but the photos inside must survive.
+# (.env is gitignored, so it survives — ignored files are never removed
+# without -x, and the pipeline rewrites it before this script runs anyway.)
 git clean -fd -e storage/
 
-# 2. Ensure the photo-storage mount's host dir exists & is writable by
-#    the container's non-root user (uid 1001). Best-effort — the setup
-#    runbook normally pre-creates this; do it again in case it's fresh.
+# --- 2. Photo-storage mount must be writable by the container (uid 1001) ---
 mkdir -p storage/photos
 chown -R 1001:1001 storage 2>/dev/null \
   || chmod -R 777 storage 2>/dev/null \
   || true
 
-# 3. Tear down any EXISTING containers/network first. Without this, a stale
-#    `app` container from a previous deploy still holds port 3000 and the new
-#    one fails to bind ("port is already allocated"). `down` leaves the named
-#    postgres volume (bodapp-pgdata) intact, so no data is lost — the DB will
-#    simply be restarted fresh against the same volume.
-echo "==> [deploy] stopping existing containers (keeping postgres volume)..."
-docker compose down --remove-orphans
+# --- 3. Snapshot the running image for rollback ----------------------------
+# (Must run BEFORE `docker compose build`, which re-tags bodapp-app:latest.)
+PREV_IMAGE_ID="$(docker inspect -f '{{.Image}}' bodapp-app 2>/dev/null || true)"
 
-# 4. Build & start everything. compose `app` depends_on
-#    `migrate: service_completed_successfully`, so `up --build` runs
-#    `prisma migrate deploy` before the app starts.
-docker compose pull 2>/dev/null || true
-docker compose up -d --build
+# --- 4. Build the new image FIRST — the old container keeps serving --------
+# `app` and `migrate` share one Dockerfile, so layers are cache-shared.
+echo "==> [deploy] building image (previous container keeps serving)..."
+docker compose build
 
-# 4. Wait for the app to come up and probe it. Instead of trusting APP_PORT
-#    (the health probe must match the ACTUAL published host port), discover it
-#    from compose: `docker compose port app 3000` prints e.g. 0.0.0.0:8080.
-probe_host="127.0.0.1"
-probe_port="$(docker compose port app 3000 2>/dev/null | sed -E 's/.*://' || true)"
-probe_port="${probe_port:-${APP_PORT:-8080}}"
+# --- 5. Postgres: start if down, otherwise leave it running untouched ------
+docker compose up -d postgres
 
-# Prefer curl; fall back to wget; last resort a raw /dev/tcp TCP check.
-http_ok() {
-  local url="http://${probe_host}:${probe_port}/login"
+# --- 6. Migrations against the NEW image, before any traffic switches ------
+# (`prisma migrate deploy` — idempotent; a failure aborts here, leaving the
+#  old app container serving.)
+echo "==> [deploy] applying database migrations..."
+docker compose run --rm migrate
+
+# --- 7. Graceful swap: recreate ONLY the app container ---------------------
+# --no-deps: postgres/migrate are not touched (migrate already ran above).
+# --no-build: the build already happened in step 4; compose never rebuilds
+# implicitly here. Docker sends SIGTERM and compose stop_grace_period: 30s
+# lets in-flight requests drain before the old container dies.
+echo "==> [deploy] swapping app container..."
+docker compose up -d --no-build --no-deps --force-recreate app
+
+# --- 8. Health gate ---------------------------------------------------------
+http_get() {
+  # $1 = url. Prefer curl; fall back to wget. Always a GET (no --spider).
   if command -v curl >/dev/null 2>&1; then
-    curl -fsS -o /dev/null "$url" 2>/dev/null
+    curl -fsS --max-time 5 -o /dev/null "$1" 2>/dev/null
   elif command -v wget >/dev/null 2>&1; then
-    wget -q --spider -T 5 "$url" 2>/dev/null
+    wget -q -O /dev/null -T 5 "$1" 2>/dev/null
   else
-    (exec 3<>"/dev/tcp/${probe_host}/${probe_port}") 2>/dev/null
+    return 1
   fi
 }
 
-echo "==> [deploy] waiting for app to respond on ${probe_host}:${probe_port}..."
-for i in $(seq 1 30); do
-  if http_ok; then
-    echo "==> [deploy] OK — app responded on /login (try $i)"
-    docker compose ps
-    exit 0
-  fi
+HEALTH_URL="http://${APP_HOST}:${APP_PORT}/healthz"
+echo "==> [deploy] waiting for ${HEALTH_URL} ..."
+healthy=false
+for _ in $(seq 1 45); do          # up to ~90s (cold start + start_period)
+  if http_get "$HEALTH_URL"; then healthy=true; break; fi
   sleep 2
 done
 
-echo "==> [deploy] WARN — app did not respond within timeout; showing logs" >&2
-docker compose logs --tail=100 app || true
+if ! $healthy; then
+  echo "==> [deploy] FAIL — new image never became healthy; logs:" >&2
+  docker compose logs --tail=100 app >&2 || true
+
+  # Rollback: put the previous image back and swap again.
+  if [ -n "$PREV_IMAGE_ID" ]; then
+    echo "==> [deploy] rolling back to previous image ${PREV_IMAGE_ID}..." >&2
+    docker tag "$PREV_IMAGE_ID" bodapp-app:latest
+    docker compose up -d --no-build --no-deps --force-recreate app
+    sleep 5
+    if http_get "$HEALTH_URL"; then
+      echo "==> [deploy] rollback OK — previous version serving again" >&2
+    else
+      echo "==> [deploy] rollback did NOT clear either — manual intervention" >&2
+    fi
+  else
+    echo "==> [deploy] no previous image to roll back to (first deploy?)" >&2
+  fi
+  docker compose ps >&2 || true
+  exit 1
+fi
+echo "==> [deploy] OK — app healthy on ${HEALTH_URL}"
+
+# Security assertion: the app must never be published beyond loopback.
+# A mismatch means docker-compose.yml regressed (0.0.0.0) — fail loudly.
+published="$(docker compose port app 3001 2>/dev/null | head -1 || true)"
+case "$published" in
+  127.0.0.1:3001)
+    echo "==> [deploy] OK — app bound loopback-only (127.0.0.1:3001)"
+    ;;
+  *)
+    echo "==> [deploy] FAIL — app port published as '${published:-<nothing>}', expected 127.0.0.1:3001." >&2
+    echo "    The app must only be reachable by Caddy on this host. Fix docker-compose.yml." >&2
+    docker compose ps >&2 || true
+    exit 1
+    ;;
+esac
+
 docker compose ps
-exit 1
+echo "==> [deploy] done."
