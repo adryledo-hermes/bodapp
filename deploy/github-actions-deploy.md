@@ -1,11 +1,15 @@
 # One-click deploy from GitHub Actions
 
 The repository ships a CI/CD pipeline (`.github/workflows/deploy.yml`) that deploys
-the app to your Hetzner VPS **over SSH** — no self-hosted runner, no registry, no
-extra infra. You click **"Run workflow"** on the Actions tab (or push to `main`)
-and it:
+the app to your Hetzner VPS **over Tailscale** — no self-hosted runner, no registry,
+no public SSH port. You click **"Run workflow"** on the Actions tab (or push to
+`main`) and it:
 
-1. Connects to the VPS over SSH.
+1. Joins your tailnet from the runner with the **ephemeral** key
+   `TAILSCALE_AUTHKEY` (temporary node; logs out when the run ends), then
+   connects to the VPS **over Tailscale SSH** — `DEPLOY_HOST` is the
+   server's MagicDNS name or `100.x` tailnet IP, because the Hetzner
+   firewall accepts SSH only from the tailnet.
 2. Ensures the repo is cloned (or clones it) into `REPO_DIR`.
 3. Writes the server `.env` from a GitHub **secret** (`ENV_FILE`).
 4. Runs `deploy/deploy.sh`: fetches latest code → builds the new image **while
@@ -33,6 +37,9 @@ two pipelines share no working-tree state. See
 ## 0. What you need beforehand
 
 - A Hetzner VPS (see [`hetzner-setup.md`](hetzner-setup.md) for OS/Docker install).
+- A **Tailscale tailnet** with the server joined to it — the Hetzner firewall
+  accepts SSH only from the tailnet, and the runner joins it per run with the
+  **ephemeral** `TAILSCALE_AUTHKEY` secret (logs out at the end of the run).
 - The repo pushed to GitHub (this app: `adryledo-hermes/bodapp`).
 - Your real values for every secret in `.env.example`.
 
@@ -56,6 +63,14 @@ mkdir -p /opt/bodapp/storage/photos && sudo chown -R 1001:1001 /opt/bodapp/stora
 
 ## 2. Create a deploy SSH key (local machine)
 
+> **Transport:** SSH/scp now travel **over Tailscale** — the runner joins
+> your tailnet with `TAILSCALE_AUTHKEY` and `DEPLOY_HOST` is the box's
+> tailnet address (MagicDNS name or `100.x` IP; the firewall has no public
+> port-22 rule). The keypair below is still used when the server runs
+> normal `sshd`; with the **Tailscale SSH server**
+> (`sudo tailscale set --ssh` on the box) authorization is by tailnet
+> identity/ACL and the key is simply ignored.
+
 Generate a dedicated keypair for the workflow (do **not** reuse your personal key):
 
 ```bash
@@ -65,7 +80,7 @@ ssh-keygen -t ed25519 -C "bodapp-github-actions" -f ~/.ssh/bodapp_deploy -N ""
 - **Public key** → add to the VPS user you'll SSH as (e.g. `deploy` or your user):
 
   ```bash
-  ssh-copy-id -i ~/.ssh/bodapp_deploy.pub <user>@<VPS_IP>
+  ssh-copy-id -i ~/.ssh/bodapp_deploy.pub <user>@hetzner.tail1234.ts.net   # tailnet address
   # or manually append the .pub contents to ~/.ssh/authorized_keys
   ```
 
@@ -86,9 +101,10 @@ add each of these:
 
 | Secret | Value |
 |---|---|
-| `DEPLOY_HOST` | VPS IP or hostname, e.g. `116.203.12.34` |
-| `DEPLOY_USER` | SSH user you added the public key to (e.g. `deploy` or `root`) |
-| `DEPLOY_SSH_KEY` | **Private** key content of `~/.ssh/bodapp_deploy` (the PEM/OpenSSH text) |
+| `TAILSCALE_AUTHKEY` | **Ephemeral** tailnet auth key — Tailscale admin console → *Settings → Keys → Generate ephemeral auth key* (tick **Ephemeral**). The runner joins the tailnet as a temporary node each run and logs out at the end. Required by **both** workflows. |
+| `DEPLOY_HOST` | **Tailnet address** of the VPS: MagicDNS name (e.g. `hetzner.tail1234.ts.net`) or `100.x` IP — **not** the public IP; the firewall accepts SSH only from the tailnet |
+| `DEPLOY_USER` | SSH user (e.g. `deploy` or `root`) — with the Tailscale SSH server, authorization is by tailnet identity/ACL |
+| `DEPLOY_SSH_KEY` | **Private** key content of `~/.ssh/bodapp_deploy` (the PEM/OpenSSH text). Needed for normal `sshd`; ignored by the Tailscale SSH server (harmless to keep passing) |
 | `ENV_FILE` | The **entire contents of your server `.env`** — copy the `.env` you'd create from `.env.example` with all real values (DATABASE_URL/POSTGRES_*, TWILIO_ACCOUNT_SID/AUTH_TOKEN/PHONE_NUMBER, SESSION_SECRET, …). Keep this in sync with what the app needs. `PUBLIC_BASE_URL` is derived from `CADDY_DOMAIN` automatically; delete any obsolete `APP_PORT` line. |
 
 **HTTPS — set both and the Infrastructure pipeline owns Caddy end-to-end** (install, Caddyfile render from the secrets, `caddy validate`, start/reload, end-to-end `https://…/healthz` gate — no manual Caddy steps):
@@ -138,9 +154,19 @@ Then in a browser:
 
 - **`docker: command not found` / compose plugin** → install Docker Engine + the
   compose plugin on the VPS first (hetzner-setup.md).
-- **SSH permission denied** → confirm `DEPLOY_SSH_KEY` is the **private** key and
-  its **public** half is in the `DEPLOY_USER`'s `authorized_keys`; check `DEPLOY_HOST`
-  / `DEPLOY_USER` / `DEPLOY_PORT`.
+- **SSH permission denied** → over the tailnet the same rules apply: if the
+  server runs `sshd`, confirm `DEPLOY_SSH_KEY` is the **private** key and its
+  public half is in `DEPLOY_USER`'s `authorized_keys`; with the Tailscale SSH
+  server, check the tailnet ACLs allow this node → `<server>:22` and that
+  `DEPLOY_HOST` / `DEPLOY_USER` are right.
+- **`FATAL: TAILSCALE_AUTHKEY secret is not set`** → add it to the `prod`
+  environment: an **ephemeral** key from the Tailscale admin console →
+  *Settings → Keys → Generate ephemeral auth key*.
+- **`FATAL: cannot reach <host>:<port> over the tailnet` (join preflight)** →
+  the runner joined but the server side is wrong: box not on the tailnet,
+  `DEPLOY_HOST` still the **public** IP (must be MagicDNS name / `100.x`),
+  Tailscale SSH not enabled (`sudo tailscale set --ssh`) or `sshd` down, or
+  ACLs deny it. Compare `tailscale status` on the box with the run log.
 - **App comes up but health probe fails** → the pipeline prints logs on
   failure and rolls back the previous image; SSH in and run
   `cd /opt/bodapp && docker compose logs --tail=100 app`.

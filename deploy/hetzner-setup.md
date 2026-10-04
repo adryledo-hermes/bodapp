@@ -25,11 +25,19 @@ This runbook takes you from a fresh Hetzner **CX22** (Ubuntu 22.04, ~2GB RAM,
 
 ## 1. Connect
 
-```bash
-SSH_KEY=~/.ssh/id_ed25519
-SERVER_IP=<your-hetzner-ip>      # replace
+SSH reaches the box **only over Tailscale** (the Hetzner firewall has no
+public port-22 rule). Enable the Tailscale SSH server once on the box:
 
-ssh -i "$SSH_KEY" root@$SERVER_IP
+```bash
+tailscale up --auth-key=<ephemeral-or-reusable-key>
+sudo tailscale set --ssh
+```
+
+…then connect with plain `ssh` to its **tailnet address** (authorization is
+by tailnet identity/ACL — no key needed), or keep `sshd` and use your key:
+
+```bash
+ssh -i ~/.ssh/id_ed25519 root@hetzner.tail1234.ts.net   # MagicDNS name or 100.x IP
 ```
 
 ## 2. Install Docker Engine + Compose plugin
@@ -128,19 +136,21 @@ docker compose run --rm app npx --no-install prisma db seed
 > If you don't want the demo seed, skip it and create the wedding + couple via
 > the `/login` → signup flow once the app is up (Step 9).
 
-## 8. Open the firewall (80/443 only)
+## 8. Open the firewall (80/443 only — no public SSH)
 
 The app is published **loopback-only** (`127.0.0.1:3001`) — it must NOT be
 firewalled open. Only Caddy needs the public internet: **TCP 80** (HTTP→HTTPS
-redirect + Let's Encrypt challenge) and **TCP 443** (HTTPS). Full rules,
-including SSH hardening and the ufw alternative:
+redirect + Let's Encrypt challenge) and **TCP 443** (HTTPS). SSH is **never
+public**: you and CI reach the box over **Tailscale** (step 1). Full rules,
+ufw alternative and verification:
 [`hetzner-firewall.md`](hetzner-firewall.md).
 
 ```bash
 # Hetzner Cloud Console → server → Firewalls → Create firewall, inbound:
-#   TCP 80   from 0.0.0.0/0
-#   TCP 443  from 0.0.0.0/0
-#   TCP 22   from <YOUR_IP>/32      (SSH — your IP only)
+#   TCP 80    from 0.0.0.0/0
+#   TCP 443   from 0.0.0.0/0
+#   UDP 41641 from 0.0.0.0/0   (optional: Tailscale direct connections)
+#   NO TCP 22 rule — SSH only via the tailnet
 # Outbound: allow all (default). Then attach the firewall to the server.
 # Do NOT open 3000/3001/8080/5432.
 ```

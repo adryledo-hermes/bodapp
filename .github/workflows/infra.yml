@@ -25,7 +25,12 @@
 #
 # REQUIRED secrets (GitHub environment `prod`) — ready-to-fill catalog:
 #   deploy/infra.env.example
-#   DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY  (same as deploy.yml)
+#   TAILSCALE_AUTHKEY - ephemeral key: the runner joins our tailnet before
+#                       any SSH/scp (the Hetzner firewall accepts SSH only
+#                       from the tailnet) and logs out at the end
+#   DEPLOY_HOST        - tailnet address of the VPS: MagicDNS name or
+#                        100.x IP — NOT the public IP
+#   DEPLOY_USER, DEPLOY_SSH_KEY  (same as deploy.yml)
 #   CADDY_DOMAIN  - public hostname, e.g. app.example.com
 #   CADDY_EMAIL   - ACME/Let's Encrypt contact email
 # Optional: DEPLOY_PORT (22).
@@ -54,6 +59,52 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # The Hetzner firewall accepts SSH only from our tailnet. The runner
+      # joins it as a TEMPORARY node with the ephemeral auth key, so the
+      # scp + SSH steps below reach DEPLOY_HOST's tailnet address over
+      # WireGuard. (Same transport as deploy.yml — keep them in sync.)
+      - name: Join tailnet (Tailscale)
+        env:
+          TS_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TS_AUTHKEY:-}" ]; then
+            echo "FATAL: TAILSCALE_AUTHKEY secret is not set (Settings -> Environments -> prod)." >&2
+            echo "Generate it: Tailscale admin console -> Settings -> Keys -> Generate ephemeral auth key." >&2
+            exit 1
+          fi
+          echo "==> installing Tailscale on the runner"
+          curl -fsSL https://tailscale.com/install.sh | sh
+          echo "==> starting tailscaled"
+          if ! sudo systemctl start tailscaled 2>/dev/null; then
+            sudo tailscaled >/tmp/tailscaled.log 2>&1 &
+          fi
+          okd=0
+          for i in $(seq 30); do
+            if sudo tailscale status --json >/dev/null 2>&1; then okd=1; break; fi
+            sleep 1
+          done
+          if [ "$okd" != 1 ]; then
+            echo "FATAL: tailscaled did not come up" >&2
+            cat /tmp/tailscaled.log 2>/dev/null >&2 || true
+            exit 1
+          fi
+          echo "==> joining the tailnet with the ephemeral key"
+          sudo tailscale up --auth-key="$TS_AUTHKEY"
+          echo "==> runner node: $(hostname) ($(sudo tailscale ip -4 | head -1))"
+          echo "==> preflight: TCP ${DEPLOY_PORT} to ${DEPLOY_HOST} over the tailnet"
+          if timeout 5 bash -c "exec 3<>/dev/tcp/${DEPLOY_HOST}/${DEPLOY_PORT}" 2>/dev/null; then
+            echo "    reachable"
+          else
+            echo "FATAL: cannot reach ${DEPLOY_HOST}:${DEPLOY_PORT} over the tailnet." >&2
+            echo "Check: server joined to the tailnet; DEPLOY_HOST = MagicDNS name or 100.x IP;" >&2
+            echo "       'sudo tailscale set --ssh' (or sshd) on the server; tailnet ACLs; firewall." >&2
+            sudo tailscale status >&2 || true
+            exit 1
+          fi
 
       # Assets come from the RUNNER checkout and land in /tmp on the server:
       # the infra pipeline never runs git or writes inside /opt/bodapp, so it
@@ -124,3 +175,9 @@ jobs:
               5*) echo "==> INFRA OK — TLS/proxy verified; app returned $code (business logic: run the Deploy workflow)" ;;
               *)  echo "==> INFRA OK — TLS verified; app status $code" ;;
             esac
+
+      # Ephemeral node: log the runner out so its tailnet record disappears
+      # now instead of lingering until offline expiry. Runs even on failure.
+      - name: Leave tailnet
+        if: always()
+        run: sudo tailscale logout >/dev/null 2>&1 || true

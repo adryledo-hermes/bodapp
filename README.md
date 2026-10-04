@@ -68,7 +68,7 @@ Deployment instructions: [`deploy/hetzner-setup.md`](deploy/hetzner-setup.md).
 
 ## Deploy (Docker Compose on Hetzner VPS, HTTPS via Caddy)
 
-- **One-click CI/CD deploy:** GitHub Actions → [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) (SSH deploy: click *Run workflow* on the Actions tab, or auto on push to `main`). Configure the required secrets + one-time server setup in [`deploy/github-actions-deploy.md`](deploy/github-actions-deploy.md).
+- **One-click CI/CD deploy:** GitHub Actions → [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) (**Tailscale SSH deploy**: the runner joins the tailnet with the ephemeral `TAILSCALE_AUTHKEY` secret and reaches the box over Tailscale — click *Run workflow* on the Actions tab, or auto on push to `main`). Configure the required secrets + one-time server setup in [`deploy/github-actions-deploy.md`](deploy/github-actions-deploy.md).
 - **Manual runbook:** [`deploy/hetzner-setup.md`](deploy/hetzner-setup.md).
 - **Reverse proxy / HTTPS:** **Caddy runs on the host as a systemd service**
   (never inside the app container), on its **own separate pipeline** —
@@ -90,7 +90,9 @@ Deployment instructions: [`deploy/hetzner-setup.md`](deploy/hetzner-setup.md).
   **only the app container**, gates on `/healthz`, asserts the loopback bind,
   rolls back the image on failure. [`infra.yml`](.github/workflows/infra.yml)
   = infrastructure — Caddy config/certs + TLS gate. Neither touches the
-  other's domain.
+  other's domain. Both reach the VPS over **Tailscale**: the runner joins
+  the tailnet with the ephemeral `TAILSCALE_AUTHKEY` secret, so the Hetzner
+  firewall can accept SSH only from the tailnet (no public port 22).
 
 ```bash
 cp .env.example .env          # fill real values (see runbook Step 4)

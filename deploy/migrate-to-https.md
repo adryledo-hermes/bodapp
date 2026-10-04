@@ -25,7 +25,8 @@ Target architecture:
 | App swap to `127.0.0.1:3001`, migrations, health gate, rollback | **Automatic** — the business-logic pipeline ([`deploy.sh`](deploy.sh), `.github/workflows/deploy.yml`) |
 | End-to-end `https://<domain>/healthz` verification | **Automatic** — hard TLS gate in the Infrastructure pipeline |
 | DNS A record for the domain | **Manual** (your DNS provider) |
-| Firewall: open 80/443, lock SSH | **Manual, once per server** ([`hetzner-firewall.md`](hetzner-firewall.md)) |
+| Firewall: 80/443 public; SSH never public (tailnet only) | **Manual, once per server** ([`hetzner-firewall.md`](hetzner-firewall.md)) |
+| Tailnet for CI/user SSH | **Manual, once per server** — box joined to your tailnet; both pipelines join it from the runner with the ephemeral `TAILSCALE_AUTHKEY` secret |
 | Docker + repo clone + deploy SSH key | **Manual, once per server** ([`hetzner-setup.md`](hetzner-setup.md) steps 1–3, [`github-actions-deploy.md`](github-actions-deploy.md)) |
 | Re-sharing invite QR codes after the domain change | **Manual, once** (last step below) |
 
@@ -47,16 +48,21 @@ each other's components, and share no server-side working state:
   never touch certificates (`/var/lib/caddy`).
 - **The app is loopback-only** (`127.0.0.1:3001`) — not reachable from any
   network even if a firewall rule is wrong.
-- **Firewall opens only 80 + 443** (plus SSH for you) — the one console step.
+- **Firewall opens only 80 + 443** — SSH is never public: both pipelines
+  reach the box over **Tailscale** (the runner joins with the ephemeral
+  `TAILSCALE_AUTHKEY`; `DEPLOY_HOST` is the MagicDNS name / `100.x` IP), so
+  there is no port-22 rule at all.
 
 ## Fresh server: zero manual Caddy steps
 
 1. DNS: `A app.example.com → <SERVER_IP>`.
-2. Firewall: attach the rule set from [`hetzner-firewall.md`](hetzner-firewall.md) (80/443 + SSH).
-3. Server basics once: Docker + repo clone + deploy key
-   ([`hetzner-setup.md`](hetzner-setup.md), [`github-actions-deploy.md`](github-actions-deploy.md)).
-4. GitHub `prod` environment secrets: `DEPLOY_HOST` / `DEPLOY_USER` /
-   `DEPLOY_SSH_KEY` / `ENV_FILE` **plus `CADDY_DOMAIN` and `CADDY_EMAIL`**.
+2. Firewall: attach the rule set from [`hetzner-firewall.md`](hetzner-firewall.md) — 80/443 only; **SSH is never public** (it goes over Tailscale).
+3. Server basics once: Docker + repo clone + join the box to your tailnet
+   + deploy key ([`hetzner-setup.md`](hetzner-setup.md), [`github-actions-deploy.md`](github-actions-deploy.md)).
+4. GitHub `prod` environment secrets: `TAILSCALE_AUTHKEY` (ephemeral key) /
+   `DEPLOY_HOST` (the **tailnet** address — MagicDNS name or `100.x` IP) /
+   `DEPLOY_USER` / `DEPLOY_SSH_KEY` / `ENV_FILE` **plus `CADDY_DOMAIN` and
+   `CADDY_EMAIL`**.
 5. **Business logic:** push `main` (or *Run workflow* on `deploy.yml`) → the
    app deploys onto loopback `127.0.0.1:3001`, green on `/healthz`.
 6. **Infrastructure:** run *Infrastructure — Caddy* (`infra.yml` — it also
@@ -82,10 +88,14 @@ Before merging, do the manual bits:
 
 1. **DNS** — `dig +short app.example.com` must print your server IP
    (Let's Encrypt cannot issue without it).
-2. **Firewall** — open TCP 80/443, lock SSH ([`hetzner-firewall.md`](hetzner-firewall.md)).
-3. **Secrets** — set `CADDY_DOMAIN` + `CADDY_EMAIL`. `PUBLIC_BASE_URL` is now
-   derived automatically (you may drop it from `ENV_FILE` — it is overridden
-   anyway). Delete any obsolete `APP_PORT` line. Keep the rest of `ENV_FILE`.
+2. **Firewall** — open TCP 80/443 only; SSH stays tailnet-only, no 22 rule
+   ([`hetzner-firewall.md`](hetzner-firewall.md)).
+3. **Secrets** — set `CADDY_DOMAIN` + `CADDY_EMAIL`, and confirm
+   `TAILSCALE_AUTHKEY` is set with `DEPLOY_HOST` = the box's **tailnet**
+   address (the firewall no longer accepts public SSH). `PUBLIC_BASE_URL` is
+   now derived automatically (you may drop it from `ENV_FILE` — it is
+   overridden anyway). Delete any obsolete `APP_PORT` line. Keep the rest of
+   `ENV_FILE`.
 
 Then **merge the branch / push `main`**: `deploy.yml` runs automatically.
 When it is green, start the **Infrastructure — Caddy** workflow (*Run

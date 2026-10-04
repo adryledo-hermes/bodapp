@@ -5,33 +5,46 @@
 # also runs automatically on every push to `main` (remove the push
 # trigger below if you prefer manual-only).
 #
-# Strategy: SSH into the Hetzner VPS, write .env from a GitHub secret
-# (PUBLIC_BASE_URL derived from CADDY_DOMAIN), then run deploy/deploy.sh
-# which fetches latest code, builds the image WHILE the old container keeps
-# serving, applies prisma migrations, gracefully recreates ONLY the app
-# container (loopback 127.0.0.1:3001), gates on
-# http://127.0.0.1:3001/healthz and rolls the image back on failure.
+# Strategy: join your tailnet on the runner with the ephemeral key
+# TAILSCALE_AUTHKEY, then SSH to the VPS **over Tailscale** (DEPLOY_HOST =
+# MagicDNS name or 100.x tailnet IP — the Hetzner firewall exposes SSH only
+# from the tailnet), write .env from a GitHub secret (PUBLIC_BASE_URL
+# derived from CADDY_DOMAIN), then run deploy/deploy.sh which fetches
+# latest code, builds the image WHILE the old container keeps serving,
+# applies prisma migrations, gracefully recreates ONLY the app container
+# (loopback 127.0.0.1:3001), gates on http://127.0.0.1:3001/healthz and
+# rolls the image back on failure. The runner logs out of the tailnet at
+# the end (ephemeral node — nothing persists between runs).
 #
 # SCOPE: BUSINESS LOGIC ONLY (app image, migrations, container, .env). This
 # workflow never installs, reloads, restarts or verifies Caddy —
 # infrastructure has its own separate pipeline: .github/workflows/infra.yml
-# ("Infrastructure — Caddy (HTTPS)").
+# ("Infrastructure — Caddy (HTTPS)"), which uses the same Tailscale
+# transport.
 #
 # REQUIRED secrets (create a GitHub **environment** named `prod` and add these
 # as Environment secrets — Settings → Environments → prod → Environment secrets):
-#   DEPLOY_HOST       - VPS IP or hostname, e.g. 116.203.12.34
-#   DEPLOY_USER       - SSH user (must have the DeployKey below)
-#   DEPLOY_SSH_KEY    - private SSH key (PEM) for that user
-#   ENV_FILE          - the ENTIRE contents of your server .env (all
-#                       secrets: DATABASE_URL/POSTGRES_*, TWILIO_*,
-#                       SESSION_SECRET, PUBLIC_BASE_URL, ...)
-#   CADDY_DOMAIN      - public hostname, e.g. app.example.com — used ONLY
-#                       to force PUBLIC_BASE_URL=https://$CADDY_DOMAIN into
-#                       .env (Caddy itself is infra.yml's job)
+#   TAILSCALE_AUTHKEY  - ephemeral auth key (admin console → Settings →
+#                        Keys → Generate ephemeral auth key); the runner
+#                        joins the tailnet as a temporary node
+#   DEPLOY_HOST        - tailnet address of the VPS: MagicDNS name
+#                        (e.g. hetzner.tail1234.ts.net) or 100.x IP — NOT
+#                        the public IP (the firewall allows SSH only from
+#                        the tailnet)
+#   DEPLOY_USER        - SSH user (must have the DeployKey below; with the
+#                        Tailscale SSH server, authorization is by ACL)
+#   DEPLOY_SSH_KEY     - private SSH key (PEM); still used when the server
+#                        runs normal sshd, ignored by the Tailscale SSH server
+#   ENV_FILE           - the ENTIRE contents of your server .env (all
+#                        secrets: DATABASE_URL/POSTGRES_*, TWILIO_*,
+#                        SESSION_SECRET, PUBLIC_BASE_URL, ...)
+#   CADDY_DOMAIN       - public hostname, e.g. app.example.com — used ONLY
+#                        to force PUBLIC_BASE_URL=https://$CADDY_DOMAIN into
+#                        .env (Caddy itself is infra.yml's job)
 # Optional:
-#   DEPLOY_PORT       - SSH port (default 22)
-#   REPO_DIR          - path on the server hosting the repo
-#                       (default /opt/bodapp)
+#   DEPLOY_PORT        - SSH port (default 22)
+#   REPO_DIR           - path on the server hosting the repo
+#                        (default /opt/bodapp)
 #
 # One-time server setup (do once):
 #   1. Install Docker Engine + compose plugin (see deploy/hetzner-setup.md).
@@ -39,12 +52,15 @@
 #        sudo apt install -y git
 #        sudo mkdir -p /opt/bodapp && sudo chown $USER /opt/bodapp
 #        git clone https://github.com/<you>/bodapp.git /opt/bodapp
-#   3. Give this workflow's public key SSH access (authorized_keys).
+#   3. Join the server to your tailnet (tailscale up) and — if you use the
+#      Tailscale SSH server — `sudo tailscale set --ssh`; otherwise give
+#      this workflow's public key access (authorized_keys).
 #   4. DNS A record for CADDY_DOMAIN → server IP + a Hetzner firewall
-#      allowing only TCP 80/443 (and SSH) — the two console steps:
-#      deploy/migrate-to-https.md, deploy/hetzner-firewall.md.
-#   5. Secrets CADDY_DOMAIN + CADDY_EMAIL, then run BOTH pipelines in order:
-#      this workflow (app) and the Infrastructure — Caddy workflow (infra.yml).
+#      allowing only TCP 80/443 (SSH only over Tailscale) — the two console
+#      steps: deploy/migrate-to-https.md, deploy/hetzner-firewall.md.
+#   5. Secrets TAILSCALE_AUTHKEY + CADDY_DOMAIN + CADDY_EMAIL, then run
+#      BOTH pipelines in order: this workflow (app) and the
+#      Infrastructure — Caddy workflow (infra.yml).
 #   6. Done — business logic here; infrastructure in infra.yml.
 # ------------------------------------------------------------------
 name: Deploy to Hetzner
@@ -75,6 +91,52 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # The Hetzner firewall accepts SSH only from our tailnet. The runner
+      # joins it as a TEMPORARY node with the ephemeral auth key, so every
+      # SSH/scp step below targets DEPLOY_HOST's tailnet address over
+      # WireGuard. (Same transport as infra.yml — keep them in sync.)
+      - name: Join tailnet (Tailscale)
+        env:
+          TS_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TS_AUTHKEY:-}" ]; then
+            echo "FATAL: TAILSCALE_AUTHKEY secret is not set (Settings -> Environments -> prod)." >&2
+            echo "Generate it: Tailscale admin console -> Settings -> Keys -> Generate ephemeral auth key." >&2
+            exit 1
+          fi
+          echo "==> installing Tailscale on the runner"
+          curl -fsSL https://tailscale.com/install.sh | sh
+          echo "==> starting tailscaled"
+          if ! sudo systemctl start tailscaled 2>/dev/null; then
+            sudo tailscaled >/tmp/tailscaled.log 2>&1 &
+          fi
+          okd=0
+          for i in $(seq 30); do
+            if sudo tailscale status --json >/dev/null 2>&1; then okd=1; break; fi
+            sleep 1
+          done
+          if [ "$okd" != 1 ]; then
+            echo "FATAL: tailscaled did not come up" >&2
+            cat /tmp/tailscaled.log 2>/dev/null >&2 || true
+            exit 1
+          fi
+          echo "==> joining the tailnet with the ephemeral key"
+          sudo tailscale up --auth-key="$TS_AUTHKEY"
+          echo "==> runner node: $(hostname) ($(sudo tailscale ip -4 | head -1))"
+          echo "==> preflight: TCP ${DEPLOY_PORT} to ${DEPLOY_HOST} over the tailnet"
+          if timeout 5 bash -c "exec 3<>/dev/tcp/${DEPLOY_HOST}/${DEPLOY_PORT}" 2>/dev/null; then
+            echo "    reachable"
+          else
+            echo "FATAL: cannot reach ${DEPLOY_HOST}:${DEPLOY_PORT} over the tailnet." >&2
+            echo "Check: server joined to the tailnet; DEPLOY_HOST = MagicDNS name or 100.x IP;" >&2
+            echo "       'sudo tailscale set --ssh' (or sshd) on the server; tailnet ACLs; firewall." >&2
+            sudo tailscale status >&2 || true
+            exit 1
+          fi
 
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
@@ -124,3 +186,9 @@ jobs:
             BRANCH="$BRANCH" bash deploy/deploy.sh
             # Infrastructure (Caddy / TLS) is a SEPARATE pipeline — see
             # .github/workflows/infra.yml. Nothing else runs here.
+
+      # Ephemeral node: log the runner out so its tailnet record disappears
+      # now instead of lingering until offline expiry. Runs even on failure.
+      - name: Leave tailnet
+        if: always()
+        run: sudo tailscale logout >/dev/null 2>&1 || true
