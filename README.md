@@ -59,6 +59,7 @@ npm run typecheck
 - ✅ **v1.2** — Dashboard, per-guest seat numbers + draggable tables, attachable decorations (auto centerpiece), invitations per group, guest editing + photos, Playwright harness.
 - ✅ **v1.1** — Multi-couple self-registration, welcome screen, configurable session expiry, logout, cookie/OTP hardening.
 - ⬜ **v1.3** — Seating-map PDF export, guest relations UI, CSV import, OTP delivery dashboard, email notifications, 2FA, PWA.
+- ⬜ **v1.4** — Account security: **email validation** (verify the couple's email address on registration) and **password recovery** (forgot-password → emailed reset link). Both depend on an outbound email channel.
 
 ## Testing
 - **Unit tests:** `npm test` (vitest — pure libs: slugs, seating, OTP, i18n parity, …).
