@@ -1,5 +1,5 @@
-[![Infrastructure — Caddy (HTTPS)](https://github.com/adryledo-hermes/bodapp/actions/workflows/infra.yml/badge.svg)](https://github.com/adryledo-hermes/bodapp/actions/workflows/infra.yml)
-[![Deploy to Hetzner](https://github.com/adryledo-hermes/bodapp/actions/workflows/deploy.yml/badge.svg)](https://github.com/adryledo-hermes/bodapp/actions/workflows/deploy.yml)
+[![Infrastructure — Caddy (HTTPS)](../../actions/workflows/infra.yml/badge.svg)](../../actions/workflows/infra.yml)
+[![Deploy to Hetzner](../../actions/workflows/deploy.yml/badge.svg)](../../actions/workflows/deploy.yml)
 
 # Bodapp
 
