@@ -213,7 +213,7 @@ jobs:
           ENV_FILE: ${{ secrets.ENV_FILE }}
           REPO_DIR: ${{ secrets.REPO_DIR }}
           REPO_URL: ${{ secrets.REPO_URL }}
-          CADDY_DOMAIN: ${{ secrets.CADDY_DOMAIN }}
+          CADDY_DOMAIN: ${{ vars.CADDY_DOMAIN }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
