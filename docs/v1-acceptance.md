@@ -26,7 +26,7 @@ Status: **v1 feature-complete**. All scope below is implemented, unit-tested (vi
 2. Guest scans / opens the link → `/w/[slug]/invite?g=<invitationId>`.
 3. Guest enters a phone; it is checked against the invitation's `acceptedPhones` allowlist **before** any OTP is generated or sent (anti-probing: unknown link and disallowed phone return the same generic error).
 4. A 6-digit OTP is sent over **WhatsApp** (SMS fallback, off by default — `src/lib/otp-channels.ts` → `src/lib/otp-providers.ts` → `src/lib/twilio-provider.ts`); only its SHA-256 hash is persisted; rate-limited per phone (max 5/hr, sliding window).
-5. Guest verifies the code → short-lived `invitation_access` cookie → personalized invitation + RSVP.
+5. Guest verifies the code → short-lived `invitation_access` cookie → personalized invitation + RSVP. With *"don't ask again on this device"* ticked (default) a long-lived `invitation_device` cookie is also issued (`GUEST_TRUST_DAYS`, default 30), so that device skips the OTP on later visits.
 
 **RSVP authorization:** the guest's `invitationAccess` cookie (invitationId/weddingId/phone) is the only source of auth for `/api/rsvp`. Only the Guest row(s) whose phone matches the authenticated phone are updated — a family invitation never clobbers every member's allergies/music (FIX I-1).
 

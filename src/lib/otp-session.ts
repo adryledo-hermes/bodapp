@@ -11,6 +11,17 @@ import { cookieSecure } from "./cookie-secure";
 const COOKIE_NAME = "invitation_access";
 const MAX_AGE = 30 * 60; // 30 minutes
 
+/**
+ * "Trust this device" cookie — set once, after the guest has passed the OTP
+ * challenge with the remember option ticked, so the SAME device is not asked
+ * for a code on every visit. Verified with the same secret and the same
+ * invitation-scoped payload as the short cookie; only the lifetime differs
+ * (GUEST_TRUST_DAYS, default 30 days).
+ */
+const TRUST_COOKIE_NAME = "invitation_device";
+const TRUST_DEFAULT_DAYS = 30;
+const TRUST_MAX_DAYS = 730; // hard ceiling: never an effectively-permanent grant
+
 function getSecret(): Uint8Array {
   const secret = process.env.SESSION_SECRET;
   // Fail closed in production (FIX I1): this guards a public gate, so a missing
@@ -57,7 +68,18 @@ export async function createInvitationAccess(
 /** Verify and return the guest-access payload, or null when absent/invalid. */
 export async function getInvitationAccess(): Promise<InvitationAccessPayload | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
+  const direct = await readVerified(cookieStore.get(COOKIE_NAME)?.value);
+  // Fall back to the trusted-device cookie: a device that verified once keeps
+  // its (invitation-scoped) access until the trust TTL expires. Callers still
+  // compare invitationId/weddingId against the invitation being opened, so a
+  // trust grant for one invitation never unlocks another.
+  return direct ?? (await readVerified(cookieStore.get(TRUST_COOKIE_NAME)?.value));
+}
+
+/** Verify one signed cookie token, or null when absent/invalid/expired. */
+async function readVerified(
+  token: string | undefined
+): Promise<InvitationAccessPayload | null> {
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, getSecret());
@@ -65,6 +87,45 @@ export async function getInvitationAccess(): Promise<InvitationAccessPayload | n
   } catch {
     return null;
   }
+}
+
+/**
+ * Trusted-device lifetime in seconds, from GUEST_TRUST_DAYS
+ * (default 30 days, clamped to 1..730). Non-numeric/absent → default.
+ */
+export function invitationTrustMaxAge(): number {
+  const raw = process.env.GUEST_TRUST_DAYS;
+  const parsed = raw === undefined || raw.trim() === "" ? NaN : Number(raw);
+  const days =
+    Number.isFinite(parsed) && parsed >= 1
+      ? Math.min(Math.floor(parsed), TRUST_MAX_DAYS)
+      : TRUST_DEFAULT_DAYS;
+  return days * 24 * 60 * 60;
+}
+
+/**
+ * Sign and set the long-lived trusted-device cookie (httpOnly). Called only
+ * from route handlers (cookies().set is unsafe during server render) and only
+ * after a successful OTP verification with rememberDevice requested.
+ */
+export async function createInvitationTrust(
+  payload: InvitationAccessPayload
+): Promise<void> {
+  const maxAge = invitationTrustMaxAge();
+  const token = await new SignJWT(payload)
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime(`${maxAge}s`)
+    .sign(getSecret());
+
+  const cookieStore = await cookies();
+  cookieStore.set(TRUST_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: cookieSecure(),
+    sameSite: "lax",
+    path: "/",
+    maxAge,
+  });
 }
 
 /** Clear the guest-access cookie (e.g. expiry or explicit logout). */
@@ -77,4 +138,7 @@ export async function clearInvitationAccess(): Promise<void> {
   });
 }
 
-export { COOKIE_NAME as INVITATION_ACCESS_COOKIE };
+export {
+  COOKIE_NAME as INVITATION_ACCESS_COOKIE,
+  TRUST_COOKIE_NAME as INVITATION_TRUST_COOKIE,
+};

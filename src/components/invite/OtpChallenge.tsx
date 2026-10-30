@@ -33,6 +33,9 @@ export default function OtpChallenge({
   const [deliveredChannel, setDeliveredChannel] = useState<
     "whatsapp" | "sms" | null
   >(null);
+  // "Trust this device": ON by default so a guest verifies once per device
+  // instead of on every visit.
+  const [trustDevice, setTrustDevice] = useState(true);
 
   const t = (key: string) => translate(locale, key);
 
@@ -68,7 +71,7 @@ export default function OtpChallenge({
       const res = await fetch("/api/otp/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, phone, code }),
+        body: JSON.stringify({ token, phone, code, trustDevice }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -136,6 +139,15 @@ export default function OtpChallenge({
             />
           </label>
           {error && <p className="text-sm text-red-600">{error}</p>}
+          <label className="flex items-start gap-2 text-sm text-slate-600">
+            <input
+              type="checkbox"
+              checked={trustDevice}
+              onChange={(e) => setTrustDevice(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-slate-300"
+            />
+            <span>{t("otp.rememberDevice")}</span>
+          </label>
           <button
             type="submit"
             disabled={loading}

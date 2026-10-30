@@ -413,6 +413,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "otp.sentMsgWhatsapp": "Te hemos enviado un código de 6 dígitos por WhatsApp.",
     "otp.sentMsgSms": "Te hemos enviado un código de 6 dígitos por SMS.",
     "otp.codeLabel": "Código",
+    "otp.rememberDevice":
+      "No volver a pedir el código en este dispositivo",
     "otp.verifying": "Verificando...",
     "otp.verify": "Verificar",
     "otp.changePhone": "Cambiar teléfono",
@@ -888,6 +890,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "otp.sentMsgWhatsapp": "We've sent you a 6-digit code via WhatsApp.",
     "otp.sentMsgSms": "We've sent you a 6-digit code by SMS.",
     "otp.codeLabel": "Code",
+    "otp.rememberDevice": "Don't ask for the code again on this device",
     "otp.verifying": "Verifying...",
     "otp.verify": "Verify",
     "otp.changePhone": "Change phone",

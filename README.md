@@ -7,7 +7,7 @@ Wedding management + invitation platform for **v1** on a Hetzner VPS.
 
 Two surfaces:
 - **Private couple panel** — dashboard, guests (editable Pokémon-card view + photos), seating planner (move tables, drag guests onto chairs), decoration/gift layer, task board, invitations manager.
-- **Public invitation portal** — QR/link → phone → OTP over **WhatsApp** (Twilio), with plain **SMS as fallback disabled by default** (`OTP_WHATSAPP_ENABLED` / `OTP_SMS_ENABLED`), each channel behind a swappable provider (`OTP_WHATSAPP_PROVIDER` / `OTP_SMS_PROVIDER`) → personalized invitation + RSVP.
+- **Public invitation portal** — QR/link → phone → OTP over **WhatsApp** (Twilio), with plain **SMS as fallback disabled by default** (`OTP_WHATSAPP_ENABLED` / `OTP_SMS_ENABLED`), each channel behind a swappable provider (`OTP_WHATSAPP_PROVIDER` / `OTP_SMS_PROVIDER`) → personalized invitation + RSVP. A device can be **verified once** (`GUEST_TRUST_DAYS`, default 30) so returning guests are not sent a new code.
 
 ## v1 scope locks
 - Multi-phone per invitation (couple/family): phone validated against the invitation's accepted phones *before* sending OTP.

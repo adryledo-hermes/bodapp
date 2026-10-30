@@ -100,6 +100,7 @@ Fill these values (never commit `.env`):
 | `OTP_WHATSAPP_PROVIDER` | `twilio` | WhatsApp provider registered in `src/lib/otp-providers.ts` |
 | `OTP_SMS_PROVIDER` | `twilio` | SMS provider registered in `src/lib/otp-providers.ts` |
 | `TWILIO_WHATSAPP_FROM` | `+14155238886` | WhatsApp sender; defaults to Twilio's sandbox — set your approved sender in production |
+| `GUEST_TRUST_DAYS` | `30` | Days a device stays verified after the guest ticks "don't ask again" (skips the OTP on that device). Clamped 1..730 |
 | `SESSION_SECRET` | `hex from openssl` | 32+ random bytes |
 | `PUBLIC_BASE_URL` | `https://app.yourdomain.com` | Builds invite/QR links; the https scheme also turns on secure session cookies. |
 | `PHOTO_STORAGE_DIR` | *(leave unset)* | Optional. Unset = app default `/app/storage/photos` (matches the `photos/` subdir under the compose mount). If you set it, use `/app/storage/photos`. |
