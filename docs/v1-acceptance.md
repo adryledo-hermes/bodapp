@@ -11,7 +11,7 @@ Status: **v1 feature-complete**. All scope below is implemented, unit-tested (vi
 | Area | v1 status | Where |
 |------|-----------|-------|
 | **Multi-phone per invitation** | ✅ Built. `acceptedPhones` allowlist is gated *before* any OTP is sent (`isPhoneAllowed`), so a couple/family invitation with several phones works. | `src/lib/otp.ts`, `src/lib/otp-flow.ts`, `src/app/api/otp/request/route.ts` |
-| **OTP via SMS only** | ✅ Built. Twilio SMS is the only channel — explicitly **no WhatsApp Business number**. | `src/lib/otp-sms.ts` |
+| **OTP via WhatsApp (SMS fallback)** | ✅ Built. WhatsApp is the primary Twilio channel; SMS is a fallback **disabled by default** (`OTP_WHATSAPP_ENABLED` / `OTP_SMS_ENABLED`), each behind a swappable provider layer (`OTP_WHATSAPP_PROVIDER` / `OTP_SMS_PROVIDER`). | `src/lib/otp-channels.ts`, `src/lib/otp-providers.ts`, `src/lib/twilio-provider.ts` |
 | **Couple bank account on invitations** | ✅ Built. Stored on the `Wedding` row, atomic with template publish, shown in the public invitation's bank-transfer section. | `src/lib/invitation-schema.ts`, `src/app/api/invitation-template/route.ts`, `src/components/invite/InvitationPage.tsx` |
 | **Duo photo upload (v1)** | ✅ Built. Couple uploads photos (PNG/JPG/WEBP/GIF, ≤10 MB); served tenant-scoped. | `src/app/api/photos/*`, `src/lib/storage.ts` |
 | **Guest photo upload (v1.1)** | ⛔ **NOT built** — deferred to v1.1 by design. | — |
@@ -25,7 +25,7 @@ Status: **v1 feature-complete**. All scope below is implemented, unit-tested (vi
 1. Couple generates one **QR** per invitation (`/api/invitation/[id]/qr`, panel-authorized).
 2. Guest scans / opens the link → `/w/[slug]/invite?g=<invitationId>`.
 3. Guest enters a phone; it is checked against the invitation's `acceptedPhones` allowlist **before** any OTP is generated or sent (anti-probing: unknown link and disallowed phone return the same generic error).
-4. A 6-digit OTP is sent via SMS (`src/lib/otp-sms.ts`); only its SHA-256 hash is persisted; rate-limited per phone (max 5/hr, sliding window).
+4. A 6-digit OTP is sent over **WhatsApp** (SMS fallback, off by default — `src/lib/otp-channels.ts` → `src/lib/otp-providers.ts` → `src/lib/twilio-provider.ts`); only its SHA-256 hash is persisted; rate-limited per phone (max 5/hr, sliding window).
 5. Guest verifies the code → short-lived `invitation_access` cookie → personalized invitation + RSVP.
 
 **RSVP authorization:** the guest's `invitationAccess` cookie (invitationId/weddingId/phone) is the only source of auth for `/api/rsvp`. Only the Guest row(s) whose phone matches the authenticated phone are updated — a family invitation never clobbers every member's allergies/music (FIX I-1).

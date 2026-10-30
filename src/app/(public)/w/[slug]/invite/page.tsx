@@ -8,6 +8,7 @@ import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { getLocale } from "@/lib/locale-server";
 import { normalizeLocale, translate } from "@/lib/i18n";
 import { guestOtpBypassEnabled } from "@/lib/guest-access";
+import { primaryChannel } from "@/lib/otp-channels";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,9 @@ export default async function InvitePage({
   const t = (key: string) => translate(locale, key);
 
   const bypassOtp = guestOtpBypassEnabled();
+  // Which channel the guest will be told about (WhatsApp unless configured
+  // SMS-only). Read from env here so the server page renders the right copy.
+  const otpChannel = primaryChannel() ?? "whatsapp";
 
   // Bypass mode: redirect to the route handler that sets the cookie and
   // bounces the guest to the invitation page — cookies().set() is safe only
@@ -98,8 +102,16 @@ export default async function InvitePage({
           </div>
         ) : (
           <div className="mt-8">
-            <p className="mb-6 text-sm text-slate-500">{t("inv.otpIntro")}</p>
-            <OtpChallenge token={invitation.id} locale={locale} />
+            <p className="mb-6 text-sm text-slate-500">
+              {t(
+                otpChannel === "sms" ? "inv.otpIntroSms" : "inv.otpIntroWhatsapp"
+              )}
+            </p>
+            <OtpChallenge
+              token={invitation.id}
+              locale={locale}
+              channel={otpChannel}
+            />
           </div>
         )}
       </div>

@@ -5,7 +5,7 @@ import {
   createPhoneRateLimiter,
   otpTtlMs,
 } from "@/lib/otp";
-import { sendOtpSms } from "@/lib/otp-sms";
+import { sendOtp } from "@/lib/otp-channels";
 import { baseGen, type OtpFlowDeps } from "@/lib/otp-flow";
 
 /**
@@ -90,7 +90,8 @@ export function defaultOtpDeps(): OtpFlowDeps {
       });
     },
     rateLimiter: sharedRateLimiter,
-    sendSms: sendOtpSms,
+    // Channel-aware sender: WhatsApp first, SMS fallback per env config.
+    sendSms: sendOtp,
     gen: baseGen(),
     otpTtlMs,
   };

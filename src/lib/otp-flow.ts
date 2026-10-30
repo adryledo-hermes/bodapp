@@ -6,7 +6,7 @@ import {
   normalizePhone,
   verifyOtp,
 } from "@/lib/otp";
-import type { OtpSmsTransport } from "@/lib/otp-sms";
+import type { OtpChannel, OtpSmsTransport } from "@/lib/otp-channels";
 
 /**
  * Core request/verify business logic for the public OTP invitation flow
@@ -75,7 +75,13 @@ export interface OtpFlowDeps {
  * tell a valid link from an invalid one, nor a valid phone from an invalid one.
  */
 export type OtpRequestOutcome =
-  | { ok: true; sent: boolean; normalizedPhone: string }
+  | {
+      ok: true;
+      sent: boolean;
+      normalizedPhone: string;
+      /** Channel that actually delivered (undefined when nothing did). */
+      channel?: OtpChannel;
+    }
   | { ok: false; error: string };
 
 const GENERIC_ERROR =
@@ -131,7 +137,12 @@ export async function requestOtp(
   });
 
   const sent = await deps.sendSms(normalizedPhone, code);
-  return { ok: true, sent: sent.ok, normalizedPhone };
+  return {
+    ok: true,
+    sent: sent.ok,
+    normalizedPhone,
+    channel: sent.channel,
+  };
 }
 
 /**

@@ -94,7 +94,12 @@ Fill these values (never commit `.env`):
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | `bodapp` / `bodapp` / `bodapp` | Credentials for the `postgres` service. `docker-compose.yml` interpolates all of these from `.env`, so all three (and `DATABASE_URL`) must agree. Change `POSTGRES_PASSWORD` for anything beyond local dev. |
 | `TWILIO_ACCOUNT_SID` | `ACxxxxxxxx...` | From Twilio console |
 | `TWILIO_AUTH_TOKEN` | `...` | From Twilio console |
-| `TWILIO_PHONE_NUMBER` | `+123****7890` | Verified SMS-capable number |
+| `TWILIO_PHONE_NUMBER` | `+123****7890` | Verified SMS-capable number (only needed when the SMS fallback is enabled) |
+| `OTP_WHATSAPP_ENABLED` | `true` | WhatsApp is the primary OTP channel (default on) |
+| `OTP_SMS_ENABLED` | `false` | SMS fallback for the OTP (default off) |
+| `OTP_WHATSAPP_PROVIDER` | `twilio` | WhatsApp provider registered in `src/lib/otp-providers.ts` |
+| `OTP_SMS_PROVIDER` | `twilio` | SMS provider registered in `src/lib/otp-providers.ts` |
+| `TWILIO_WHATSAPP_FROM` | `+14155238886` | WhatsApp sender; defaults to Twilio's sandbox — set your approved sender in production |
 | `SESSION_SECRET` | `hex from openssl` | 32+ random bytes |
 | `PUBLIC_BASE_URL` | `https://app.yourdomain.com` | Builds invite/QR links; the https scheme also turns on secure session cookies. |
 | `PHOTO_STORAGE_DIR` | *(leave unset)* | Optional. Unset = app default `/app/storage/photos` (matches the `photos/` subdir under the compose mount). If you set it, use `/app/storage/photos`. |

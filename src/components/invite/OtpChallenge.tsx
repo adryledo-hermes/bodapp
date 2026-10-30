@@ -7,6 +7,8 @@ import { translate, type Locale } from "@/lib/i18n";
 interface OtpChallengeProps {
   token: string;
   locale: Locale;
+  /** Configured primary channel — decides the pre-send copy. */
+  channel?: "whatsapp" | "sms";
 }
 
 /**
@@ -15,7 +17,11 @@ interface OtpChallengeProps {
  * server issues the httpOnly `invitation_access` cookie, so we refresh the
  * route to let the server page re-render with access granted.
  */
-export default function OtpChallenge({ token, locale }: OtpChallengeProps) {
+export default function OtpChallenge({
+  token,
+  locale,
+  channel,
+}: OtpChallengeProps) {
   const router = useRouter();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -23,6 +29,10 @@ export default function OtpChallenge({ token, locale }: OtpChallengeProps) {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  // Channel that actually delivered the code (WhatsApp unless SMS fallback ran).
+  const [deliveredChannel, setDeliveredChannel] = useState<
+    "whatsapp" | "sms" | null
+  >(null);
 
   const t = (key: string) => translate(locale, key);
 
@@ -41,6 +51,7 @@ export default function OtpChallenge({ token, locale }: OtpChallengeProps) {
         setError(data.error || t("otp.errSend"));
         return;
       }
+      setDeliveredChannel(data.channel ?? channel ?? "whatsapp");
       setStep(2);
     } catch {
       setError(t("otp.errNetwork"));
@@ -103,7 +114,13 @@ export default function OtpChallenge({ token, locale }: OtpChallengeProps) {
         </form>
       ) : (
         <form onSubmit={handleVerify} className="flex flex-col gap-4">
-          <p className="text-sm text-slate-500">{t("otp.sentMsg")}</p>
+          <p className="text-sm text-slate-500">
+            {t(
+              (deliveredChannel ?? channel ?? "whatsapp") === "sms"
+                ? "otp.sentMsgSms"
+                : "otp.sentMsgWhatsapp"
+            )}
+          </p>
           <label className="block text-sm font-medium text-slate-700">
             {t("otp.codeLabel")}
             <input

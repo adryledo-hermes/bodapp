@@ -410,7 +410,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "otp.yourPhone": "Tu teléfono",
     "otp.sending": "Enviando...",
     "otp.sendCode": "Enviar código",
-    "otp.sentMsg": "Te hemos enviado un código de 6 dígitos por SMS.",
+    "otp.sentMsgWhatsapp": "Te hemos enviado un código de 6 dígitos por WhatsApp.",
+    "otp.sentMsgSms": "Te hemos enviado un código de 6 dígitos por SMS.",
     "otp.codeLabel": "Código",
     "otp.verifying": "Verificando...",
     "otp.verify": "Verificar",
@@ -468,7 +469,9 @@ export const messages: Record<Locale, Record<string, string>> = {
     "inv.accessSoon":
       "En breve podrás ver los detalles y confirmar tu asistencia.",
     "inv.viewInvitation": "Ver mi invitación",
-    "inv.otpIntro":
+    "inv.otpIntroWhatsapp":
+      "Para ver tu invitación, confirma tu número de teléfono para recibir un código por WhatsApp.",
+    "inv.otpIntroSms":
       "Para ver tu invitación, confirma tu número de teléfono para recibir un código por SMS.",
 
     // ---- Login ----
@@ -882,7 +885,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "otp.yourPhone": "Your phone",
     "otp.sending": "Sending...",
     "otp.sendCode": "Send code",
-    "otp.sentMsg": "We've sent you a 6-digit code by SMS.",
+    "otp.sentMsgWhatsapp": "We've sent you a 6-digit code via WhatsApp.",
+    "otp.sentMsgSms": "We've sent you a 6-digit code by SMS.",
     "otp.codeLabel": "Code",
     "otp.verifying": "Verifying...",
     "otp.verify": "Verify",
@@ -940,7 +944,9 @@ export const messages: Record<Locale, Record<string, string>> = {
     "inv.accessSoon":
       "You'll soon be able to see the details and confirm your attendance.",
     "inv.viewInvitation": "View my invitation",
-    "inv.otpIntro":
+    "inv.otpIntroWhatsapp":
+      "To view your invitation, confirm your phone number to receive a WhatsApp code.",
+    "inv.otpIntroSms":
       "To view your invitation, confirm your phone number to receive an SMS code.",
 
     // ---- Login ----

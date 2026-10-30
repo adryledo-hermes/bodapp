@@ -7,13 +7,13 @@ Wedding management + invitation platform for **v1** on a Hetzner VPS.
 
 Two surfaces:
 - **Private couple panel** — dashboard, guests (editable Pokémon-card view + photos), seating planner (move tables, drag guests onto chairs), decoration/gift layer, task board, invitations manager.
-- **Public invitation portal** — QR/link → phone → SMS OTP → personalized invitation + RSVP.
+- **Public invitation portal** — QR/link → phone → OTP over **WhatsApp** (Twilio), with plain **SMS as fallback disabled by default** (`OTP_WHATSAPP_ENABLED` / `OTP_SMS_ENABLED`), each channel behind a swappable provider (`OTP_WHATSAPP_PROVIDER` / `OTP_SMS_PROVIDER`) → personalized invitation + RSVP.
 
 ## v1 scope locks
 - Multi-phone per invitation (couple/family): phone validated against the invitation's accepted phones *before* sending OTP.
 - Invitations are created **manually per guest/couple/group** in the panel (Invitations manager); each gets its own QR code.
 - Seating: always-visible chairs around each table — dropping a guest on a chair seats them AND fixes their seat number in one action; tables are draggable; every table auto-creates its attached centerpiece decoration.
-- OTP via **Twilio SMS only** (no WhatsApp Business number).
+- OTP via **Twilio WhatsApp** (primary) with **SMS fallback disabled by default** — each channel behind a swappable provider layer.
 - Couple's **bank account** shown on invitations.
 - Photo upload: couple in v1, guests in v1.1 (guest photos now supported).
 - **No menu selection**, no CSV import, no 2FA, no GDPR tooling (all deferred to v2).
@@ -46,7 +46,7 @@ npm run typecheck
 - **Decorations**: decorations **attach to a table when dropped on it** (rendered at the table's position) and **move together when the table moves**; drop on empty canvas to detach; every table auto-creates its centerpiece.
 - **Photos**: the **wedding gallery shows ONLY wedding photos** — guest profile photos and invitation images (same storage) are excluded from it. The invitation editor shows a **live preview** (frame + image + text) under the current data.
 - **Tasks**: Kanban + calendar views, pre-seeded Spanish wedding checklist.
-- **Public portal**: QR → phone → SMS OTP → personalised invitation + RSVP. For private/testing deployments, set `REQUIRE_GUEST_OTP="false"` to open invitation links without sending SMS (explicit security trade-off; default remains OTP).
+- **Public portal**: QR → phone → OTP over **WhatsApp**, SMS fallback off by default → personalised invitation + RSVP. For private/testing deployments, set `REQUIRE_GUEST_OTP="false"` to open invitation links without sending a message (explicit security trade-off; default remains OTP).
 
 ## Usage
 1. Open the app; at `/` choose **Log in** (existing couple) or **Create a new couple** (self-registration at `/setup`).
