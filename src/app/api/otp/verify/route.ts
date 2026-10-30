@@ -5,14 +5,20 @@ import {
   defaultOtpDeps,
   findInvitationByToken,
 } from "@/lib/otp-flow-db";
-import { createInvitationAccess } from "@/lib/otp-session";
+import {
+  createInvitationAccess,
+  createInvitationTrust,
+} from "@/lib/otp-session";
 
 // POST /api/otp/verify — public, no session. Verifies a submitted code and, on
-// success, issues the short-lived guest invitation-access cookie.
+// success, issues the short-lived guest invitation-access cookie. With
+// rememberDevice it ALSO issues the long-lived trusted-device cookie, so this
+// device is not challenged again until GUEST_TRUST_DAYS expires.
 const verifySchema = z.object({
   token: z.string().min(1),
   phone: z.string().min(3),
   code: z.string().min(4).max(8),
+  trustDevice: z.boolean().optional().default(false),
 });
 
 export async function POST(req: Request) {
@@ -28,7 +34,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid input" }, { status: 400 });
   }
 
-  const { token, phone, code } = parsed.data;
+  const { token, phone, code, trustDevice } = parsed.data;
   const outcome = await verifyOtpRequest(token, phone, code, defaultOtpDeps());
 
   if (!outcome.ok) {
@@ -48,6 +54,15 @@ export async function POST(req: Request) {
     weddingId: invitation.weddingId,
     phone,
   });
+
+  // "Verify this device once": same invitation-scoped payload, longer TTL.
+  if (trustDevice) {
+    await createInvitationTrust({
+      invitationId: invitation.id,
+      weddingId: invitation.weddingId,
+      phone,
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }
