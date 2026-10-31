@@ -18,6 +18,10 @@
  * plan rate/quota hit (429) without parsing free text.
  */
 
+// The message payload is defined in the provider-neutral contract (./types)
+// so the abstraction layer and this client share ONE definition of it.
+import type { EmailFrom, EmailMessage } from "./types";
+
 export const SENDPULSE_DEFAULT_BASE_URL = "https://api.sendpulse.com";
 
 /**
@@ -62,20 +66,10 @@ export interface SendPulseConfig {
   baseUrl: string;
 }
 
-/** Optional overrides for a single message. */
-export interface EmailFrom {
-  email: string;
-  name?: string;
-}
-
-export interface EmailMessage {
-  to: string | string[];
-  subject: string;
-  html?: string;
-  text?: string;
-  /** Defaults to the configured verified sender. */
-  from?: EmailFrom;
-}
+// `EmailFrom` / `EmailMessage` live in ./types (provider-neutral contract);
+// re-exported here so existing `from "@/lib/email/sendpulse"` imports keep
+// working unchanged.
+export type { EmailFrom, EmailMessage };
 
 export interface SendEmailResult {
   ok: true;
