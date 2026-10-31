@@ -70,6 +70,8 @@ npm run typecheck
 
 Deployment instructions: [`deploy/hetzner-setup.md`](deploy/hetzner-setup.md).
 
+Email (SendPulse — validation / password recovery): [`src/lib/email/README.md`](src/lib/email/README.md) — `npm run email:test -- --to you@example.com`.
+
 ## Deploy (Docker Compose on Hetzner VPS, HTTPS via Caddy)
 
 - **One-click CI/CD deploy:** GitHub Actions → [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) (**Tailscale SSH deploy**: the runner joins the tailnet with the ephemeral `TAILSCALE_AUTHKEY` secret and reaches the box over Tailscale — click *Run workflow* on the Actions tab, or auto on push to `main`). Configure the required secrets + one-time server setup in [`deploy/github-actions-deploy.md`](deploy/github-actions-deploy.md).
