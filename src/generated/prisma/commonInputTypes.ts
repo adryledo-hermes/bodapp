@@ -416,6 +416,23 @@ export type JsonWithAggregatesFilterBase<$PrismaModel = never> = {
   _max?: Prisma.NestedJsonFilter<$PrismaModel>
 }
 
+export type EnumAuthEmailTokenKindFilter<$PrismaModel = never> = {
+  equals?: $Enums.AuthEmailTokenKind | Prisma.EnumAuthEmailTokenKindFieldRefInput<$PrismaModel>
+  in?: $Enums.AuthEmailTokenKind[] | Prisma.ListEnumAuthEmailTokenKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AuthEmailTokenKind[] | Prisma.ListEnumAuthEmailTokenKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAuthEmailTokenKindFilter<$PrismaModel> | $Enums.AuthEmailTokenKind
+}
+
+export type EnumAuthEmailTokenKindWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AuthEmailTokenKind | Prisma.EnumAuthEmailTokenKindFieldRefInput<$PrismaModel>
+  in?: $Enums.AuthEmailTokenKind[] | Prisma.ListEnumAuthEmailTokenKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AuthEmailTokenKind[] | Prisma.ListEnumAuthEmailTokenKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAuthEmailTokenKindWithAggregatesFilter<$PrismaModel> | $Enums.AuthEmailTokenKind
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAuthEmailTokenKindFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAuthEmailTokenKindFilter<$PrismaModel>
+}
+
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
@@ -764,6 +781,23 @@ export type NestedJsonFilterBase<$PrismaModel = never> = {
   gt?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   gte?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   not?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | Prisma.JsonNullValueFilter
+}
+
+export type NestedEnumAuthEmailTokenKindFilter<$PrismaModel = never> = {
+  equals?: $Enums.AuthEmailTokenKind | Prisma.EnumAuthEmailTokenKindFieldRefInput<$PrismaModel>
+  in?: $Enums.AuthEmailTokenKind[] | Prisma.ListEnumAuthEmailTokenKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AuthEmailTokenKind[] | Prisma.ListEnumAuthEmailTokenKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAuthEmailTokenKindFilter<$PrismaModel> | $Enums.AuthEmailTokenKind
+}
+
+export type NestedEnumAuthEmailTokenKindWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AuthEmailTokenKind | Prisma.EnumAuthEmailTokenKindFieldRefInput<$PrismaModel>
+  in?: $Enums.AuthEmailTokenKind[] | Prisma.ListEnumAuthEmailTokenKindFieldRefInput<$PrismaModel>
+  notIn?: $Enums.AuthEmailTokenKind[] | Prisma.ListEnumAuthEmailTokenKindFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAuthEmailTokenKindWithAggregatesFilter<$PrismaModel> | $Enums.AuthEmailTokenKind
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAuthEmailTokenKindFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAuthEmailTokenKindFilter<$PrismaModel>
 }
 
 

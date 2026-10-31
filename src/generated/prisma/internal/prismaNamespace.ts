@@ -80,12 +80,12 @@ export type PrismaVersion = {
 }
 
 /**
- * Prisma Client JS version: 7.9.1
- * Query Engine version: e922089b7d7502aff4249d5da3420f6fa55fc6ad
+ * Prisma Client JS version: 7.10.1
+ * Query Engine version: d1b3f377ca835d73fd50954a5e22128b9ebdd6b8
  */
 export const prismaVersion: PrismaVersion = {
-  client: "7.9.1",
-  engine: "e922089b7d7502aff4249d5da3420f6fa55fc6ad"
+  client: "7.10.1",
+  engine: "d1b3f377ca835d73fd50954a5e22128b9ebdd6b8"
 }
 
 /**
@@ -407,7 +407,8 @@ export const ModelName = {
   Decoration: 'Decoration',
   Task: 'Task',
   InvitationTemplate: 'InvitationTemplate',
-  Photo: 'Photo'
+  Photo: 'Photo',
+  AuthEmailToken: 'AuthEmailToken'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -423,7 +424,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "wedding" | "user" | "guest" | "guestRelation" | "invitation" | "otpCode" | "table" | "decoration" | "task" | "invitationTemplate" | "photo"
+    modelProps: "wedding" | "user" | "guest" | "guestRelation" | "invitation" | "otpCode" | "table" | "decoration" | "task" | "invitationTemplate" | "photo" | "authEmailToken"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1241,6 +1242,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    AuthEmailToken: {
+      payload: Prisma.$AuthEmailTokenPayload<ExtArgs>
+      fields: Prisma.AuthEmailTokenFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AuthEmailTokenFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthEmailTokenPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AuthEmailTokenFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthEmailTokenPayload>
+        }
+        findFirst: {
+          args: Prisma.AuthEmailTokenFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthEmailTokenPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AuthEmailTokenFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthEmailTokenPayload>
+        }
+        findMany: {
+          args: Prisma.AuthEmailTokenFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthEmailTokenPayload>[]
+        }
+        create: {
+          args: Prisma.AuthEmailTokenCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthEmailTokenPayload>
+        }
+        createMany: {
+          args: Prisma.AuthEmailTokenCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AuthEmailTokenCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthEmailTokenPayload>[]
+        }
+        delete: {
+          args: Prisma.AuthEmailTokenDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthEmailTokenPayload>
+        }
+        update: {
+          args: Prisma.AuthEmailTokenUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthEmailTokenPayload>
+        }
+        deleteMany: {
+          args: Prisma.AuthEmailTokenDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AuthEmailTokenUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AuthEmailTokenUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthEmailTokenPayload>[]
+        }
+        upsert: {
+          args: Prisma.AuthEmailTokenUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthEmailTokenPayload>
+        }
+        aggregate: {
+          args: Prisma.AuthEmailTokenAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAuthEmailToken>
+        }
+        groupBy: {
+          args: Prisma.AuthEmailTokenGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AuthEmailTokenGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AuthEmailTokenCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AuthEmailTokenCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1302,6 +1377,7 @@ export const UserScalarFieldEnum = {
   email: 'email',
   passwordHash: 'passwordHash',
   role: 'role',
+  emailVerifiedAt: 'emailVerifiedAt',
   createdAt: 'createdAt'
 } as const
 
@@ -1440,6 +1516,19 @@ export const PhotoScalarFieldEnum = {
 } as const
 
 export type PhotoScalarFieldEnum = (typeof PhotoScalarFieldEnum)[keyof typeof PhotoScalarFieldEnum]
+
+
+export const AuthEmailTokenScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  kind: 'kind',
+  tokenHash: 'tokenHash',
+  expiresAt: 'expiresAt',
+  consumedAt: 'consumedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type AuthEmailTokenScalarFieldEnum = (typeof AuthEmailTokenScalarFieldEnum)[keyof typeof AuthEmailTokenScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1642,6 +1731,20 @@ export type EnumTaskStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Prism
 export type ListEnumTaskStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskStatus[]'>
     
 
+
+/**
+ * Reference to a field of type 'AuthEmailTokenKind'
+ */
+export type EnumAuthEmailTokenKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AuthEmailTokenKind'>
+    
+
+
+/**
+ * Reference to a field of type 'AuthEmailTokenKind[]'
+ */
+export type ListEnumAuthEmailTokenKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AuthEmailTokenKind[]'>
+    
+
 /**
  * Batch Payload for updateMany & deleteMany & createMany
  */
@@ -1804,6 +1907,7 @@ export type GlobalOmitConfig = {
   task?: Prisma.TaskOmit
   invitationTemplate?: Prisma.InvitationTemplateOmit
   photo?: Prisma.PhotoOmit
+  authEmailToken?: Prisma.AuthEmailTokenOmit
 }
 
 /* Types for Logging */

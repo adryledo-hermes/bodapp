@@ -3,6 +3,15 @@ import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
 import { createSession } from "@/lib/session";
 import { applySlugDefaults, onboardingSchema } from "@/lib/onboarding";
+import {
+  buildVerifyEmailUrl,
+  expiryFrom,
+  generateEmailToken,
+  hashEmailToken,
+  publicBaseUrl,
+  VERIFY_EMAIL_TTL_MS,
+} from "@/lib/auth-email";
+import { sendVerificationEmail } from "@/lib/email/account";
 
 /**
  * Open self-registration for couples (intentionally PUBLIC, multi-tenant).
@@ -68,7 +77,38 @@ export async function POST(req: Request) {
         role: "couple",
       });
 
-      return NextResponse.json({ ok: true, redirect: "/panel" });
+      // v1.4 — email validation on signup. The account and session already
+      // exist, so a dead provider must NOT fail the registration: log it, let
+      // the couple in, and let them resend from the login screen.
+      let emailSent = false;
+      try {
+        const token = generateEmailToken();
+        await prisma.authEmailToken.create({
+          data: {
+            userId: created.user.id,
+            kind: "verify_email",
+            tokenHash: hashEmailToken(token),
+            expiresAt: expiryFrom(VERIFY_EMAIL_TTL_MS),
+          },
+        });
+        emailSent = await sendVerificationEmail({
+          to: email,
+          url: buildVerifyEmailUrl(publicBaseUrl(), token),
+          locale,
+          coupleName: `${coupleNameA} ${coupleNameB}`,
+        });
+        if (!emailSent) {
+          console.warn("[setup] provider did not accept the validation email");
+        }
+      } catch (err) {
+        console.error("[setup] validation email failed:", err);
+      }
+
+      return NextResponse.json({
+        ok: true,
+        redirect: "/panel",
+        emailSent,
+      });
     } catch (err) {
       // P2002 = unique constraint violation. The slug-dedup loop above covers
       // the common case, but a concurrent request can still race us to the

@@ -62,7 +62,7 @@ npm run typecheck
 - ✅ **v1.2** — Dashboard, per-guest seat numbers + draggable tables, attachable decorations (auto centerpiece), invitations per group, guest editing + photos, Playwright harness.
 - ✅ **v1.1** — Multi-couple self-registration, welcome screen, configurable session expiry, logout, cookie/OTP hardening.
 - ⬜ **v1.3** — Seating-map PDF export, guest relations UI, CSV import, OTP delivery dashboard, email notifications, 2FA, PWA.
-- ⬜ **v1.4** — Account security: **email validation** (verify the couple's email address on registration) and **password recovery** (forgot-password → emailed reset link). Both depend on an outbound email channel.
+- ✅ **v1.4** — Account security: **email validation** (the signup flow emails a 24 h single-use link; `GET /api/auth/verify-email` consumes it and stamps `emailVerifiedAt`) and **password recovery** (`/forgot-password` → 60 min single-use emailed link → `/reset-password`). Login can be gated on a validated email with `EMAIL_VERIFICATION_REQUIRED` (default off). Both send through the `src/lib/email` provider abstraction layer.
 
 ## Testing
 - **Unit tests:** `npm test` (vitest — pure libs: slugs, seating, OTP, i18n parity, …).

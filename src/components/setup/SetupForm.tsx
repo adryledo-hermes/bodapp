@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { slugFromNames } from "@/lib/onboarding";
@@ -28,6 +28,10 @@ export default function SetupForm() {
   const [slug, setSlug] = useState("");
   const [locale, setLocale] = useState<Locale>("es");
   const [error, setError] = useState("");
+  // v1.4: the signup response says whether the validation email went out.
+  const [signedUp, setSignedUp] = useState<
+    { emailSent: boolean; redirect: string; email: string } | null
+  >(null);
   const [loading, setLoading] = useState(false);
 
   // Read the saved locale via useSyncExternalStore so SSR/hydration stays
@@ -86,12 +90,47 @@ export default function SetupForm() {
         }
         return;
       }
-      router.push(data.redirect || "/panel");
+      setSignedUp({
+        emailSent: data.emailSent === true,
+        redirect: data.redirect || "/panel",
+        email,
+      });
     } catch {
       setError(t("setup.errNetwork"));
     } finally {
       setLoading(false);
     }
+  }
+
+  // Give them a moment to read the note, then continue exactly as before.
+  useEffect(() => {
+    if (!signedUp) return;
+    const id = setTimeout(() => router.push(signedUp.redirect), 5000);
+    return () => clearTimeout(id);
+  }, [signedUp, router]);
+
+  if (signedUp) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
+        <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <h1 className="text-2xl font-semibold text-slate-900">Bodapp</h1>
+          <p className="mt-4 text-sm text-slate-700">
+            {translate(
+              uiLocale,
+              signedUp.emailSent ? "setup.verifySent" : "setup.verifyFailed",
+              { email: signedUp.email }
+            )}
+          </p>
+          <button
+            type="button"
+            onClick={() => router.push(signedUp.redirect)}
+            className="tap-min mt-6 w-full rounded-lg bg-slate-900 py-3 text-sm font-medium text-white hover:bg-slate-700"
+          >
+            {t("setup.continue")}
+          </button>
+        </div>
+      </main>
+    );
   }
 
   return (
