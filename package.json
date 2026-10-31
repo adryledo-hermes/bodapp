@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "email:test": "tsx scripts/send-test-email.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
