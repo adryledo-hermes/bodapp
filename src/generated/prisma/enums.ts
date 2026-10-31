@@ -53,3 +53,11 @@ export const TaskCategory = {
 } as const
 
 export type TaskCategory = (typeof TaskCategory)[keyof typeof TaskCategory]
+
+
+export const AuthEmailTokenKind = {
+  verify_email: 'verify_email',
+  password_reset: 'password_reset'
+} as const
+
+export type AuthEmailTokenKind = (typeof AuthEmailTokenKind)[keyof typeof AuthEmailTokenKind]

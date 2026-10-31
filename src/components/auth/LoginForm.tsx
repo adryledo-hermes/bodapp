@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { getClientLocale, translate, type Locale } from "@/lib/i18n";
@@ -17,12 +18,16 @@ const localeStore = {
   },
 };
 
-export default function LoginForm() {
+/**
+ * Flags written by the server page from the query string: `?verified=1|0`
+ * (the emailed validation link) and `?reset=1` (the reset form succeeded).
+ */
+export type LoginNotice = "verified" | "reset" | "linkInvalid";
+
+export default function LoginForm({ notice }: { notice?: LoginNotice }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
   // Read the saved locale via useSyncExternalStore so SSR/hydration stays
   // consistent ("es") while the client reads the real cookie after mount.
@@ -33,9 +38,31 @@ export default function LoginForm() {
   );
   const t = (key: string) => translate(locale, key);
 
+  const bannerKey =
+    notice === "verified"
+      ? "login.verifiedOk"
+      : notice === "reset"
+        ? "login.resetOk"
+        : notice === "linkInvalid"
+          ? "login.verifyFailed"
+          : null;
+
+  const [info, setInfo] = useState<string | null>(
+    notice === "verified" || notice === "reset" ? t(bannerKey!) : null
+  );
+  const [error, setError] = useState<string | null>(
+    notice === "linkInvalid" ? t(bannerKey!) : null
+  );
+  // The resend button only appears when it can help: the sign-in was just
+  // rejected as unverified, or the emailed link bounced.
+  const [showResend, setShowResend] = useState(notice === "linkInvalid");
+  const [resent, setResent] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setInfo(null);
     setLoading(true);
     try {
       const res = await fetch("/api/auth/login", {
@@ -45,10 +72,41 @@ export default function LoginForm() {
       });
       const data = await res.json();
       if (!res.ok) {
+        if (data.error === "email_not_verified") {
+          setError(t("login.notVerified"));
+          setShowResend(true);
+          return;
+        }
         setError(data.error || t("login.err"));
         return;
       }
       router.push(data.redirect || "/panel");
+    } catch {
+      setError(t("login.errNetwork"));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /** Re-send the validation email for the address typed above. */
+  async function handleResend() {
+    if (!email) {
+      setError(t("login.err"));
+      return;
+    }
+    setLoading(true);
+    setInfo(null);
+    setError("");
+    try {
+      // The API answers identically for unknown/already-verified addresses,
+      // so the confirmation below is deliberately unconditional.
+      await fetch("/api/auth/verify-email/resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      setResent(true);
+      setInfo(t("login.resent"));
     } catch {
       setError(t("login.errNetwork"));
     } finally {
@@ -90,11 +148,36 @@ export default function LoginForm() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mb-4 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className="mb-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           required
         />
 
+        <div className="mb-4 text-right">
+          <Link
+            href="/forgot-password"
+            className="text-sm text-slate-500 underline hover:text-slate-800"
+          >
+            {t("login.forgot")}
+          </Link>
+        </div>
+
+        {info && (
+          <p className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+            {info}
+          </p>
+        )}
         {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+
+        {showResend && (
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={loading || resent}
+            className="mb-3 block w-full text-left text-sm text-slate-600 underline hover:text-slate-900 disabled:opacity-50"
+          >
+            {t("login.resend")}
+          </button>
+        )}
 
         <button
           type="submit"

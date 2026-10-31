@@ -61,7 +61,8 @@ export const ModelName = {
   Decoration: 'Decoration',
   Task: 'Task',
   InvitationTemplate: 'InvitationTemplate',
-  Photo: 'Photo'
+  Photo: 'Photo',
+  AuthEmailToken: 'AuthEmailToken'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -102,6 +103,7 @@ export const UserScalarFieldEnum = {
   email: 'email',
   passwordHash: 'passwordHash',
   role: 'role',
+  emailVerifiedAt: 'emailVerifiedAt',
   createdAt: 'createdAt'
 } as const
 
@@ -240,6 +242,19 @@ export const PhotoScalarFieldEnum = {
 } as const
 
 export type PhotoScalarFieldEnum = (typeof PhotoScalarFieldEnum)[keyof typeof PhotoScalarFieldEnum]
+
+
+export const AuthEmailTokenScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  kind: 'kind',
+  tokenHash: 'tokenHash',
+  expiresAt: 'expiresAt',
+  consumedAt: 'consumedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type AuthEmailTokenScalarFieldEnum = (typeof AuthEmailTokenScalarFieldEnum)[keyof typeof AuthEmailTokenScalarFieldEnum]
 
 
 export const SortOrder = {

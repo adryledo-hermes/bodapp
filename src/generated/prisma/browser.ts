@@ -72,3 +72,8 @@ export type InvitationTemplate = Prisma.InvitationTemplateModel
  * 
  */
 export type Photo = Prisma.PhotoModel
+/**
+ * Model AuthEmailToken
+ * 
+ */
+export type AuthEmailToken = Prisma.AuthEmailTokenModel

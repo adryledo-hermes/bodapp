@@ -163,6 +163,18 @@ then `POST /smtp/emails`, and exits non-zero with the typed error on failure.
 - `tests/lib/email-providers.test.ts` — the abstraction layer: provider
   resolution (default / unknown / whitespace / case), registry delegation, and
   the SendPulse adapter's contract (never throws, neutral error codes).
+- `tests/lib/email-templates.test.ts` — the v1.4 account emails (es/en
+  subjects and bodies, HTML escaping of the couple's name, plain-text fallback
+  carrying the same link).
+- `tests/lib/account-email.test.ts` — the send helpers: they forward a rendered
+  message to `sendEmail()` and translate the result into a boolean (provider
+  stubbed).
+- `tests/lib/auth-email.test.ts` — token hashing/expiry/TTLs, the
+  `EMAIL_VERIFICATION_REQUIRED` login-gate flag, link builders and the
+  per-address rate limiter.
+- `tests/lib/auth-email-routes.test.ts` — the routes end to end with stubbed
+  Prisma: login gate, forgot/reset (single-use consumption), the verification
+  redirect, resend + no-enumeration guarantees.
 - `tests/lib/sendpulse.test.ts` — the client: config validation, request shape (URL,
   method, `Authorization: Bearer`, payload), and every error path — 401/403, 422
   (with verified-sender hint), 429 (`rate_limited`), network failure, and
