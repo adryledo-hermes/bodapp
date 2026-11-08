@@ -158,6 +158,32 @@ npm run email:test -- --to a@b.com --subject "Hola" --text "Hola mundo"
 It runs `GET /user/info` first (so a bad key fails before anything is sent),
 then `POST /smtp/emails`, and exits non-zero with the typed error on failure.
 
+### Failure logging (observability)
+
+The provider contract never throws, so a dead service used to be *silent*:
+the route still answered `200 { ok:true }` and nothing useful reached the
+logs. Every failed send now writes one server-side ERROR line:
+
+```
+[email] SEND FAILED provider=sendpulse code=network detail="Could not reach SendPulse at https://api.sendpulse.com: getaddrinfo ENOTFOUND …"
+[password/forgot] password-reset email NOT sent — email service failing (reason: see the [email] SEND FAILED line)
+```
+
+`src/lib/email/log.ts` scrubs the detail before it is written: addresses
+(recipient *and* sender) become `[email]`, URL query strings — where reset
+tokens live — become `?<redacted>`, `Bearer …` headers and known secret env
+values (`SENDPULSE_API_KEY`, `SESSION_SECRET`, `DATABASE_URL`, Twilio) become
+`***`, and long details are truncated. Successful sends log nothing.
+
+HTTP behaviour is unchanged: routes still answer `{ ok:true }` for
+well-formed input, so nobody can enumerate which addresses have accounts
+here. Observability is server-side only.
+
+Error codes you will see in `code=`: `not_configured` (unknown
+`EMAIL_PROVIDER`), `network` (wrong `SENDPULSE_API_BASE_URL` / provider down),
+`auth` (bad key), `provider_error` (provider answered an error status),
+`rate_limited`, `invalid_response`, `invalid_input`.
+
 ## Tests
 
 - `tests/lib/email-providers.test.ts` — the abstraction layer: provider
@@ -172,6 +198,10 @@ then `POST /smtp/emails`, and exits non-zero with the typed error on failure.
 - `tests/lib/auth-email.test.ts` — token hashing/expiry/TTLs, the
   `EMAIL_VERIFICATION_REQUIRED` login-gate flag, link builders and the
   per-address rate limiter.
+- `tests/lib/email-failure-log.test.ts` — the failure logger: a failed send
+  surfaces as one `[email] SEND FAILED provider=… code=…` line **without**
+  recipients, reset links or credentials in it, and a successful send logs
+  nothing.
 - `tests/lib/auth-email-routes.test.ts` — the routes end to end with stubbed
   Prisma: login gate, forgot/reset (single-use consumption), the verification
   redirect, resend + no-enumeration guarantees.

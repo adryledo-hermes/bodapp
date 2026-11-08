@@ -71,7 +71,10 @@ export async function POST(req: Request): Promise<NextResponse> {
       url: `${publicBaseUrl()}/api/auth/verify-email?token=${token}`,
       locale: "es",
     });
-    if (!sent) console.warn("[verify-email/resend] provider did not accept the email");
+    if (!sent)
+      console.error(
+        "[verify-email/resend] verification email NOT sent — email service failing (reason: see the [email] SEND FAILED line)"
+      );
   } catch (err) {
     console.error("[verify-email/resend] failed:", err);
   }

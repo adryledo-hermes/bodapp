@@ -77,7 +77,10 @@ export async function POST(req: Request): Promise<NextResponse> {
       url: buildResetPasswordUrl(publicBaseUrl(), token),
       locale,
     });
-    if (!sent) console.warn("[password/forgot] provider did not accept the email");
+    if (!sent)
+      console.error(
+        "[password/forgot] password-reset email NOT sent — email service failing (reason: see the [email] SEND FAILED line)"
+      );
   } catch (err) {
     console.error("[password/forgot] failed:", err);
   }

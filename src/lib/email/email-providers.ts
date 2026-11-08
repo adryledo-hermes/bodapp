@@ -20,6 +20,7 @@
  */
 
 import { sendpulseEmailProvider } from "./sendpulse-provider";
+import { logEmailFailure } from "./log";
 import type { EmailMessage, EmailProvider, EmailProviderResult } from "./types";
 
 export type { EmailFrom, EmailMessage, EmailProvider, EmailProviderResult } from "./types";
@@ -56,6 +57,12 @@ export function listEmailProviders(): string[] {
  * App-facing send: resolve the configured provider and hand it the message.
  * Never throws — an unknown/unset provider becomes a failed result naming the
  * choices, so callers only ever branch on `result.ok` / `result.code`.
+ *
+ * Every failure is also written to the server log (see ./log): the contract
+ * swallows exceptions on purpose, so without this a dead provider would be
+ * invisible — the route would still answer 200 and nobody would know why the
+ * mail never arrived. The line carries provider + code + a redacted reason;
+ * it never contains recipients, links or credentials.
  */
 export async function sendEmail(
   message: EmailMessage,
@@ -64,11 +71,15 @@ export async function sendEmail(
   const provider = getEmailProvider(env);
   if (!provider) {
     const wanted = (env.EMAIL_PROVIDER || "").trim() || "(unset)";
-    return {
+    const failure: EmailProviderResult = {
       ok: false,
       error: `email provider "${wanted}" is not configured — available: ${listEmailProviders().join(", ")}`,
       code: "not_configured",
     };
+    logEmailFailure("(none)", failure);
+    return failure;
   }
-  return provider.send(message);
+  const result = await provider.send(message);
+  if (!result.ok) logEmailFailure(provider.name, result);
+  return result;
 }
