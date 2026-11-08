@@ -80,7 +80,7 @@ each, never a combined run):
 ```
 1. deploy.yml (business logic): write .env → force PUBLIC_BASE_URL →
    deploy.sh swaps the app to 127.0.0.1:3001, freeing :80
-2. infra.yml (Infrastructure — Caddy): setup-caddy.sh
+2. infra.yml (Infrastructure — Caddy + Dozzle): setup-dozzle.sh / setup-caddy.sh
    install/render/validate/start → end-to-end TLS gate
 ```
 

@@ -22,6 +22,13 @@
 #   2. end-to-end TLS GATE on https://$CADDY_DOMAIN/healthz — ANY HTTP
 #      status proves DNS + firewall + certificate + proxy are fine; a 502
 #      only means the app container is down, which is deploy.yml's job.
+#   3. runs deploy/dozzle/setup-dozzle.sh — a live log viewer showing ONLY the
+#      bodapp-app container (DOZZLE_FILTER=name=bodapp-app), MCP endpoint at
+#      /api/mcp (read-only tools), actions/shell disabled, bound to loopback
+#      and published TAILNET-ONLY via `tailscale serve --https=8443` (no
+#      funnel: nothing on the public internet; Caddy keeps :80/:443, which is
+#      why serve uses 8443). Reuses the Tailscale/SSH secrets above — Dozzle
+#      needs NO new secrets.
 #
 # REQUIRED secrets (GitHub environment `prod`) — ready-to-fill catalog:
 #   deploy/infra.env.example
@@ -37,7 +44,7 @@
 # NOT read here (business-logic only, see deploy.yml): ENV_FILE, REPO_DIR,
 # REPO_URL — infra assets come from the runner checkout via scp.
 # ------------------------------------------------------------------
-name: Infrastructure — Caddy (HTTPS)
+name: Infrastructure (Caddy HTTPS + Dozzle logs)
 
 on:
   workflow_dispatch:
@@ -45,6 +52,7 @@ on:
     branches: [main]
     paths:
       - deploy/caddy/**
+      - deploy/dozzle/**
 
 concurrency:
   group: infra-caddy
@@ -52,7 +60,7 @@ concurrency:
 
 jobs:
   caddy:
-    name: Provision Caddy + TLS gate
+    name: Provision Caddy, TLS gate + Dozzle logs
     runs-on: ubuntu-latest
     environment: prod
     if: github.ref == 'refs/heads/main'
@@ -277,6 +285,83 @@ jobs:
             REMOTE_SCRIPT
             } > "$SCRIPTF"
             ssh "${SSH_OPTS[@]}" "$DEPLOY_USER@$TS_IP" bash -s < "$SCRIPTF"
+
+      # Dozzle (live log viewer) is infrastructure too: assets come from the
+      # runner checkout into /tmp — the same pattern as the Caddy assets — and
+      # only Dozzle's OWN container is created. The app container, Caddy and
+      # the database are never touched here (deploy.yml owns the app).
+      - name: Copy Dozzle assets to the server
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          TS_IP: ${{ steps.ts.outputs.ts_ip }}
+        run: |
+          set -euo pipefail
+          [ -n "${TS_IP:-}" ] || { echo "FATAL: no tailnet IP from the join step" >&2; exit 1; }
+          umask 077
+          KEYF="$(mktemp)"; trap 'rm -f "$KEYF"' EXIT
+          SSH_OPTS=(-o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null)
+          if [ -n "$DEPLOY_KEY" ]; then
+            printf '%s\n' "$DEPLOY_KEY" > "$KEYF"
+            SSH_OPTS+=(-i "$KEYF")
+          fi
+          TARGET="$DEPLOY_USER@$TS_IP"
+          ssh -p "$DEPLOY_PORT" "${SSH_OPTS[@]}" "$TARGET" \
+            'rm -rf /tmp/bodapp-dozzle && mkdir -p /tmp/bodapp-dozzle'
+          scp -P "$DEPLOY_PORT" "${SSH_OPTS[@]}" -r deploy/dozzle/* "$TARGET:/tmp/bodapp-dozzle/"
+          echo "==> assets copied to /tmp/bodapp-dozzle on $TS_IP"
+
+      - name: Provision Dozzle and expose it through Tailscale
+        env:
+          APP_CONTAINER: ${{ vars.DOZZLE_APP_CONTAINER || 'bodapp-app' }}
+          DOZZLE_SERVE_PORT: ${{ vars.DOZZLE_SERVE_PORT || '8443' }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          TS_IP: ${{ steps.ts.outputs.ts_ip }}
+        run: |
+          set -euo pipefail
+          [ -n "${TS_IP:-}" ] || { echo "FATAL: no tailnet IP from the join step" >&2; exit 1; }
+          umask 077
+          KEYF="$(mktemp)"; SCRIPTF="$(mktemp)"
+          trap 'rm -f "$KEYF" "$SCRIPTF"' EXIT
+          SSH_OPTS=(-o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null)
+          if [ -n "$DEPLOY_KEY" ]; then
+            printf '%s\n' "$DEPLOY_KEY" > "$KEYF"
+            SSH_OPTS+=(-i "$KEYF")
+          fi
+          {
+            printf 'export APP_CONTAINER=%q\n' "$APP_CONTAINER"
+            printf 'export DOZZLE_SERVE_PORT=%q\n' "$DOZZLE_SERVE_PORT"
+            cat <<'REMOTE_SCRIPT'
+          set -euo pipefail
+          SETUP="$(find /tmp/bodapp-dozzle -name setup-dozzle.sh 2>/dev/null | head -1)"
+          if [ -z "$SETUP" ]; then
+            echo "FATAL: setup-dozzle.sh not found under /tmp/bodapp-dozzle" >&2
+            exit 1
+          fi
+          chmod +x "$SETUP"
+          bash "$SETUP"
+          REMOTE_SCRIPT
+          } > "$SCRIPTF"
+          ssh -p "$DEPLOY_PORT" "${SSH_OPTS[@]}" "$DEPLOY_USER@$TS_IP" bash -s < "$SCRIPTF"
+
+          # End-to-end probe from the RUNNER, which is on the tailnet too:
+          # proves the Tailscale serve endpoint answers over TLS. `-k` only
+          # skips certificate NAME verification (the tailnet CA is not in the
+          # runner's trust store) — the transport is WireGuard either way, and
+          # this URL is not reachable from outside the tailnet.
+          echo "==> probing https://${DEPLOY_HOST}:${DOZZLE_SERVE_PORT}/healthcheck from the tailnet"
+          if curl -kfsS --max-time 15 "https://${DEPLOY_HOST}:${DOZZLE_SERVE_PORT}/healthcheck" >/dev/null; then
+            echo "==> DOZZLE OK — https://${DEPLOY_HOST}:${DOZZLE_SERVE_PORT}/ reachable over the tailnet (MCP at /api/mcp)"
+          else
+            echo "FATAL: Dozzle is not reachable through Tailscale on port ${DOZZLE_SERVE_PORT}." >&2
+            echo "  Check: tailnet ACL allows HTTPS; 'tailscale serve status' on the host;" >&2
+            echo "        'docker logs dozzle' on the host." >&2
+            exit 1
+          fi
 
       # Ephemeral node: log the runner out so its tailnet record disappears
       # now instead of lingering until offline expiry. Runs even on failure.
