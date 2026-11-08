@@ -22,9 +22,12 @@
  */
 
 import { ensureInternational } from "./phone-prefix";
+import { logOtpFailure, logOtpSent } from "./otp-log";
 import {
   getSmsProvider,
   getWhatsAppProvider,
+  listSmsProviders,
+  listWhatsAppProviders,
   type SmsProvider,
   type WhatsAppProvider,
 } from "./otp-providers";
@@ -38,6 +41,8 @@ export type OtpChannel = "whatsapp" | "sms";
 export interface OtpSendResult {
   ok: boolean;
   error?: string;
+  /** Machine code from the failing provider (`http_error`, …) when known. */
+  code?: string;
   /** Channel that actually delivered the message (set on success). */
   channel?: OtpChannel;
   /** Channels tried, in order (WhatsApp first when both are enabled). */
@@ -141,30 +146,84 @@ export async function sendOtp(
   const channels = otpChannels();
   const attempted: OtpChannel[] = [];
   if (channels.length === 0) {
+    logOtpFailure({
+      code: "no_channel",
+      detail:
+        "OTP_WHATSAPP_ENABLED and OTP_SMS_ENABLED are both off — nothing can be delivered",
+    });
     return { ok: false, error: "no otp channel enabled", attempted };
   }
 
   const to = ensureInternational(phone, process.env.DEFAULT_DIAL_CODE ?? undefined);
   if (!to) {
+    logOtpFailure({
+      code: "invalid_phone",
+      detail: "phone could not be normalized to E.164 (check DEFAULT_DIAL_CODE)",
+    });
     return { ok: false, error: "invalid phone", attempted };
   }
 
   const body = buildOtpBody(code);
   let lastError = "otp send failed";
+  let lastCode: string | undefined;
 
   for (const channel of channels) {
     attempted.push(channel);
     const provider = resolveProvider(channel, deps);
     if (!provider) {
+      const wanted =
+        process.env[
+          channel === "whatsapp" ? "OTP_WHATSAPP_PROVIDER" : "OTP_SMS_PROVIDER"
+        ] || "twilio";
+      const available =
+        channel === "whatsapp" ? listWhatsAppProviders() : listSmsProviders();
       lastError = `${channel} provider not configured`;
+      lastCode = "provider_not_configured";
+      logOtpFailure({
+        channel,
+        provider: "(none)",
+        code: "provider_not_configured",
+        detail: `${channel} provider "${wanted}" is not registered — available: ${available.join(", ")}`,
+      });
       continue;
     }
-    const result = await provider.send(to, body);
-    if (result.ok) {
-      return { ok: true, channel, attempted };
+
+    // The provider contract says it never throws; guard anyway so a bug in a
+    // provider degrades to the next channel instead of a 500 with no context.
+    let result: Awaited<ReturnType<WhatsAppProvider["send"]>>;
+    try {
+      const startedAt = Date.now();
+      result = await provider.send(to, body);
+      if (result.ok) {
+        logOtpSent(channel, provider.name, Date.now() - startedAt);
+        return { ok: true, channel, attempted };
+      }
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      lastError = `${channel} provider threw: ${reason}`;
+      lastCode = "provider_threw";
+      logOtpFailure({
+        channel,
+        provider: provider.name,
+        code: "provider_threw",
+        detail: reason,
+      });
+      continue;
     }
     lastError = result.error ?? lastError;
+    lastCode = result.code ?? lastCode;
+    logOtpFailure({
+      channel,
+      provider: provider.name,
+      code: result.code ?? "send_failed",
+      detail: result.error ?? "no detail",
+    });
   }
 
-  return { ok: false, error: lastError, attempted };
+  return {
+    ok: false,
+    error: lastError,
+    code: lastCode,
+    attempted,
+  };
 }

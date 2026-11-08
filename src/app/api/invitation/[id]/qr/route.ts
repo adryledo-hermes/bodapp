@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth-guard";
+import { errText, logFailure } from "@/lib/failure-log";
 import { buildInvitationUrl, encodeQr } from "@/lib/qr";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -22,9 +23,10 @@ export async function GET(_req: Request, { params }: Ctx) {
       where: { id, weddingId: auth.session.weddingId },
       select: { id: true, wedding: { select: { slug: true } } },
     });
-  } catch {
+  } catch (err) {
     // Fail as a JSON 500 instead of an HTML error page (consistent with
-    // sibling route handlers).
+    // sibling route handlers) — and say WHY in the server log.
+    logFailure("qr", "db_failed", `invitation lookup failed: ${errText(err)}`);
     return NextResponse.json({ error: "internal" }, { status: 500 });
   }
 
@@ -39,7 +41,12 @@ export async function GET(_req: Request, { params }: Ctx) {
       invitationId: invitation.id,
     });
     png = await encodeQr(url);
-  } catch {
+  } catch (err) {
+    logFailure(
+      "qr",
+      "encode_failed",
+      `QR encode failed for invitation ${invitation.id}: ${errText(err)}`
+    );
     return NextResponse.json({ error: "internal" }, { status: 500 });
   }
 

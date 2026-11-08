@@ -7,13 +7,20 @@ import {
   verifyOtp,
 } from "@/lib/otp";
 import type { OtpChannel, OtpSmsTransport } from "@/lib/otp-channels";
+import { logOtpRefusal } from "@/lib/otp-log";
 
 /**
  * Core request/verify business logic for the public OTP invitation flow
- * (Task 9). This module is PURE — it imports no Prisma and no live transport —
+ * (Task 9). This module is FREE OF I/O DEPS — no Prisma and no live transport —
  * so the security-critical gating (allowlist first, rate limiting, never
  * leaking validity) is unit-testable without a database or a Twilio call.
  * Defaults wired to Prisma/Twilio live in ./otp-flow-db.ts.
+ *
+ * The refusals below DO write operator log lines ([otp] REQUEST REFUSED …):
+ * they answer the client with one uniform generic error on purpose, so without
+ * a server-side line an operator can never tell "link expired", "phone not on
+ * the invitation" and "rate limited" apart — and a guest who simply never
+ * receives the code leaves no trace at all.
  */
 
 export interface OtpInvitation {
@@ -109,16 +116,23 @@ export async function requestOtp(
 ): Promise<OtpRequestOutcome> {
   const invitation = await deps.findInvitation(token);
 
-  // Uniform response whether the link is invalid or the phone is not allowed.
-  if (
-    !invitation ||
-    !deps.gen.isPhoneAllowed(invitation.acceptedPhones, phone)
-  ) {
+  // Uniform response whether the link is invalid or the phone is not allowed
+  // — but the SERVER log says which, since the client never may.
+  if (!invitation) {
+    logOtpRefusal("invitation_unknown", "no invitation for this token");
+    return { ok: false, error: GENERIC_ERROR };
+  }
+  if (!deps.gen.isPhoneAllowed(invitation.acceptedPhones, phone)) {
+    logOtpRefusal(
+      "phone_not_allowed",
+      "phone is not on the invitation's accepted list"
+    );
     return { ok: false, error: GENERIC_ERROR };
   }
 
   const normalizedPhone = normalizePhone(phone);
   if (!deps.rateLimiter.allowed(normalizedPhone)) {
+    logOtpRefusal("rate_limited", "too many OTP requests for this phone");
     return {
       ok: false,
       error: "Demasiados intentos. Inténtalo de nuevo más tarde.",
@@ -159,21 +173,28 @@ export async function verifyOtpRequest(
 ): Promise<{ ok: boolean; error?: string }> {
   const invitation = await deps.findInvitation(token);
   if (!invitation) {
+    logOtpRefusal("verify_invitation_unknown", "no invitation for this token");
     return { ok: false, error: GENERIC_ERROR };
   }
 
   const normalizedPhone = normalizePhone(phone);
   const pending = await deps.findPendingOtp(invitation.id, normalizedPhone);
   if (!pending) {
+    // Covers consumed and expired codes too — all collapse to "no pending".
+    logOtpRefusal("verify_no_pending_code", "no live code for this phone");
     return { ok: false, error: GENERIC_ERROR };
   }
   if (pending.attempts >= OTP_MAX_ATTEMPTS) {
+    logOtpRefusal("verify_locked_out", "attempt cap reached");
     return { ok: false, error: GENERIC_ERROR };
   }
 
   const valid = deps.gen.verifyOtp(code, pending.codeHash);
   if (!valid) {
     await deps.incrementAttempts(pending.id);
+    // A cluster of these is a brute-force attempt — the reason is server-side
+    // only; the client still sees the uniform generic error.
+    logOtpRefusal("verify_wrong_code", "code mismatch");
     return { ok: false, error: GENERIC_ERROR };
   }
 

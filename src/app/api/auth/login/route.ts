@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { verifyPassword } from "@/lib/password";
 import { createSession } from "@/lib/session";
 import { emailVerificationRequired } from "@/lib/auth-email";
+import { logWarn, maskEmail } from "@/lib/failure-log";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -27,12 +28,27 @@ export async function POST(req: Request) {
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
+    // Server-side only: the account is identified by a MASKED address, never
+    // the full one — enough to recognise a mistyped password or spot a
+    // credential-stuffing run, without an address harvest in Dozzle.
+    logWarn(
+      "auth",
+      "login_failed",
+      user
+        ? `bad password for ${maskEmail(email)}`
+        : `unknown account ${maskEmail(email)}`
+    );
     return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
   }
 
   // v1.4: with EMAIL_VERIFICATION_REQUIRED on, an unvalidated signup email
   // blocks the sign-in (the login screen offers a resend for that case).
   if (emailVerificationRequired() && !user.emailVerifiedAt) {
+    logWarn(
+      "auth",
+      "login_blocked",
+      `email not verified for ${maskEmail(email)}`
+    );
     return NextResponse.json({ error: "email_not_verified" }, { status: 401 });
   }
 

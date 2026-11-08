@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth-guard";
+import { errText, logWarn } from "@/lib/failure-log";
 import { destroySession } from "@/lib/session";
 import { deletePhoto } from "@/lib/storage";
 
@@ -62,8 +63,20 @@ export async function DELETE() {
     return { weddingDeleted: true, photoFiles: photos.map((p) => p.filename) };
   });
 
-  // Best effort: the rows are already gone, a stray file is only wasted disk.
-  await Promise.all(result.photoFiles.map((f) => deletePhoto(f).catch(() => {})));
+  // Best effort: the rows are already gone, a stray file is only wasted disk —
+  // but a silently failing cleanup would fill the volume over time, so it is
+  // logged (the account deletion itself already succeeded).
+  await Promise.all(
+    result.photoFiles.map((f) =>
+      deletePhoto(f).catch((err) =>
+        logWarn(
+          "account",
+          "file_cleanup_failed",
+          `stray photo ${f} left after account delete: ${errText(err)}`
+        )
+      )
+    )
+  );
 
   // Drop the cookie so this tab can't keep using the deleted account.
   await destroySession();

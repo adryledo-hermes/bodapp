@@ -13,7 +13,14 @@
  * and rewrites them into a dependable embed URL. It is deliberately fail-open:
  * if the URL is empty, already canonical, or cannot be resolved, it returns the
  * input unchanged so a valid value is never corrupted.
+ *
+ * Fail-open must not mean invisible: when the outbound resolve (the only
+ * network call in this file) times out or fails, a WARN line records it, so
+ * "the directions box shows a raw link instead of a map" is explainable from
+ * the logs instead of guessed at.
  */
+
+import { errText, logWarn } from "./failure-log";
 
 /** Fast check — no network. Turns obvious share/embed forms into a usable URL. */
 export function canonicalizeMapUrl(input: string): string {
@@ -64,8 +71,10 @@ export async function resolveMapEmbedUrl(
       4000
     );
     finalUrl = resp.url || raw;
-  } catch {
-    // Network failure / no internet at publish time → bail, keep the input.
+  } catch (err) {
+    // Network failure / no internet at publish time → bail, keep the input
+    // (fail-open) — but leave a trace so the degraded output is explained.
+    logWarn("maps", "resolve_failed", `could not resolve link: ${errText(err)}`);
     return raw;
   }
 
