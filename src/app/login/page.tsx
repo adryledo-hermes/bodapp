@@ -13,8 +13,10 @@ export const dynamic = "force-dynamic";
  *
  * It also forwards the outcome flags written by the account flows:
  * `?verified=1` (validation link OK), `?verified=0` (link invalid/expired),
- * `?reset=1` (password just reset) and `?deleted=1` (account deleted from the
- * Profile danger zone), so the form can say what happened.
+ * `?reset=1` (password just reset), `?deleted=1` (account deleted from the
+ * Profile danger zone) and `?registered=1` (account created, waiting for the
+ * confirmation email — the session only starts after that click), so the form
+ * can say what happened.
  */
 export default async function LoginPage({
   searchParams,
@@ -37,7 +39,9 @@ export default async function LoginPage({
           ? "reset"
           : first(params.deleted) === "1"
             ? "deleted"
-            : undefined;
+            : first(params.registered) === "1"
+              ? "registered"
+              : undefined;
 
   return <LoginForm notice={notice} />;
 }

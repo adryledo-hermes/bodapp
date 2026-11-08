@@ -5,6 +5,7 @@ import { createSession } from "@/lib/session";
 import { applySlugDefaults, onboardingSchema } from "@/lib/onboarding";
 import {
   buildVerifyEmailUrl,
+  emailVerificationRequired,
   expiryFrom,
   generateEmailToken,
   hashEmailToken,
@@ -70,16 +71,9 @@ export async function POST(req: Request) {
         return { wedding, user };
       });
 
-      // Log the couple straight in — their first stop is the panel.
-      await createSession({
-        userId: created.user.id,
-        weddingId: created.wedding.id,
-        role: "couple",
-      });
-
-      // v1.4 — email validation on signup. The account and session already
-      // exist, so a dead provider must NOT fail the registration: log it, let
-      // the couple in, and let them resend from the login screen.
+      // v1.4 — email validation on signup. A dead provider must NOT fail the
+      // registration: the account was just created either way, and the couple
+      // can always resend from the login screen.
       let emailSent = false;
       try {
         const token = generateEmailToken();
@@ -105,6 +99,27 @@ export async function POST(req: Request) {
       } catch (err) {
         console.error("[setup] validation email failed:", err);
       }
+
+      // With EMAIL_VERIFICATION_REQUIRED on, NO session is created here:
+      // signing the couple in at signup would hand them the very session the
+      // login gate (api/auth/login) withholds, turning the emailed link into
+      // decoration. The account exists and the link is already out — they
+      // confirm it, then sign in from /login (?registered=1 says why).
+      if (emailVerificationRequired()) {
+        return NextResponse.json({
+          ok: true,
+          redirect: "/login?registered=1",
+          emailSent,
+        });
+      }
+
+      // Verification off: log the couple straight in — their first stop is
+      // the panel. A failed send never blocks this (it is caught above).
+      await createSession({
+        userId: created.user.id,
+        weddingId: created.wedding.id,
+        role: "couple",
+      });
 
       return NextResponse.json({
         ok: true,

@@ -7,8 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  */
 const mocks = vi.hoisted(() => {
   const prisma = {
-    user: { findUnique: vi.fn(), update: vi.fn() },
-    wedding: { findUnique: vi.fn() },
+    user: { findUnique: vi.fn(), update: vi.fn(), create: vi.fn() },
+    wedding: { findUnique: vi.fn(), create: vi.fn() },
     authEmailToken: {
       findFirst: vi.fn(),
       create: vi.fn(),
@@ -47,6 +47,7 @@ import { GET as verifyEmail } from "../../src/app/api/auth/verify-email/route";
 import { POST as resend } from "../../src/app/api/auth/verify-email/resend/route";
 import { POST as forgot } from "../../src/app/api/auth/password/forgot/route";
 import { POST as reset } from "../../src/app/api/auth/password/reset/route";
+import { POST as setup } from "../../src/app/api/setup/route";
 import {
   generateEmailToken,
   hashEmailToken,
@@ -91,6 +92,7 @@ beforeEach(() => {
 
 afterEach(() => {
   delete process.env.EMAIL_VERIFICATION_REQUIRED;
+  delete process.env.PUBLIC_BASE_URL;
 });
 
 describe("POST /api/auth/login — email-validation gate", () => {
@@ -486,5 +488,96 @@ describe("POST /api/auth/verify-email/resend", () => {
       })
     );
     expect(prisma.authEmailToken.create).toHaveBeenCalledTimes(5);
+  });
+});
+
+describe("POST /api/setup — session vs. the verification gate", () => {
+  const SIGNUP = {
+    coupleNameA: "Ana",
+    coupleNameB: "Luis",
+    email: "ana@example.com",
+    password: "secret123",
+  };
+
+  beforeEach(() => {
+    // The slug-dedup loop asks whether the derived slug is taken: no wedding
+    // (null) keeps it from spinning. The created rows come from the mocks.
+    prisma.wedding.findUnique.mockResolvedValue(null);
+    prisma.wedding.create.mockResolvedValue({ id: "wed-1", slug: "ana-luis" });
+    prisma.user.create.mockResolvedValue({ id: "user-9" });
+    prisma.authEmailToken.create.mockResolvedValue({});
+  });
+
+  it("creates NO session when EMAIL_VERIFICATION_REQUIRED is on", async () => {
+    process.env.EMAIL_VERIFICATION_REQUIRED = "true";
+
+    const res = await setup(jsonRequest("http://localhost/api/setup", SIGNUP));
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.ok).toBe(true);
+    expect(body.redirect).toBe("/login?registered=1");
+    expect(body.emailSent).toBe(true);
+
+    // The account and the single-use link exist…
+    expect(prisma.wedding.create).toHaveBeenCalledTimes(1);
+    expect(prisma.user.create).toHaveBeenCalledTimes(1);
+    const token = prisma.authEmailToken.create.mock.calls[0][0].data;
+    expect(token.kind).toBe("verify_email");
+    expect(sendVerificationEmail).toHaveBeenCalledTimes(1);
+    // …but the couple is NOT signed in: that session is exactly what the
+    // login gate (api/auth/login) must withhold until the link is clicked.
+    expect(createSession).not.toHaveBeenCalled();
+  });
+
+  it("signs the couple in straight away while the flag is off", async () => {
+    const res = await setup(jsonRequest("http://localhost/api/setup", SIGNUP));
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.redirect).toBe("/panel");
+    expect(createSession).toHaveBeenCalledTimes(1);
+    expect(createSession).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "user-9", role: "couple" })
+    );
+  });
+
+  it("never fails the registration when the provider is down", async () => {
+    process.env.EMAIL_VERIFICATION_REQUIRED = "true";
+    sendVerificationEmail.mockResolvedValue(false);
+
+    const res = await setup(jsonRequest("http://localhost/api/setup", SIGNUP));
+    expect(res.status).toBe(200);
+
+    const body = await res.json();
+    expect(body.ok).toBe(true);
+    expect(body.emailSent).toBe(false);
+    expect(prisma.user.create).toHaveBeenCalledTimes(1);
+    expect(createSession).not.toHaveBeenCalled();
+  });
+});
+
+describe("GET /api/auth/verify-email — redirect origin", () => {
+  it("sends the clicker to PUBLIC_BASE_URL, never the upstream host", async () => {
+    process.env.PUBLIC_BASE_URL = "https://bodapp.example/";
+
+    const res = await verifyEmail(
+      // Behind the proxy the request can carry the internal upstream host.
+      new Request("https://0.0.0.0:3001/api/auth/verify-email")
+    );
+
+    expect(res.headers.get("location")).toBe(
+      "https://bodapp.example/login?verified=0"
+    );
+  });
+
+  it("falls back to the request origin when PUBLIC_BASE_URL is unset", async () => {
+    const res = await verifyEmail(
+      new Request("https://bodapp.example/api/auth/verify-email")
+    );
+
+    expect(res.headers.get("location")).toBe(
+      "https://bodapp.example/login?verified=0"
+    );
   });
 });

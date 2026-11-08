@@ -22,7 +22,12 @@ const localeStore = {
  * Flags written by the server page from the query string: `?verified=1|0`
  * (the emailed validation link) and `?reset=1` (the reset form succeeded).
  */
-export type LoginNotice = "verified" | "reset" | "linkInvalid" | "deleted";
+export type LoginNotice =
+  | "verified"
+  | "reset"
+  | "linkInvalid"
+  | "deleted"
+  | "registered";
 
 export default function LoginForm({ notice }: { notice?: LoginNotice }) {
   const router = useRouter();
@@ -45,12 +50,17 @@ export default function LoginForm({ notice }: { notice?: LoginNotice }) {
         ? "login.resetOk"
         : notice === "deleted"
           ? "login.accountDeleted"
-          : notice === "linkInvalid"
-            ? "login.verifyFailed"
-            : null;
+          : notice === "registered"
+            ? "login.checkEmail"
+            : notice === "linkInvalid"
+              ? "login.verifyFailed"
+              : null;
 
   const [info, setInfo] = useState<string | null>(
-    notice === "verified" || notice === "reset" || notice === "deleted"
+    notice === "verified" ||
+      notice === "reset" ||
+      notice === "deleted" ||
+      notice === "registered"
       ? t(bannerKey!)
       : null
   );

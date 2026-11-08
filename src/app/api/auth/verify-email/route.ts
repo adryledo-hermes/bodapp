@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import {
   hashEmailToken,
   isTokenUsable,
+  publicBaseUrl,
   verifyEmailToken,
 } from "@/lib/auth-email";
 
@@ -17,12 +18,20 @@ export const dynamic = "force-dynamic";
  * login screen so a click never dead-ends, with `verified=1|0` telling the UI
  * which message to show. A bad token redirects just like an expired one —
  * this endpoint never reveals which part failed.
+ *
+ * The redirect is built from PUBLIC_BASE_URL, not from the incoming request:
+ * behind the reverse proxy the request can arrive carrying the upstream's
+ * internal host (e.g. 0.0.0.0:3001), which would send the clicker to an
+ * unreachable URL instead of back to the public login page.
  */
 export async function GET(request: Request): Promise<NextResponse> {
   const token = new URL(request.url).searchParams.get("token") ?? "";
   const redirectToLogin = (ok: boolean) =>
     NextResponse.redirect(
-      new URL(`/login?verified=${ok ? "1" : "0"}`, request.url)
+      new URL(
+        `/login?verified=${ok ? "1" : "0"}`,
+        publicBaseUrl() || request.url
+      )
     );
 
   if (!token) return redirectToLogin(false);
