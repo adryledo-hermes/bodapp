@@ -98,7 +98,9 @@ export async function POST(req: Request) {
           coupleName: `${coupleNameA} ${coupleNameB}`,
         });
         if (!emailSent) {
-          console.warn("[setup] provider did not accept the validation email");
+          console.error(
+            "[setup] validation email NOT sent — email service failing (reason: see the [email] SEND FAILED line)"
+          );
         }
       } catch (err) {
         console.error("[setup] validation email failed:", err);
