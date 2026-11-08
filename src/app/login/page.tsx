@@ -11,9 +11,10 @@ export const dynamic = "force-dynamic";
  * authenticated (a valid session cookie is present), they're sent straight to
  * the panel instead of being shown the login form again.
  *
- * It also forwards the outcome flags written by the v1.4 email flows:
- * `?verified=1` (validation link OK), `?verified=0` (link invalid/expired) and
- * `?reset=1` (password just reset), so the form can say what happened.
+ * It also forwards the outcome flags written by the account flows:
+ * `?verified=1` (validation link OK), `?verified=0` (link invalid/expired),
+ * `?reset=1` (password just reset) and `?deleted=1` (account deleted from the
+ * Profile danger zone), so the form can say what happened.
  */
 export default async function LoginPage({
   searchParams,
@@ -34,7 +35,9 @@ export default async function LoginPage({
         ? "linkInvalid"
         : first(params.reset) === "1"
           ? "reset"
-          : undefined;
+          : first(params.deleted) === "1"
+            ? "deleted"
+            : undefined;
 
   return <LoginForm notice={notice} />;
 }

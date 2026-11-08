@@ -96,6 +96,15 @@ export const messages: Record<Locale, Record<string, string>> = {
     "profile.coupleNameB": "Nombre de tu pareja",
     "profile.email": "Email de contacto",
     "profile.venue": "Lugar de la boda",
+    "profile.dangerZone": "Zona de peligro",
+    "profile.deleteAccount": "Eliminar mi cuenta",
+    "profile.deleteWarning":
+      "Esta acción elimina tu cuenta y todos los datos de la boda (invitados, invitaciones, fotos, mesas y tareas). No se puede deshacer.",
+    "profile.deleteTitle": "¿Eliminar tu cuenta?",
+    "profile.deleteBody":
+      "Tu cuenta y todos los datos de la boda se eliminarán de forma permanente. Esta operación no se puede deshacer.",
+    "profile.deleteConfirm": "Sí, eliminar mi cuenta",
+    "profile.deleteError": "No se pudo eliminar la cuenta",
     "common.networkError": "Error de red: no se pudo guardar",
 
     // ---- Guests (personalized cards) ----
@@ -489,6 +498,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "login.resent": "Si tu cuenta existe, te hemos reenviado el email de validación.",
     "login.verifiedOk": "Email validado: ya puedes entrar.",
     "login.resetOk": "Contraseña actualizada: ya puedes entrar.",
+    "login.accountDeleted": "Cuenta eliminada.",
     "login.forgot": "¿Has olvidado tu contraseña?",
     "forgot.title": "Recuperar contraseña",
     "forgot.subtitle": "Te enviaremos un enlace para elegir una contraseña nueva.",
@@ -595,6 +605,15 @@ export const messages: Record<Locale, Record<string, string>> = {
     "profile.coupleNameB": "Partner's name",
     "profile.email": "Contact email",
     "profile.venue": "Wedding venue",
+    "profile.dangerZone": "Danger zone",
+    "profile.deleteAccount": "Delete my account",
+    "profile.deleteWarning":
+      "This deletes your account and all wedding data (guests, invitations, photos, tables and tasks). It cannot be undone.",
+    "profile.deleteTitle": "Delete your account?",
+    "profile.deleteBody":
+      "Your account and all wedding data will be permanently deleted. This operation cannot be undone.",
+    "profile.deleteConfirm": "Yes, delete my account",
+    "profile.deleteError": "Could not delete the account",
     "common.networkError": "Network error: could not save",
 
     // ---- Guests ----
@@ -986,6 +1005,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "login.resent": "If your account exists, we've sent the verification email again.",
     "login.verifiedOk": "Email verified: you can sign in now.",
     "login.resetOk": "Password updated: you can sign in now.",
+    "login.accountDeleted": "Account deleted.",
     "login.forgot": "Forgot your password?",
     "forgot.title": "Reset your password",
     "forgot.subtitle": "We'll email you a link to choose a new password.",
