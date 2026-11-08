@@ -1,4 +1,4 @@
-[![Infrastructure — Caddy (HTTPS)](../../actions/workflows/infra.yml/badge.svg)](../../actions/workflows/infra.yml)
+[![Infrastructure (Caddy HTTPS + Dozzle logs)](../../actions/workflows/infra.yml/badge.svg)](../../actions/workflows/infra.yml)
 [![Deploy to Hetzner](../../actions/workflows/deploy.yml/badge.svg)](../../actions/workflows/deploy.yml)
 
 # Bodapp
@@ -78,13 +78,21 @@ Email (SendPulse — validation / password recovery): [`src/lib/email/README.md`
 - **Manual runbook:** [`deploy/hetzner-setup.md`](deploy/hetzner-setup.md).
 - **Reverse proxy / HTTPS:** **Caddy runs on the host as a systemd service**
   (never inside the app container), on its **own separate pipeline** —
-  [`infra.yml`](.github/workflows/infra.yml) *"Infrastructure — Caddy (HTTPS)"* —
+  [`infra.yml`](.github/workflows/infra.yml) *"Infrastructure (Caddy HTTPS + Dozzle logs)"* —
   driven by the `CADDY_DOMAIN` + `CADDY_EMAIL` GitHub secrets:
   [`deploy/caddy/setup-caddy.sh`](deploy/caddy/setup-caddy.sh) installs it
   (once) and reconfigures it idempotently, then an end-to-end TLS gate.
   Config: [`deploy/caddy/Caddyfile`](deploy/caddy/Caddyfile); details:
   [`deploy/migrate-to-https.md`](deploy/migrate-to-https.md); firewall (only
   80/443): [`deploy/hetzner-firewall.md`](deploy/hetzner-firewall.md).
+- **Logs (same infra pipeline):** **Dozzle**, a live log viewer for the app —
+  [`deploy/dozzle/setup-dozzle.sh`](deploy/dozzle/setup-dozzle.sh) runs it
+  showing **only** `bodapp-app` (`DOZZLE_FILTER=name=bodapp-app`), with the
+  **MCP server** on at `/api/mcp` (read-only tools) and actions/shell off.
+  Bound to `127.0.0.1:8080` and published **tailnet-only** via
+  `tailscale serve --https=8443` (no funnel → nothing is public):
+  `https://<host>.<tailnet>.ts.net:8443/`. Details:
+  [`deploy/dozzle/README.md`](deploy/dozzle/README.md).
 - **Image:** multi-stage `Dockerfile` — `node:20-alpine`, webpack build
   (`next build --webpack`), Next.js standalone `server.js`, runs as non-root,
   listens on port **3001**, published **loopback-only** (`127.0.0.1:3001`).
@@ -95,7 +103,8 @@ Email (SendPulse — validation / password recovery): [`src/lib/email/README.md`
   = business logic — builds while the old container serves, migrates, swaps
   **only the app container**, gates on `/healthz`, asserts the loopback bind,
   rolls back the image on failure. [`infra.yml`](.github/workflows/infra.yml)
-  = infrastructure — Caddy config/certs + TLS gate. Neither touches the
+  = infrastructure — Caddy config/certs + TLS gate, plus the Dozzle log
+  viewer. Neither touches the
   other's domain. Both reach the VPS over **Tailscale**: the runner joins
   the tailnet with the ephemeral `TAILSCALE_AUTHKEY` secret, so the Hetzner
   firewall can accept SSH only from the tailnet (no public port 22).
