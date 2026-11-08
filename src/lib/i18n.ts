@@ -499,6 +499,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "login.verifiedOk": "Email validado: ya puedes entrar.",
     "login.resetOk": "Contraseña actualizada: ya puedes entrar.",
     "login.accountDeleted": "Cuenta eliminada.",
+    "login.checkEmail":
+      "Cuenta creada: te hemos enviado un email para confirmar tu correo. Revísalo para entrar.",
     "login.forgot": "¿Has olvidado tu contraseña?",
     "forgot.title": "Recuperar contraseña",
     "forgot.subtitle": "Te enviaremos un enlace para elegir una contraseña nueva.",
@@ -1006,6 +1008,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     "login.verifiedOk": "Email verified: you can sign in now.",
     "login.resetOk": "Password updated: you can sign in now.",
     "login.accountDeleted": "Account deleted.",
+    "login.checkEmail":
+      "Account created: we've sent you a confirmation email. Check your inbox to sign in.",
     "login.forgot": "Forgot your password?",
     "forgot.title": "Reset your password",
     "forgot.subtitle": "We'll email you a link to choose a new password.",
