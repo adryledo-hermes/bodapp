@@ -27,6 +27,11 @@ import { twilioSmsProvider, twilioWhatsAppProvider } from "./twilio-provider";
 export interface ProviderResult {
   ok: boolean;
   error?: string;
+  /**
+   * Machine-readable failure code (`http_error`, `credentials_missing`, …) so
+   * the channel layer can write a greppable log line without parsing prose.
+   */
+  code?: string;
 }
 
 /** Layer 1 — WhatsApp delivery. */
