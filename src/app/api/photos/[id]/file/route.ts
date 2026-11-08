@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth-guard";
+import { errText, logWarn } from "@/lib/failure-log";
 import { getInvitationAccess } from "@/lib/otp-session";
 import { readPhoto } from "@/lib/storage";
 
@@ -41,7 +42,14 @@ export async function GET(_req: Request, { params }: Ctx) {
   let bytes: Buffer;
   try {
     bytes = await readPhoto(photo.filename);
-  } catch {
+  } catch (err) {
+    // The DB row exists but the bytes do not — that is real data loss (a
+    // broken gallery image), not a normal 404, so it gets a WARN line.
+    logWarn(
+      "photos",
+      "file_missing",
+      `row ${photo.id} references unreadable file ${photo.filename}: ${errText(err)}`
+    );
     return NextResponse.json({ error: "file missing" }, { status: 404 });
   }
 

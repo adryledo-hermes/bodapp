@@ -26,61 +26,12 @@
  *     disallowed phone. Observability is server-side only.
  */
 
-/** Env values that must never appear in a log line. */
-const SECRET_ENV_KEYS = [
-  "TWILIO_AUTH_TOKEN",
-  "TWILIO_ACCOUNT_SID",
-  "SENDPULSE_API_KEY",
-  "SESSION_SECRET",
-  "DATABASE_URL",
-];
+import { redactLogText } from "./redact";
 
-const MAX_DETAIL_CHARS = 240;
-
-/**
- * Scrub a free-text provider/flow reason before it reaches the logs:
- * known secret values, bearer tokens, URL query strings (invitation links),
- * every email address and every phone number. Exported for tests.
- */
-export function redactOtpLog(text: string): string {
-  let out = String(text ?? "");
-
-  // Exact secret values from the environment (Twilio creds, DSN, keys).
-  for (const key of SECRET_ENV_KEYS) {
-    const value = process.env[key];
-    if (value && value.length >= 4) {
-      out = out.split(value).join("***");
-    }
-  }
-
-  // Authorization headers that can ride along inside an error body.
-  out = out.replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer ***");
-
-  // Query strings carry single-use tokens (?token=…, /i/<uuid>).
-  out = out.replace(/\?[A-Za-z0-9_\-=&%./+]+/g, "?<redacted>");
-
-  // Any address — we never log who was written to.
-  out = out.replace(
-    /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g,
-    "[email]"
-  );
-
-  // Phone numbers: the WhatsApp addressing form first, then any E.164 run
-  // (+3461223344), then a bare 7+ digit run (local format / spaced groups).
-  out = out.replace(/whatsapp:\+?\d[\d\s.-]*/gi, "whatsapp:+***");
-  out = out.replace(/\+\d{6,}/g, "+***");
-  out = out.replace(/(?<![\d+])\d(?:[\s.-]?\d){6,}(?![\d])/g, "[phone]");
-
-  // The OTP itself is 6 digits — never let it ride along inside a provider
-  // message. Longer digit runs are phones (handled above); 3–5 digit numbers
-  // (HTTP statuses, Twilio error codes like 20003) stay readable.
-  out = out.replace(/(?<![\w-])\d{6}(?![\w-])/g, "[code]");
-
-  out = out.replace(/\s+/g, " ").trim();
-  return out.length > MAX_DETAIL_CHARS
-    ? `${out.slice(0, MAX_DETAIL_CHARS)}…`
-    : out;
-}
+// Redaction itself lives in ./redact so every log helper in the app (this
+// module and ./failure-log) scrubs by the SAME rules instead of drifting.
+// The otp-specific name stays for its callers and tests.
+export { redactLogText as redactOtpLog };
 
 /** One delivery failure — channel/provider when a provider was involved. */
 export interface OtpFailureLog {
@@ -105,7 +56,7 @@ export function logOtpFailure(failure: OtpFailureLog): void {
     if (failure.channel) parts.push(`channel=${failure.channel}`);
     parts.push(`provider=${failure.provider ?? "(none)"}`);
     parts.push(`code=${failure.code ?? "unknown"}`);
-    parts.push(`detail="${redactOtpLog(failure.detail ?? "no detail")}"`);
+    parts.push(`detail="${redactLogText(failure.detail ?? "no detail")}"`);
     console.error(parts.join(" "));
   } catch {
     // Logging is best-effort by design.
@@ -119,7 +70,7 @@ export function logOtpFailure(failure: OtpFailureLog): void {
  */
 export function logOtpRefusal(reason: string, detail?: string): void {
   try {
-    const suffix = detail ? ` detail="${redactOtpLog(detail)}"` : "";
+    const suffix = detail ? ` detail="${redactLogText(detail)}"` : "";
     console.error(`[otp] REQUEST REFUSED reason=${reason}${suffix}`);
   } catch {
     // Logging is best-effort by design.

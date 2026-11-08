@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { logWarn } from "@/lib/failure-log";
 import { verifyOtpRequest } from "@/lib/otp-flow";
 import {
   defaultOtpDeps,
@@ -46,6 +47,13 @@ export async function POST(req: Request) {
   // directly — fail closed rather than silently issuing a bogus-scoped cookie.
   const invitation = await findInvitationByToken(token);
   if (!invitation) {
+    // The code verified but the invitation vanished between the two lookups —
+    // a race or a deleted invitation. Rare and worth seeing in the log.
+    logWarn(
+      "otp",
+      "verify_token_lost",
+      "invitation disappeared between verify and cookie issue"
+    );
     return NextResponse.json({ error: "invalid token" }, { status: 400 });
   }
 

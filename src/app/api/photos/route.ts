@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { requireSession, tenantWhere } from "@/lib/auth-guard";
+import { errText, logFailure, logWarn } from "@/lib/failure-log";
 import { deletePhoto, savePhoto } from "@/lib/storage";
 
 /** Max upload size: 10 MB. */
@@ -85,7 +86,9 @@ export async function POST(req: Request) {
   let filename: string;
   try {
     filename = await savePhoto(buffer, { id, ext });
-  } catch {
+  } catch (err) {
+    // Storage write failed — a 500 nobody would otherwise ever see.
+    logFailure("photos", "save_failed", `storage write failed: ${errText(err)}`);
     return NextResponse.json({ error: "save_failed" }, { status: 500 });
   }
 
@@ -106,9 +109,23 @@ export async function POST(req: Request) {
       },
       select: { id: true, mimeType: true, size: true, createdAt: true },
     });
-  } catch {
-    // Avoid leaving an orphan file behind if the DB write fails.
-    await deletePhoto(filename).catch(() => {});
+  } catch (err) {
+    // File is on disk but the DB row never happened — report the real cause
+    // here (the response stays the opaque create_failed).
+    logFailure(
+      "photos",
+      "create_failed",
+      `db insert failed for ${filename}: ${errText(err)}`
+    );
+    // Avoid leaving an orphan file behind if the DB write fails — and if THAT
+    // fails too, the stray file needs a human (disk only fills silently).
+    await deletePhoto(filename).catch((cleanupErr) =>
+      logWarn(
+        "photos",
+        "orphan_cleanup_failed",
+        `stray file ${filename} left behind: ${errText(cleanupErr)}`
+      )
+    );
     return NextResponse.json({ error: "create_failed" }, { status: 500 });
   }
 

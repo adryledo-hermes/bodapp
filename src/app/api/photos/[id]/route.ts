@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth-guard";
+import { errText, logWarn } from "@/lib/failure-log";
 import { deletePhoto } from "@/lib/storage";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -24,8 +25,15 @@ export async function DELETE(_req: Request, { params }: Ctx) {
     where: { id, weddingId: auth.session.weddingId },
   });
   // Best effort: remove the file even if the DB delete already happened. Guarded
-  // against traversal by deletePhoto.
-  await deletePhoto(photo.filename).catch(() => {});
+  // against traversal by deletePhoto. A failure here strands a file on disk
+  // forever (the row is already gone), so it must be visible in the log.
+  await deletePhoto(photo.filename).catch((err) =>
+    logWarn(
+      "photos",
+      "file_cleanup_failed",
+      `stray file ${photo.filename} after delete: ${errText(err)}`
+    )
+  );
 
   return NextResponse.json({ ok: true });
 }

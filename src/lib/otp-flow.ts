@@ -173,21 +173,28 @@ export async function verifyOtpRequest(
 ): Promise<{ ok: boolean; error?: string }> {
   const invitation = await deps.findInvitation(token);
   if (!invitation) {
+    logOtpRefusal("verify_invitation_unknown", "no invitation for this token");
     return { ok: false, error: GENERIC_ERROR };
   }
 
   const normalizedPhone = normalizePhone(phone);
   const pending = await deps.findPendingOtp(invitation.id, normalizedPhone);
   if (!pending) {
+    // Covers consumed and expired codes too — all collapse to "no pending".
+    logOtpRefusal("verify_no_pending_code", "no live code for this phone");
     return { ok: false, error: GENERIC_ERROR };
   }
   if (pending.attempts >= OTP_MAX_ATTEMPTS) {
+    logOtpRefusal("verify_locked_out", "attempt cap reached");
     return { ok: false, error: GENERIC_ERROR };
   }
 
   const valid = deps.gen.verifyOtp(code, pending.codeHash);
   if (!valid) {
     await deps.incrementAttempts(pending.id);
+    // A cluster of these is a brute-force attempt — the reason is server-side
+    // only; the client still sees the uniform generic error.
+    logOtpRefusal("verify_wrong_code", "code mismatch");
     return { ok: false, error: GENERIC_ERROR };
   }
 
