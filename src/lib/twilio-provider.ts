@@ -65,8 +65,11 @@ async function twilioPost(
     };
   }
 
+  // HTTP Basic — Twilio's REST API authenticates with `Basic base64(SID:token)`.
+  // A `Bearer` scheme is rejected with 401/20003 ("Authenticate") even when the
+  // credentials are perfect, so the scheme is not a style choice here.
   const auth = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
-  const authHeader = ["Bearer", auth].join(" ");
+  const authHeader = ["Basic", auth].join(" ");
   try {
     const res = await fetch(
       `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
