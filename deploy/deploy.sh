@@ -9,6 +9,8 @@
 # setup-caddy.sh and is never invoked, checked or probed from here.
 #
 # Strategy (zero build-downtime, graceful swap, health-gated rollback):
+#   0. disk pre-flight: prune reclaimable docker disk (builder cache +
+#      dangling images), fail fast with df output if still too low
 #   1. fetch code (storage/ photos preserved)
 #   2. build the new image WHILE the old container keeps serving
 #   3. run prisma migrations against the new image
@@ -25,6 +27,11 @@
 #   REPO_DIR - absolute path to the checked-out repo (default /opt/bodapp)
 #   BRANCH   - git branch to deploy (default main)
 #   APP_PORT - obsolete, ignored. The port is fixed at 3001.
+#   DEPLOY_BUILDER_CACHE - build cache kept after the pre-flight prune
+#                          (default 6GiB)
+#   DEPLOY_MIN_FREE_KB   - fail before building when / has less free space
+#                          (default 6291456 KiB = 6GiB; lower it on a small
+#                          volume rather than skipping the pre-flight)
 # ------------------------------------------------------------------
 set -euo pipefail
 
@@ -50,6 +57,37 @@ mkdir -p storage/photos
 chown -R 1001:1001 storage 2>/dev/null \
   || chmod -R 777 storage 2>/dev/null \
   || true
+
+# --- 2b. Disk pre-flight: reclaim build disk BEFORE building ---------------
+# Every deploy leaves a full `next build` in the builder cache and failed
+# runs leave even more behind; the runner targets then COPY node_modules +
+# .next/standalone twice (app + migrate), so a full volume kills the build
+# minutes later with "no space left on device" (Dockerfile:73). Prune ONLY
+# reclaimable disk:
+#   - builder cache, capped at DEPLOY_BUILDER_CACHE so the next build still
+#     starts warm;
+#   - DANGLING (untagged) images only. The running image is tagged and the
+#     rollback snapshot (next step) reads it off the running container, so
+#     this can never take away the rollback target.
+# df output stays in the log before/after, so a failure is diagnosable from
+# the workflow run alone.
+echo "==> [deploy] disk before prune:"; df -h / | tail -1
+docker system df || true
+docker builder prune -af --keep-storage "${DEPLOY_BUILDER_CACHE:-6GiB}" || true
+docker image prune -f || true
+echo "==> [deploy] disk after prune:"; df -h / | tail -1
+docker system df || true
+
+MIN_FREE_KB="${DEPLOY_MIN_FREE_KB:-6291456}"   # 6 GiB
+AVAIL_KB="$(df -kP / | awk 'NR==2 {print $4}')"
+if [ "${AVAIL_KB:-0}" -lt "$MIN_FREE_KB" ]; then
+  echo "==> [deploy] FAIL — only ${AVAIL_KB} KiB free on / after pruning (need ${MIN_FREE_KB})." >&2
+  echo "    Refusing to start a build that would die halfway ('no space left on device')." >&2
+  echo "    If 'docker system df' above shows little reclaimable, the space is held" >&2
+  echo "    elsewhere (logs, volumes, other images) — clean it on the host, or lower" >&2
+  echo "    DEPLOY_MIN_FREE_KB if the volume is genuinely smaller." >&2
+  exit 1
+fi
 
 # --- 3. Snapshot the running image for rollback ----------------------------
 # (Must run BEFORE `docker compose build`, which re-tags bodapp-app:latest.)
