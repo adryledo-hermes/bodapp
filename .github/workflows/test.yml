@@ -1,0 +1,33 @@
+# ------------------------------------------------------------------
+# Bodapp -> tests
+#
+# SCOPE: TESTS ONLY. Runs the vitest suite on every pull request and on
+# demand (workflow_dispatch). It never builds or deploys the app and never
+# touches infrastructure: deploys live in deploy.yml (app image, migrations,
+# container), infrastructure in infra.yml (Caddy/HTTPS) — and neither of
+# those belongs here. No shared state, no cross-triggered jobs.
+#
+# tsc/eslint are deliberately NOT steps yet: the repo carries a known
+# pre-existing tsc baseline (6 errors) this change does not own, so gating on
+# it would make the check red from day one. Add them once that baseline is
+# fixed.
+# ------------------------------------------------------------------
+name: Test
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  vitest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests
+        run: npm test
