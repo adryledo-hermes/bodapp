@@ -43,15 +43,23 @@ afterEach(() => {
   }
 });
 
-/** Fake provider that records recipients and replays scripted outcomes. */
+/** Fake provider that records recipients/args and replays scripted outcomes. */
 function fakeProvider(name: string, outcomes: boolean[]) {
-  const calls: Array<{ to: string; body: string }> = [];
+  const calls: Array<{
+    to: string;
+    body: string;
+    templateVars?: Record<string, string>;
+  }> = [];
   let i = 0;
   return {
     name,
     calls,
-    async send(to: string, body: string): Promise<{ ok: boolean; error?: string }> {
-      calls.push({ to, body });
+    async send(
+      to: string,
+      body: string,
+      templateVars?: Record<string, string>
+    ): Promise<{ ok: boolean; error?: string }> {
+      calls.push({ to, body, templateVars });
       const ok = outcomes[i++] ?? false;
       return ok ? { ok: true } : { ok: false, error: `${name} refused` };
     },

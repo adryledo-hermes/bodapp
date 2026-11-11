@@ -6,8 +6,10 @@
  *   Layer 2 — SmsProvider       (fallback channel)
  *
  * Contract for BOTH layers:
- *   - `send(to, body)` takes a BARE E.164 number and the already-rendered
- *     message body; it returns { ok, error? } and never throws.
+ *   - `send(to, body, templateVars?)` takes a BARE E.164 number and the
+ *     already-rendered message body, plus optional approved-template
+ *     variables (WhatsApp — see the layer-1 interface); it returns
+ *     { ok, error? } and never throws.
  *   - Each provider owns its own addressing (the Twilio WhatsApp provider
  *     adds the `whatsapp:` prefix itself; an email/other provider would not).
  *   - Credentials live in the provider, never in the flow.
@@ -37,7 +39,20 @@ export interface ProviderResult {
 /** Layer 1 — WhatsApp delivery. */
 export interface WhatsAppProvider {
   readonly name: string;
-  send(to: string, body: string): Promise<ProviderResult>;
+  /**
+   * `templateVars` carries substitution values for an APPROVED content
+   * template (Twilio sends them as ContentVariables; placeholder {{1}} = the
+   * OTP code). WhatsApp only accepts free-form text inside the 24-hour
+   * customer-service window — outside it, and on trial-level accounts, Twilio
+   * rejects a plain Body with 400/21654 "ContentSid Required". The flow
+   * therefore ALWAYS passes the code; a provider configured for plain text
+   * simply ignores the argument.
+   */
+  send(
+    to: string,
+    body: string,
+    templateVars?: Record<string, string>
+  ): Promise<ProviderResult>;
 }
 
 /** Layer 2 — SMS delivery. */

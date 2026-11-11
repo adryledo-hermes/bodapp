@@ -193,7 +193,14 @@ export async function sendOtp(
     let result: Awaited<ReturnType<WhatsAppProvider["send"]>>;
     try {
       const startedAt = Date.now();
-      result = await provider.send(to, body);
+      // WhatsApp also gets the code as template variable {{1}}: when a
+      // Content SID is configured the provider sends the APPROVED TEMPLATE
+      // (a plain Body is refused outside the 24h window — 21654). SMS keeps
+      // the plain body; a WhatsApp provider without a template ignores it.
+      result =
+        channel === "whatsapp"
+          ? await (provider as WhatsAppProvider).send(to, body, { "1": code })
+          : await (provider as SmsProvider).send(to, body);
       if (result.ok) {
         logOtpSent(channel, provider.name, Date.now() - startedAt);
         return { ok: true, channel, attempted };

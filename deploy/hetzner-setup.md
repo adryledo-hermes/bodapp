@@ -99,7 +99,8 @@ Fill these values (never commit `.env`):
 | `OTP_SMS_ENABLED` | `false` | SMS fallback for the OTP (default off) |
 | `OTP_WHATSAPP_PROVIDER` | `twilio` | WhatsApp provider registered in `src/lib/otp-providers.ts` |
 | `OTP_SMS_PROVIDER` | `twilio` | SMS provider registered in `src/lib/otp-providers.ts` |
-| `TWILIO_WHATSAPP_FROM` | `+14155238886` | WhatsApp sender; defaults to Twilio's sandbox — set your approved sender in production |
+| `TWILIO_WHATSAPP_FROM` | `+141****8886` | WhatsApp sender; defaults to Twilio's sandbox — set your approved sender in production |
+| `TWILIO_WHATSAPP_CONTENT_SID` | *(unset = plain-text)* | Approved WhatsApp Content Template SID (`HX…`) for OTPs — required outside the 24h free-form window; Twilio rejects a plain `Body` there with 21654 "ContentSid Required" |
 | `GUEST_TRUST_DAYS` | `30` | Days a device stays verified after the guest ticks "don't ask again" (skips the OTP on that device). Clamped 1..730 |
 | `SESSION_SECRET` | `hex from openssl` | 32+ random bytes |
 | `PUBLIC_BASE_URL` | `https://app.yourdomain.com` | Builds invite/QR links; the https scheme also turns on secure session cookies. |

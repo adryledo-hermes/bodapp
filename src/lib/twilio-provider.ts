@@ -11,6 +11,11 @@
  *   TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN   — shared by both layers
  *   TWILIO_WHATSAPP_FROM                     — WhatsApp sender
  *                                              (default: Twilio sandbox number)
+ *   TWILIO_WHATSAPP_CONTENT_SID              — optional approved Content
+ *                                              Template SID (HX…): when set,
+ *                                              OTPs go out as that template
+ *                                              (Body omitted) instead of
+ *                                              free-form text
  *   TWILIO_PHONE_NUMBER                      — SMS sender (required for SMS)
  *
  * This module knows nothing about OTPs: it sends a body to a number.
@@ -48,11 +53,21 @@ export function whatsappRecipient(e164: string): string {
   return `whatsapp:${e164}`;
 }
 
+/** What to deliver: a plain Body, or an approved content template. */
+interface TwilioContent {
+  /** Free-form message body — used when no contentSid is set. */
+  body?: string;
+  /** Approved Content Template SID (`HX…`); replaces Body entirely. */
+  contentSid?: string;
+  /** Values for the template's placeholders — {"1": the OTP code}. */
+  contentVariables?: Record<string, string>;
+}
+
 /** Shared POST to Twilio's Messages API. Never throws. */
 async function twilioPost(
   to: string,
   from: string,
-  body: string
+  content: TwilioContent
 ): Promise<ProviderResult> {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
@@ -70,6 +85,22 @@ async function twilioPost(
   // credentials are perfect, so the scheme is not a style choice here.
   const auth = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
   const authHeader = ["Basic", auth].join(" ");
+
+  // Body vs content template. Twilio's Content docs: "Exclude Body and
+  // MediaUrl — ContentSid replaces both". A free-form Body where a template
+  // is required (outside the 24h WhatsApp window, or trial-level accounts)
+  // comes back 400/21654 "ContentSid Required".
+  const params = new URLSearchParams({ To: to, From: from });
+  if (content.contentSid) {
+    params.set("ContentSid", content.contentSid);
+    const vars = content.contentVariables ?? {};
+    if (Object.keys(vars).length > 0) {
+      params.set("ContentVariables", JSON.stringify(vars));
+    }
+  } else {
+    params.set("Body", content.body ?? "");
+  }
+
   try {
     const res = await fetch(
       `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
@@ -79,7 +110,7 @@ async function twilioPost(
           Authorization: authHeader,
           "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: new URLSearchParams({ To: to, From: from, Body: body }),
+        body: params,
       }
     );
     if (!res.ok) {
@@ -119,7 +150,7 @@ async function twilioPost(
 /** Layer 1 — WhatsApp over Twilio. */
 export const twilioWhatsAppProvider: WhatsAppProvider = {
   name: "twilio",
-  async send(to, body) {
+  async send(to, body, templateVars) {
     const from = process.env.TWILIO_WHATSAPP_FROM || DEFAULT_WHATSAPP_FROM;
     if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
       return {
@@ -136,7 +167,26 @@ export const twilioWhatsAppProvider: WhatsAppProvider = {
         error: "whatsapp sender not configured (TWILIO_WHATSAPP_FROM)",
       };
     }
-    return twilioPost(whatsappRecipient(to), whatsappAddress(from), body);
+    // Approved-template path: outside the 24-hour window (and on trial-level
+    // accounts) Twilio refuses free-form WhatsApp with 400/21654
+    // "ContentSid Required". When an HX Content SID is configured, send the
+    // template with the code as its {{1}} variable — and NO Body.
+    const contentSid = (process.env.TWILIO_WHATSAPP_CONTENT_SID || "").trim();
+    if (contentSid) {
+      if (!contentSid.toUpperCase().startsWith("HX")) {
+        return {
+          ok: false,
+          code: "content_sid_invalid",
+          error:
+            "TWILIO_WHATSAPP_CONTENT_SID must be a Content Template SID (starts with HX)",
+        };
+      }
+      return twilioPost(whatsappRecipient(to), whatsappAddress(from), {
+        contentSid,
+        contentVariables: templateVars,
+      });
+    }
+    return twilioPost(whatsappRecipient(to), whatsappAddress(from), { body });
   },
 };
 
@@ -144,7 +194,7 @@ export const twilioWhatsAppProvider: WhatsAppProvider = {
 export const twilioSmsProvider: SmsProvider = {
   name: "twilio",
   async send(to, body) {
-    const from = process.env.TWILIO_PHONE_NUMBER;
+    const from = process.env.TWILIO_PHONE_NUMBER;  // plain SMS, never a template
     if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
       return {
         ok: false,
@@ -160,6 +210,6 @@ export const twilioSmsProvider: SmsProvider = {
         error: "sms sender not configured (TWILIO_PHONE_NUMBER)",
       };
     }
-    return twilioPost(to, from, body);
+    return twilioPost(to, from, { body });
   },
 };
