@@ -29,6 +29,19 @@
 #      funnel: nothing on the public internet; Caddy keeps :80/:443, which is
 #      why serve uses 8443). Reuses the Tailscale/SSH secrets above — Dozzle
 #      needs NO new secrets.
+#   4. runs deploy/monitoring/setup-postgres-monitoring.sh — prepares the
+#      database for monitoring (read-only monitor role + self-tests +
+#      pg_stat_statements). The ONLY step in the repo allowed to restart
+#      postgres does so exclusively when the workflow input
+#      `enable_pg_stat_statements` is ticked — that checkbox IS the approval;
+#      default = zero database changes (it prints the plan and continues).
+#   5. runs deploy/monitoring/setup-monitoring.sh — vmagent + postgres/node/
+#      cAdvisor exporters as the separate compose project `bodapp-monitoring`
+#      (/opt/bodapp-monitoring), remote_write to Grafana Cloud, every port
+#      loopback-only, hard health gates (targets up, no remote-write auth
+#      errors, no public binds). Monitoring problems can never fail the app:
+#      nothing here touches the /opt/bodapp tree, the app container, Caddy's
+#      config or the database container (beyond the input-gated restart).
 #
 # REQUIRED secrets (GitHub environment `prod`) — ready-to-fill catalog:
 #   deploy/infra.env.example
@@ -40,19 +53,34 @@
 #   DEPLOY_USER, DEPLOY_SSH_KEY  (same as deploy.yml)
 #   CADDY_DOMAIN  - public hostname, e.g. app.example.com
 #   CADDY_EMAIL   - ACME/Let's Encrypt contact email
+#   GRAFANA_PROM_URL   - Grafana Cloud remote-write endpoint (…/api/prom/push)
+#   GRAFANA_PROM_USER  - numeric Grafana Cloud instance id
+#   GRAFANA_PROM_PASSWORD - write token (scope metrics:write, shown once)
+#                       (monitoring; details in deploy/infra.env.example)
 # Optional: DEPLOY_PORT (22).
+# Workflow input (Run workflow → enable_pg_stat_statements, default off):
+#   approves the short postgres restart required for query statistics.
 # NOT read here (business-logic only, see deploy.yml): ENV_FILE, REPO_DIR,
 # REPO_URL — infra assets come from the runner checkout via scp.
 # ------------------------------------------------------------------
-name: Infrastructure (Caddy HTTPS + Dozzle logs)
+name: Infrastructure (Caddy HTTPS + Dozzle logs + Grafana monitoring)
 
 on:
   workflow_dispatch:
+    inputs:
+      enable_pg_stat_statements:
+        description: >-
+          Enable pg_stat_statements monitoring. Requires a short postgres
+          container restart (~5s DB blip; the app reconnects automatically
+          and /healthz is DB-free). OFF = no database changes are made.
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
       - deploy/caddy/**
       - deploy/dozzle/**
+      - deploy/monitoring/**
 
 concurrency:
   group: infra-caddy
@@ -362,6 +390,126 @@ jobs:
             echo "        'docker logs dozzle' on the host." >&2
             exit 1
           fi
+
+      # Monitoring (vmagent → Grafana Cloud) follows the same asset flow as
+      # Caddy/Dozzle: runner checkout → /tmp on the server → setup script.
+      # Only the separate `bodapp-monitoring` compose project is created; the
+      # /opt/bodapp tree, the app container, Caddy config and the database
+      # container are never touched — the single exception is the input-gated
+      # postgres restart in the preparation step below.
+      - name: Copy monitoring assets to the server
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          TS_IP: ${{ steps.ts.outputs.ts_ip }}
+        run: |
+          set -euo pipefail
+          [ -n "${TS_IP:-}" ] || { echo "FATAL: no tailnet IP from the join step" >&2; exit 1; }
+          umask 077
+          KEYF="$(mktemp)"; trap 'rm -f "$KEYF"' EXIT
+          SSH_OPTS=(-o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null)
+          if [ -n "$DEPLOY_KEY" ]; then
+            printf '%s\n' "$DEPLOY_KEY" > "$KEYF"
+            SSH_OPTS+=(-i "$KEYF")
+          fi
+          TARGET="$DEPLOY_USER@$TS_IP"
+          ssh -p "$DEPLOY_PORT" "${SSH_OPTS[@]}" "$TARGET" \
+            'rm -rf /tmp/bodapp-monitoring && mkdir -p /tmp/bodapp-monitoring'
+          scp -P "$DEPLOY_PORT" "${SSH_OPTS[@]}" -r deploy/monitoring/* "$TARGET:/tmp/bodapp-monitoring/"
+          echo "==> monitoring assets copied to /tmp/bodapp-monitoring on $TS_IP"
+
+      - name: PostgreSQL monitoring preparation (restart gated by input)
+        env:
+          # Tick the workflow input = approve the short postgres restart;
+          # push-triggered runs and unticked dispatches always get '0'.
+          MON_ALLOW_RESTART: ${{ inputs.enable_pg_stat_statements && '1' || '0' }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          TS_IP: ${{ steps.ts.outputs.ts_ip }}
+        run: |
+          set -euo pipefail
+          [ -n "${TS_IP:-}" ] || { echo "FATAL: no tailnet IP from the join step" >&2; exit 1; }
+          umask 077
+          KEYF="$(mktemp)"; SCRIPTF="$(mktemp)"
+          trap 'rm -f "$KEYF" "$SCRIPTF"' EXIT
+          SSH_OPTS=(-p "$DEPLOY_PORT" -o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null)
+          if [ -n "$DEPLOY_KEY" ]; then
+            printf '%s\n' "$DEPLOY_KEY" > "$KEYF"
+            SSH_OPTS+=(-i "$KEYF")
+          fi
+          {
+            printf 'export MON_ALLOW_RESTART=%q\n' "$MON_ALLOW_RESTART"
+            cat <<'REMOTE_SCRIPT'
+          set -euo pipefail
+          SCRIPT=/tmp/bodapp-monitoring/setup-postgres-monitoring.sh
+          [ -f "$SCRIPT" ] || { echo "FATAL: setup-postgres-monitoring.sh not found under /tmp/bodapp-monitoring" >&2; exit 1; }
+          chmod +x "$SCRIPT"
+          if [ "$MON_ALLOW_RESTART" = "1" ]; then
+            echo "==> pg_stat_statements: restart APPROVED via workflow input"
+          else
+            echo "==> pg_stat_statements: no restart approved — database will not be modified"
+          fi
+          bash "$SCRIPT"
+          REMOTE_SCRIPT
+          } > "$SCRIPTF"
+          ssh "${SSH_OPTS[@]}" "$DEPLOY_USER@$TS_IP" bash -s < "$SCRIPTF"
+
+      - name: Provision monitoring (vmagent → Grafana Cloud) and verify
+        env:
+          GRAFANA_PROM_URL: ${{ secrets.GRAFANA_PROM_URL }}
+          GRAFANA_PROM_USER: ${{ secrets.GRAFANA_PROM_USER }}
+          GRAFANA_PROM_PASSWORD: ${{ secrets.GRAFANA_PROM_PASSWORD }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          TS_IP: ${{ steps.ts.outputs.ts_ip }}
+        run: |
+          set -euo pipefail
+          [ -n "${TS_IP:-}" ] || { echo "FATAL: no tailnet IP from the join step" >&2; exit 1; }
+          if [ -z "${GRAFANA_PROM_URL:-}" ] || [ -z "${GRAFANA_PROM_USER:-}" ] || [ -z "${GRAFANA_PROM_PASSWORD:-}" ]; then
+            echo "FATAL: GRAFANA_PROM_URL / GRAFANA_PROM_USER / GRAFANA_PROM_PASSWORD secrets are required." >&2
+            echo "  Add them: GitHub → Settings → Environments → prod (catalog: deploy/infra.env.example)." >&2
+            exit 1
+          fi
+          umask 077
+          KEYF="$(mktemp)"; SCRIPTF="$(mktemp)"
+          trap 'rm -f "$KEYF" "$SCRIPTF"' EXIT
+          SSH_OPTS=(-p "$DEPLOY_PORT" -o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null)
+          if [ -n "$DEPLOY_KEY" ]; then
+            printf '%s\n' "$DEPLOY_KEY" > "$KEYF"
+            SSH_OPTS+=(-i "$KEYF")
+          fi
+          {
+            printf 'export GF_PROM_URL=%q\n' "$GRAFANA_PROM_URL"
+            printf 'export GF_PROM_USER=%q\n' "$GRAFANA_PROM_USER"
+            printf 'export GF_PROM_PASSWORD=%q\n' "$GRAFANA_PROM_PASSWORD"
+            cat <<'REMOTE_SCRIPT'
+          set -euo pipefail
+          SETUP=/tmp/bodapp-monitoring/setup-monitoring.sh
+          [ -f "$SETUP" ] || { echo "FATAL: setup-monitoring.sh not found under /tmp/bodapp-monitoring" >&2; exit 1; }
+          chmod +x "$SETUP"
+          bash "$SETUP"
+
+          # The app must be exactly as before this step: running, loopback-only.
+          echo "==> verifying the application is untouched"
+          if docker ps -a --format '{{.Names}}' | grep -qx bodapp-app; then
+            running="$(docker inspect -f '{{.State.Running}}' bodapp-app)"
+            port="$(docker port bodapp-app 3001 2>/dev/null | head -1 || true)"
+            echo "    bodapp-app running=$running port=${port:-<none>}"
+            [ "$running" = "true" ] || { echo "FATAL: app container is not running" >&2; exit 1; }
+            case "$port" in
+              127.0.0.1:3001|127.0.0.1:3001*) ;;
+              *) echo "FATAL: app port changed during monitoring deploy: '$port' (expected 127.0.0.1:3001)" >&2; exit 1 ;;
+            esac
+          else
+            echo "    bodapp-app not present on this host yet — app stack is deployed separately; no impact either way"
+          fi
+          echo "==> MONITORING OK — containers healthy, targets up, loopback-only, no remote_write errors"
+          REMOTE_SCRIPT
+          } > "$SCRIPTF"
+          ssh "${SSH_OPTS[@]}" "$DEPLOY_USER@$TS_IP" bash -s < "$SCRIPTF"
 
       # Ephemeral node: log the runner out so its tailnet record disappears
       # now instead of lingering until offline expiry. Runs even on failure.
