@@ -17,9 +17,13 @@
 #                            the approval for the restart)
 #                            With approval:
 #                              ALTER SYSTEM SET shared_preload_libraries
-#                                (appending, preserving any existing entries)
-#                              ALTER SYSTEM SET pg_stat_statements.max = 100
-#                                (bounds exporter cardinality: default 5000)
+#                                (appending, preserving any existing entries).
+#                                pg_stat_statements.max is deliberately NOT
+#                                touched: it is PGC_POSTMASTER and unknown
+#                                before the extension loads — PG rejects the
+#                                ALTER (verified); exported rows are bounded
+#                                exporter-side (DefaultPGStatStatementsLimit
+#                                = 100) instead.
 #                              docker restart bodapp-postgres   ← the one
 #                                disruptive act: a few seconds of DB blip;
 #                                the app reconnects automatically and
@@ -42,7 +46,6 @@ APP_DB_CONTAINER="${APP_DB_CONTAINER:-bodapp-postgres}"
 MON_ROLE="${MON_ROLE:-bodapp_monitor}"
 MON_ALLOW_RESTART="${MON_ALLOW_RESTART:-0}"
 MARKER="$MON_DIR/statements.enabled"
-STMT_MAX="${STMT_MAX:-100}"
 
 SUDO=""
 [ "$(id -u)" -ne 0 ] && SUDO="sudo"
@@ -92,7 +95,6 @@ if ! printf '%s' "$PRELOAD" | grep -q 'pg_stat_statements'; then
     cat <<EOF
 ==> [pg-monitor] pg_stat_statements is NOT loaded — PLAN (not applied):
       ALTER SYSTEM SET shared_preload_libraries = '${PRELOAD:+$PRELOAD,}pg_stat_statements';
-      ALTER SYSTEM SET pg_stat_statements.max = $STMT_MAX;
       docker restart $APP_DB_CONTAINER     # seconds-level DB blip, approved via workflow input
       CREATE EXTENSION IF NOT EXISTS pg_stat_statements;   # app database only
     A database RESTART is required (preload happens at startup) — this run made
@@ -105,10 +107,15 @@ EOF
   fi
 
   NEW_PRELOAD="${PRELOAD:+$PRELOAD,}pg_stat_statements"
-  echo "==> [pg-monitor] APPROVED restart: setting preload + bounded statement stats"
+  echo "==> [pg-monitor] APPROVED restart: setting shared_preload_libraries"
+  # pg_stat_statements.max is NOT set here on purpose: it is PGC_POSTMASTER
+  # and its GUC does not exist until the extension loads, so ALTER SYSTEM
+  # rejects it BEFORE the restart ("unrecognized configuration parameter" —
+  # observed on PG16). Exported rows are bounded exporter-side by upstream's
+  # DefaultPGStatStatementsLimit = 100 anyway; the DB keeps tracking the
+  # default 5000 rows (a few MB of shared memory — harmless here).
   psql_as_superuser <<EOF
 ALTER SYSTEM SET shared_preload_libraries = '$NEW_PRELOAD';
-ALTER SYSTEM SET pg_stat_statements.max = $STMT_MAX;
 EOF
   echo "    restarting $APP_DB_CONTAINER (app reconnects automatically; /healthz is DB-free)..."
   docker restart "$APP_DB_CONTAINER" >/dev/null
@@ -128,6 +135,8 @@ psql_q "SELECT 1 FROM pg_extension WHERE extname='pg_stat_statements'" | grep -q
   || { echo "    creating extension pg_stat_statements in '$PDB'";
        psql_as_superuser <<<"CREATE EXTENSION IF NOT EXISTS pg_stat_statements;" >/dev/null; }
 echo "    extension: present"
+STMTS_MAX="$(psql_q 'SHOW pg_stat_statements.max;' 2>/dev/null || echo '?')"
+echo "    pg_stat_statements.max = $STMTS_MAX (DB tracking cap — exported rows are capped at 100 by the exporter's default LIMIT)"
 
 # --- 5. role + minimal grants + self-test ------------------------------------
 if ! psql_q "SELECT 1 FROM pg_roles WHERE rolname='$MON_ROLE'" | grep -q 1; then
