@@ -44,7 +44,9 @@ Key decisions and why:
   file is untouched.
 - **Pinned images** (no `latest`): `victoriametrics/vmagent:v1.156.0`,
   `quay.io/prometheuscommunity/postgres-exporter:v0.20.1`,
-  `prom/node-exporter:v1.12.1`, `gcr.io/cadvisor/cadvisor:v0.60.6`.
+  `prom/node-exporter:v1.12.1`, `ghcr.io/google/cadvisor:v0.60.6`
+  (cAdvisor publishes to ghcr.io now — `gcr.io/cadvisor/cadvisor` stops at
+  v0.55.1, verified against both registries' tag lists).
 - **Separate compose project** `bodapp-monitoring` in `/opt/bodapp-monitoring`
   (outside `/opt/bodapp`, so the app pipeline's `git reset --hard` /
   `git clean -fd` can never delete monitoring state). Unavailable monitoring
@@ -103,9 +105,12 @@ infra run; the restart needs your explicit approval.
 - **With approval:** run the workflow manually (see §6) and tick
   **`enable_pg_stat_statements`** — that checkbox *is* the approval. It then:
   1. `ALTER SYSTEM SET shared_preload_libraries = '…,pg_stat_statements'`
-     (appends, preserving existing entries) and
-     `ALTER SYSTEM SET pg_stat_statements.max = 100` (bounds cardinality —
-     the default 5000 would risk the 10k free-tier series budget);
+     (appends, preserving existing entries). `pg_stat_statements.max` is
+     deliberately *not* set here: it is `PGC_POSTMASTER` and its GUC doesn't
+     exist until the extension loads, so PG rejects the ALTER beforehand
+     (`unrecognized configuration parameter` — observed on PG16), and
+     exported rows are already capped at 100 by the exporter's own
+     `DefaultPGStatStatementsLimit` (config/config.go);
   2. **`docker restart bodapp-postgres`** — *the disruptive step*: a
      ~5-second DB blip; Prisma reconnects automatically and Caddy's
      `/healthz` gate is DB-free, so the site keeps serving (requests in that
@@ -126,10 +131,13 @@ infra run; the restart needs your explicit approval.
 
 **Never enabled:** `--collector.stat_statements.include_query` — it exports
 SQL text as a metric label (query literals = cardinality + a data-leak
-vector). Statements are addressed by numeric `queryid` only. The exporter's
-built-in query already filters to the slow 90% and orders by total time with
-a LIMIT; together with `pg_stat_statements.max=100` worst case ≈ 100 queryids
-× 5 metrics ≈ **500 series**.
+vector). Statements are addressed by numeric `queryid` only. Series are
+bounded **exporter-side**: upstream `config.DefaultPGStatStatementsLimit =
+100` (the collector query filters to the slow 90%, orders by total time,
+takes the top 100) → worst case ≈ 100 queryids × 5 metrics ≈ **500 series**.
+The DB still tracks up to `pg_stat_statements.max = 5000` rows by default
+(a few MB of shared memory; lowering it needs `ALTER SYSTEM` + one further
+restart now that the extension exists — optional, never required).
 
 ## 5. Caddy metrics
 

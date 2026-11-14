@@ -131,7 +131,10 @@ services:
       start_period: 20s
 
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.60.6
+    # NOTE: current cAdvisor releases publish to ghcr.io/google/cadvisor —
+    # the old gcr.io/cadvisor/cadvisor tag list stops at v0.55.1 (both
+    # registries' tag lists verified; gcr pin caused "not found" on pull).
+    image: ghcr.io/google/cadvisor:v0.60.6
     container_name: monitoring-cadvisor
     restart: unless-stopped
     # Official cAdvisor container recipe (read-only mounts, NOT privileged).

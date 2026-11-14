@@ -143,7 +143,7 @@
       "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "yellow", "value": 90 }, { "color": "green", "value": 95 } ] } }, "overrides": [] },
       "targets": [ { "refId": "A", "expr": "100 * sum(rate(pg_stat_database_blks_hit[5m])) / (sum(rate(pg_stat_database_blks_hit[5m])) + sum(rate(pg_stat_database_blks_read[5m])))", "legendFormat": "hit %", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" } } ] },
 
-    { "id": 24, "type": "stat", "title": "Tracked statements", "description": "Rows in pg_stat_statements (bounded to max=100 by setup-postgres-monitoring.sh)", "gridPos": { "h": 5, "w": 5, "x": 19, "y": 49 },
+    { "id": 24, "type": "stat", "title": "Tracked statements", "description": "Distinct queryids exported by the collector (bounded to 100 by the exporter's DefaultPGStatStatementsLimit)", "gridPos": { "h": 5, "w": 5, "x": 19, "y": 49 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] } }, "overrides": [] },
       "targets": [ { "refId": "A", "expr": "count(pg_stat_statements_calls_total) or vector(0)", "legendFormat": "queryids", "instant": true, "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" } } ] },
