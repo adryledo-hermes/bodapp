@@ -1,0 +1,170 @@
+# ---------------------------------------------------------------------------
+# Bodapp — MONITORING stack (vmagent → Grafana Cloud).  INFRA PIPELINE ONLY.
+#
+# Separate compose project (`name: bodapp-monitoring`), separate containers,
+# separate lifecycle: this file NEVER touches the app stack (docker-compose.yml
+# at the repo root), Caddy or the database containers. Nothing here depends on
+# the application starting, and an unavailable monitoring service can never
+# block app traffic — no app service references these containers.
+#
+# Architecture (smallest viable — no local Prometheus, no local Grafana):
+#   vmagent             scrapes the four targets below every 20s and ships
+#                       samples to Grafana Cloud over Prometheus remote_write
+#                       (the hosted metrics backend). Host network — see below.
+#   postgres_exporter   PostgreSQL health/connections/transactions/locks/
+#                       pg_stat_statements (opt-in override file), connects to
+#                       the app's `postgres` container over the shared
+#                       `bodapp_default` network with a read-only monitor role.
+#   node_exporter       host CPU / memory / filesystem / disk / network.
+#   cAdvisor            per-container CPU / memory / network / filesystem.
+#
+# Network contract — NOTHING is reachable from the internet:
+#   * every exporter publishes on 127.0.0.1 only (the same pattern as the app
+#     itself and Dozzle); Docker's loopback bind IS the security boundary.
+#   * vmagent runs with `network_mode: host` so it can scrape loopback-bound
+#     endpoints WITHOUT any metric port being widened to a bridge/public IP —
+#     in particular Caddy, a host systemd service, exposes its metrics on its
+#     admin API at 127.0.0.1:2019 (default admin bind) and rebinding that to a
+#     docker bridge would expose the unauthenticated Caddy admin API. vmagent
+#     makes only OUTBOUND connections (scrapes + remote_write) and listens on
+#     127.0.0.1:8429 for its own metrics. This is the justification for host
+#     networking: no privileged mode, no extra mounts, no public listener.
+#   * port 8080 on loopback is already taken by Dozzle → cAdvisor uses 8081.
+#
+# Secrets: interpolation reads `.env` NEXT TO THIS FILE (root-owned 0600,
+# written by setup-monitoring.sh from the GitHub environment secrets — never
+# committed, never printed). Validation uses `docker compose config --quiet`
+# precisely so resolved secrets never land in CI logs.
+#
+# Images are pinned to immutable release tags (no `latest`); upgrades are
+# deliberate edits to the tags + re-run of the infra pipeline.
+#
+# Deploy / upgrade / rollback / remove: see deploy/monitoring/README.md.
+# ---------------------------------------------------------------------------
+name: bodapp-monitoring
+
+services:
+  vmagent:
+    image: victoriametrics/vmagent:v1.156.0
+    container_name: monitoring-vmagent
+    restart: unless-stopped
+    # Host network — justified in the header comment above. Ports must NOT be
+    # declared with host networking (Docker rejects the combination).
+    network_mode: host
+    cap_drop:
+      - ALL
+    command:
+      - --promscrape.config=/etc/vmagent/vmagent.yml
+      - --remoteWrite.url=${GF_PROM_URL:?set GF_PROM_URL in .env (Grafana Cloud remote-write endpoint)}
+      - --remoteWrite.basicAuth.username=${GF_PROM_USER:?set GF_PROM_USER in .env (Grafana Cloud instance id)}
+      - --remoteWrite.basicAuth.password=${GF_PROM_PASSWORD:?set GF_PROM_PASSWORD in .env (Grafana Cloud write token)}
+      # Tiny disk buffer: retries during a Grafana Cloud hiccup without ever
+      # threatening the host volume (the app pipeline fails builds at 6 GiB free).
+      - --remoteWrite.maxDiskUsagePerURL=100MB
+      # Its own metrics/health endpoint — loopback only.
+      - --httpListenAddr=127.0.0.1:8429
+    volumes:
+      - ./vmagent.yml:/etc/vmagent/vmagent.yml:ro
+      - vmagent-buffer:/tmp/vmagent-remotewrite
+    healthcheck:
+      # vmagent's image is Alpine-based (busybox wget); /metrics always answers.
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8429/metrics >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  postgres_exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1
+    container_name: monitoring-postgres-exporter
+    restart: unless-stopped
+    # Reaches the app's `postgres` service by its stable Docker DNS name over
+    # the app project's default network (external). Read-only: it connects as
+    # the dedicated `bodapp_monitor` role (pg_read_all_stats, escalated to
+    # pg_monitor only if self-tests require it — see
+    # setup-postgres-monitoring.sh), never as the app or superuser.
+    networks:
+      - bodapp
+    environment:
+      # Password is a hex string generated on the server into the root-owned
+      # .env — URL-safe, never committed, never echoed.
+      DATA_SOURCE_NAME: postgresql://${PG_MON_USER:-bodapp_monitor}:${PG_MON_PASSWORD:?run setup-postgres-monitoring.sh first (writes PG_MON_PASSWORD into .env)}@postgres:5432/${PG_MON_DB:-bodapp}?sslmode=disable
+    # Base command (the statements variant lives in
+    # docker-compose.statements.yml and REPLACES this whole list — Compose
+    # does not merge `command` sequences, so each variant is self-contained).
+    command:
+      # Per-table I/O collectors are on by default but add hundreds of series
+      # for ~20 tables without answering any question this app asks.
+      - --no-collector.stat_user_tables
+    ports:
+      # Loopback only — scraped by host-network vmagent, never public.
+      - "127.0.0.1:9187:9187"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9187/metrics >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  node_exporter:
+    image: prom/node-exporter:v1.12.1
+    container_name: monitoring-node-exporter
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    # Standard read-only host visibility — no privileged mode anywhere.
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+    ports:
+      - "127.0.0.1:9100:9100"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9100/metrics >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.60.6
+    container_name: monitoring-cadvisor
+    restart: unless-stopped
+    # Official cAdvisor container recipe (read-only mounts, NOT privileged).
+    # --docker_only: report Docker containers, skip the host's cgroup noise.
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    command:
+      - --docker_only
+    ports:
+      # 8080 is Dozzle's loopback port on this host — cAdvisor gets 8081.
+      - "127.0.0.1:8081:8080"
+    # No in-container healthcheck: the cAdvisor image ships no guaranteed
+    # shell/wget. Health is gated host-side by setup-monitoring.sh
+    # (curl 127.0.0.1:8081/healthz), which runs on every deploy.
+
+  # --- Postgres: query-statistics variant -----------------------------------
+  # Selected by setup-monitoring.sh when pg_stat_statements is available:
+  #   docker compose -f docker-compose.yml -f docker-compose.statements.yml up -d
+  # This file is a full `command` replacement (see comment above).
+
+volumes:
+  vmagent-buffer:
+
+networks:
+  default:
+    driver: bridge
+  # The app project's default network (compose project name `bodapp`).
+  # External = we join an existing network read-only; this file never creates,
+  # modifies or removes anything in the app project.
+  bodapp:
+    external: true
+    name: bodapp_default

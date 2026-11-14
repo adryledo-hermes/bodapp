@@ -1,0 +1,27 @@
+# ---------------------------------------------------------------------------
+# Postgres statements VARIANT — used only when pg_stat_statements is enabled
+# (setup-postgres-monitoring.sh verified the extension + preload, then
+# setup-monitoring.sh adds this file to the compose file set):
+#
+#   docker compose -f docker-compose.yml -f docker-compose.statements.yml up -d
+#
+# Compose REPLACES `command` sequences instead of merging them, so this file
+# restates the base flags plus the opt-in collector.
+#
+# `--collector.stat_statements` (default: disabled upstream — every unique
+# queryid becomes a timeseries, so it is deliberately opt-in). SQL TEXT is
+# NOT exported: the upstream `--collector.stat_statements.include_query` flag
+# stays off (it would put query literals into a metric label — high
+# cardinality and a data-leak vector). The dashboard identifies statements by
+# numeric queryid only.
+#
+# Series are bounded twice: PostgreSQL-side via
+# `pg_stat_statements.max = 100` (set by setup-postgres-monitoring.sh) and
+# upstream's query already filters to the slow 90% and orders by total time
+# with a LIMIT — worst case ≈ 100 queryids × 5 metrics ≈ 500 series.
+# ---------------------------------------------------------------------------
+services:
+  postgres_exporter:
+    command:
+      - --no-collector.stat_user_tables
+      - --collector.stat_statements

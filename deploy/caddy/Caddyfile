@@ -30,6 +30,14 @@
 {
 	# ACME registration contact — Let's Encrypt sends expiry/failure mail here.
 	email admin@yourdomain.com
+
+	# Prometheus metrics for the HTTP servers: request rate, status-code
+	# distribution (on the duration histogram), in-flight, TLS/process
+	# health. Served on the admin API's default loopback bind
+	# http://127.0.0.1:2019/metrics — never public, and the admin address
+	# itself stays at its secure default. Scraped by vmagent
+	# (deploy/monitoring/); setup-caddy.sh validates and reloads as usual.
+	metrics
 }
 
 # ---------------------------------------------------------------------------
