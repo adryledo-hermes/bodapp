@@ -1,0 +1,52 @@
+# ---------------------------------------------------------------------------
+# vmagent scrape config → Grafana Cloud (remote_write lives on the command
+# line in docker-compose.yml; credentials never appear in this file).
+#
+# Interval decision: 20s as requested. Grafana Cloud Free meters ACTIVE
+# SERIES (limit 10k/month), which do NOT change with the scrape interval —
+# a 5s interval would fit the free tier but quadruple sample ingestion,
+# network and scrape load for a single low-traffic VPS with no practical
+# benefit. To tighten one target later, add `scrape_interval: 5s` under that
+# job only — vmagent supports per-job overrides.
+# scrape_timeout must stay shorter than the interval (10s < 20s).
+# ---------------------------------------------------------------------------
+global:
+  scrape_interval: 20s
+  scrape_timeout: 10s
+  # Added by vmagent to every scraped series after relabeling (like
+  # Prometheus), so anything queryable in Grafana Cloud carries:
+  #   environment="production", service="bodapp"
+  external_labels:
+    environment: production
+    service: bodapp
+
+scrape_configs:
+  # PostgreSQL: health (pg_up), connections, transactions, size, locks, cache,
+  # pg_stat_statements (variant file — collector absent otherwise).
+  - job_name: postgres
+    static_configs:
+      - targets: ["127.0.0.1:9187"]
+
+  # Caddy: request rate, status-code distribution and latency histograms live
+  # on caddy_http_* (served on the admin API's /metrics, loopback by default).
+  # The `code` label exists on caddy_http_request_duration_seconds*, NOT on
+  # caddy_http_requests_total — dashboards/alerts account for that.
+  - job_name: caddy
+    static_configs:
+      - targets: ["127.0.0.1:2019"]
+
+  # Host: CPU, memory, swap, filesystems, disk I/O, network, load.
+  - job_name: node
+    static_configs:
+      - targets: ["127.0.0.1:9100"]
+
+  # Containers: per-container CPU/memory/network/filesystem, restarts
+  # (changes of container_start_time_seconds), OOM events, throttling.
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["127.0.0.1:8081"]
+
+  # vmagent itself: scrape health, remote_write failures, queue depth.
+  - job_name: vmagent
+    static_configs:
+      - targets: ["127.0.0.1:8429"]
