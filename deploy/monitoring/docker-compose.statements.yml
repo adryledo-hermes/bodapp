@@ -15,10 +15,13 @@
 # cardinality and a data-leak vector). The dashboard identifies statements by
 # numeric queryid only.
 #
-# Series are bounded twice: PostgreSQL-side via
-# `pg_stat_statements.max = 100` (set by setup-postgres-monitoring.sh) and
-# upstream's query already filters to the slow 90% and orders by total time
-# with a LIMIT — worst case ≈ 100 queryids × 5 metrics ≈ 500 series.
+# Series are bounded by upstream itself: `DefaultPGStatStatementsLimit = 100`
+# (config/config.go — the collector's query filters to the slow 90%, orders
+# by total time and takes the top 100) → worst case ≈ 100 queryids × 5
+# metrics ≈ 500 series. PostgreSQL-side `pg_stat_statements.max` (default
+# 5000, PGC_POSTMASTER) only caps how many rows the DB tracks (a few MB of
+# shared memory) and can only change at a restart AFTER the extension exists,
+# which is why setup-postgres-monitoring.sh deliberately leaves it alone.
 # ---------------------------------------------------------------------------
 services:
   postgres_exporter:
