@@ -1,0 +1,13 @@
+[Unit]
+Description=Daily Bodapp backup (03:30; catches up after downtime)
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+# Missed runs (VPS rebooted/off) execute on the next boot.
+Persistent=true
+# Spread the burst away from the top of the hour.
+RandomizedDelaySec=20m
+Unit=bodapp-backup.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=Bodapp daily database backup (pg_dump → age → Cloudflare R2)
+After=docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/bodapp-backup/backup.sh
+# Never compete with the app/DB: idle I/O class + low CPU priority.
+Nice=10
+IOSchedulingClass=idle

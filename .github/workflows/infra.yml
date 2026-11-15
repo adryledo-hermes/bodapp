@@ -42,6 +42,13 @@
 #      errors, no public binds). Monitoring problems can never fail the app:
 #      nothing here touches the /opt/bodapp tree, the app container, Caddy's
 #      config or the database container (beyond the input-gated restart).
+#   6. runs deploy/backup/setup-backup.sh (input `setup_backup`, default
+#      off) — daily pg_dump → age → Cloudflare R2 via systemd timers plus a
+#      weekly test-restore. Installs only under /opt/bodapp-backup,
+#      /etc/systemd/system/bodapp-backup* and root's rclone config; the
+#      app, Caddy, monitoring and the database container are untouched.
+#      R2 credentials are deliberately NOT GitHub secrets — they live only
+#      on the server (/opt/bodapp-backup/backup.env, root 600).
 #
 # REQUIRED secrets (GitHub environment `prod`) — ready-to-fill catalog:
 #   deploy/infra.env.example
@@ -60,10 +67,14 @@
 # Optional: DEPLOY_PORT (22).
 # Workflow input (Run workflow → enable_pg_stat_statements, default off):
 #   approves the short postgres restart required for query statistics.
+# Workflow input (Run workflow → setup_backup, default off):
+#   installs the daily R2 backup timers; fails with a TODO checklist if
+#   /opt/bodapp-backup/backup.env on the server still lacks the R2
+#   credentials / age public key (see deploy/backup/README.md).
 # NOT read here (business-logic only, see deploy.yml): ENV_FILE, REPO_DIR,
 # REPO_URL — infra assets come from the runner checkout via scp.
 # ------------------------------------------------------------------
-name: Infrastructure (Caddy HTTPS + Dozzle logs + Grafana monitoring)
+name: Infrastructure (Caddy HTTPS + Dozzle logs + Grafana monitoring + R2 backups)
 
 on:
   workflow_dispatch:
@@ -75,12 +86,23 @@ on:
           and /healthz is DB-free). OFF = no database changes are made.
         type: boolean
         default: false
+      setup_backup:
+        description: >-
+          Install daily encrypted database backups to Cloudflare R2
+          (pg_dump → age → rclone; daily + weekly test-restore timers).
+          Idempotent; needs R2 credentials + age public key in
+          /opt/bodapp-backup/backup.env on the server (a missing value
+          fails the step with the exact TODO checklist). No new GitHub
+          secrets; no app containers are touched.
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
       - deploy/caddy/**
       - deploy/dozzle/**
       - deploy/monitoring/**
+      - deploy/backup/**
 
 concurrency:
   group: infra-caddy
@@ -507,6 +529,65 @@ jobs:
             echo "    bodapp-app not present on this host yet — app stack is deployed separately; no impact either way"
           fi
           echo "==> MONITORING OK — containers healthy, targets up, loopback-only, no remote_write errors"
+          REMOTE_SCRIPT
+          } > "$SCRIPTF"
+          ssh "${SSH_OPTS[@]}" "$DEPLOY_USER@$TS_IP" bash -s < "$SCRIPTF"
+
+      # Backups are infrastructure too, gated by their own input so default
+      # runs stay unchanged. Assets follow the same flow as every feature
+      # here: runner checkout → /tmp on the server → setup script. R2
+      # credentials never enter GitHub — they live in
+      # /opt/bodapp-backup/backup.env on the server (root, 600).
+      - name: Copy backup assets to the server
+        if: ${{ inputs.setup_backup }}
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          TS_IP: ${{ steps.ts.outputs.ts_ip }}
+        run: |
+          set -euo pipefail
+          [ -n "${TS_IP:-}" ] || { echo "FATAL: no tailnet IP from the join step" >&2; exit 1; }
+          umask 077
+          KEYF="$(mktemp)"; trap 'rm -f "$KEYF"' EXIT
+          SSH_OPTS=(-o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null)
+          if [ -n "$DEPLOY_KEY" ]; then
+            printf '%s\n' "$DEPLOY_KEY" > "$KEYF"
+            SSH_OPTS+=(-i "$KEYF")
+          fi
+          TARGET="$DEPLOY_USER@$TS_IP"
+          ssh -p "$DEPLOY_PORT" "${SSH_OPTS[@]}" "$TARGET" \
+            'rm -rf /tmp/bodapp-backup && mkdir -p /tmp/bodapp-backup'
+          scp -P "$DEPLOY_PORT" "${SSH_OPTS[@]}" -r deploy/backup/* "$TARGET:/tmp/bodapp-backup/"
+          echo "==> backup assets copied to /tmp/bodapp-backup on $TS_IP"
+
+      - name: Setup daily backups to Cloudflare R2 (gated by input)
+        if: ${{ inputs.setup_backup }}
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          TS_IP: ${{ steps.ts.outputs.ts_ip }}
+        run: |
+          set -euo pipefail
+          [ -n "${TS_IP:-}" ] || { echo "FATAL: no tailnet IP from the join step" >&2; exit 1; }
+          umask 077
+          KEYF="$(mktemp)"; SCRIPTF="$(mktemp)"
+          trap 'rm -f "$KEYF" "$SCRIPTF"' EXIT
+          SSH_OPTS=(-p "$DEPLOY_PORT" -o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=20 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null)
+          if [ -n "$DEPLOY_KEY" ]; then
+            printf '%s\n' "$DEPLOY_KEY" > "$KEYF"
+            SSH_OPTS+=(-i "$KEYF")
+          fi
+          {
+            cat <<'REMOTE_SCRIPT'
+          set -euo pipefail
+          SETUP=/tmp/bodapp-backup/setup-backup.sh
+          [ -f "$SETUP" ] || { echo "FATAL: setup-backup.sh not found under /tmp/bodapp-backup" >&2; exit 1; }
+          chmod +x "$SETUP"
+          echo "==> provisioning daily backups to Cloudflare R2"
+          bash "$SETUP"
+          echo "==> BACKUP OK — timers active, first backup verified end-to-end"
           REMOTE_SCRIPT
           } > "$SCRIPTF"
           ssh "${SSH_OPTS[@]}" "$DEPLOY_USER@$TS_IP" bash -s < "$SCRIPTF"

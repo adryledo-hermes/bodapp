@@ -1,0 +1,11 @@
+[Unit]
+Description=Weekly Bodapp backup test-restore (Sun 05:00; catches up after downtime)
+
+[Timer]
+OnCalendar=Sun *-*-* 05:00:00
+Persistent=true
+RandomizedDelaySec=30m
+Unit=bodapp-backup-test.service
+
+[Install]
+WantedBy=timers.target
