@@ -31,31 +31,45 @@ touched. The only shared component is the database itself — and only
    R2 → Manage R2 API Tokens → Create API token → *Custom permissions*:
    **Object Read & Write** → *Resource: Specific bucket →
    `bodapp-backups`*. Copy the access key id + secret once.
-3. **Account id** (R2 overview page, right sidebar) → for the endpoint
+3. **Account id** (R2 overview page, right sidebar) → endpoint
    `https://<accountid>.r2.cloudflarestorage.com`.
-4. **age keypair** — the *public* key below already encrypts; store the
-   *private* key in your password manager (a file copy is also attached
-   to the delivery of this README):
-
-   `AGE_PUBKEY=age1uf0qe6n0ced229axefz4dj5c8cw2el8g9j7qc629qwue2vyr353q2z580g`
-
+4. **GitHub secrets** — Settings → Environments → prod (same place as
+   `CADDY_*` / `GRAFANA_*`). The workflow persists them to the server,
+   so you never SSH for this:
+   - `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`,
+     `R2_BUCKET=bodapp-backups` (values from step 2/3)
+   - `AGE_PUBKEY` =
+     `age1uf0qe6n0ced229axefz4dj5c8cw2el8g9j7qc629qwue2vyr353q2z580g`
+     (public — encrypts backups; the *private* key goes in your password
+     manager, file copy attached to this README)
+   - `AGE_KEY` *(optional, recommended)* = the age **private key** (the
+     single `AGE-SECRET-KEY-1…` line) → enables the automated weekly
+     test-restore with **zero SSH**. Trade-off: GitHub then also holds
+     the decryption key (still independent of the VPS *and* the bucket —
+     which is the requirement). Omit it → daily backups unaffected, only
+     the test-restore timer stays disabled.
+   - `ALERT_WEBHOOK_URL` *(optional)* = Discord/Slack webhook for
+     instant failure alerts
 5. *(Recommended)* a second R2 token with **Object Read & List only**,
    same bucket → for the independent freshness prober (a separate
    machine must not hold write credentials).
 
-## Setup
+## Setup (no SSH needed)
 
-On the server, fill the env file once, then run setup:
+**Infrastructure workflow → Run workflow → ☑ setup_backup.**
 
-```bash
-sudo nano /opt/bodapp-backup/backup.env   # R2_* + AGE_PUBKEY
-sudo bash deploy/backup/setup-backup.sh   # idempotent
-```
+The step ships `deploy/backup/*` to the server, persists the GitHub
+secrets above into `/opt/bodapp-backup/backup.env` (root, 600 — the only
+runtime location; the optional `AGE_KEY` lands in
+`/root/.config/bodapp-backup/backup.key`), installs age/rclone + the
+systemd timers, and ends by running **one real backup end-to-end** as
+its health gate — green means a verified backup already exists.
 
-Or from GitHub: **Infrastructure workflow → Run workflow → ☑ setup_backup**
-(the step fails with the same TODO checklist if the env file is still
-incomplete — nothing is half-installed silently). The setup ends by
-running **one real backup end-to-end** as its health gate.
+Idempotent: re-run any time (it also auto-runs on pushes touching
+`deploy/backup/**`). A missing secret fails the step with the exact
+TODO checklist — nothing is ever half-installed silently. Manual
+alternative: edit `backup.env` on the server and run `setup-backup.sh`
+yourself.
 
 ## Restoring (the easy ways)
 
@@ -95,10 +109,11 @@ private key → `setup-backup.sh` → `restore.sh latest --into-prod --yes`.
   enough.
 - The VPS may hold a *convenience* copy at
   `/root/.config/bodapp-backup/backup.key` (root, 600) **only** so the
-  automated weekly test-restore can decrypt. Without it, daily backups
-  work unchanged and only the test-restore timer stays disabled.
-  Maximum-security mode: never install it; restore manually with
-  `--key-file /path/to/key`.
+  automated weekly test-restore can decrypt. The no-SSH way to install
+  it: set the `AGE_KEY` GitHub secret (persisted at setup time).
+  Without it, daily backups work unchanged and only the test-restore
+  timer stays disabled. Maximum-security mode: never install it
+  anywhere on the VPS; restore manually with `--key-file /path/to/key`.
 - Rotation: `age-keygen -o new.key` → put the new public key in
   `backup.env` → re-run setup → old backups still decrypt with the old
   key (keep that old key in the password manager!).

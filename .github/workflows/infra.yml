@@ -47,8 +47,11 @@
 #      weekly test-restore. Installs only under /opt/bodapp-backup,
 #      /etc/systemd/system/bodapp-backup* and root's rclone config; the
 #      app, Caddy, monitoring and the database container are untouched.
-#      R2 credentials are deliberately NOT GitHub secrets — they live only
-#      on the server (/opt/bodapp-backup/backup.env, root 600).
+#      GitHub secrets are only the PROVISIONING transport (same pattern
+#      as CADDY_* / GRAFANA_*): the step persists them into the
+#      root-owned server file /opt/bodapp-backup/backup.env (600) once;
+#      runtime — daily timer, restore, staleness prober — reads only
+#      that file and never depends on GitHub.
 #
 # REQUIRED secrets (GitHub environment `prod`) — ready-to-fill catalog:
 #   deploy/infra.env.example
@@ -64,6 +67,15 @@
 #   GRAFANA_PROM_USER  - numeric Grafana Cloud instance id
 #   GRAFANA_PROM_PASSWORD - write token (scope metrics:write, shown once)
 #                       (monitoring; details in deploy/infra.env.example)
+#   R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET,
+#   AGE_PUBKEY        daily encrypted DB backups to Cloudflare R2 —
+#                       provisioning transport into the server's root-owned
+#                       /opt/bodapp-backup/backup.env (catalog:
+#                       deploy/infra.env.example, docs: deploy/backup/)
+#   AGE_KEY           (optional) age PRIVATE key: enables the automated
+#                       weekly test-restore with no SSH; omit to keep the
+#                       decryption key out of GitHub
+#   ALERT_WEBHOOK_URL (optional) backup failure webhook (Discord/Slack)
 # Optional: DEPLOY_PORT (22).
 # Workflow input (Run workflow → enable_pg_stat_statements, default off):
 #   approves the short postgres restart required for query statistics.
@@ -90,10 +102,13 @@ on:
         description: >-
           Install daily encrypted database backups to Cloudflare R2
           (pg_dump → age → rclone; daily + weekly test-restore timers).
-          Idempotent; needs R2 credentials + age public key in
-          /opt/bodapp-backup/backup.env on the server (a missing value
-          fails the step with the exact TODO checklist). No new GitHub
-          secrets; no app containers are touched.
+          Idempotent. Provide the R2 credentials + age key as GitHub
+          secrets (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY,
+          R2_BUCKET, AGE_PUBKEY [+ optional AGE_KEY, ALERT_WEBHOOK_URL])
+          — they are persisted to the root-owned backup.env on the server,
+          so no SSH is needed; or fill that file manually. A missing value
+          fails the step with the exact TODO checklist. No app containers
+          are touched.
         type: boolean
         default: false
   push:
@@ -568,6 +583,16 @@ jobs:
           DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
           TS_IP: ${{ steps.ts.outputs.ts_ip }}
+          # Provisioning transport only — persisted to the server's
+          # root-owned backup.env by setup-backup.sh; runtime reads only
+          # that file (missing secret = empty = TODO checklist failure).
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          AGE_PUBKEY: ${{ secrets.AGE_PUBKEY }}
+          AGE_KEY: ${{ secrets.AGE_KEY }}
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
         run: |
           set -euo pipefail
           [ -n "${TS_IP:-}" ] || { echo "FATAL: no tailnet IP from the join step" >&2; exit 1; }
@@ -580,6 +605,13 @@ jobs:
             SSH_OPTS+=(-i "$KEYF")
           fi
           {
+            printf 'export R2_ACCOUNT_ID=%q\n' "$R2_ACCOUNT_ID"
+            printf 'export R2_ACCESS_KEY_ID=%q\n' "$R2_ACCESS_KEY_ID"
+            printf 'export R2_SECRET_ACCESS_KEY=%q\n' "$R2_SECRET_ACCESS_KEY"
+            printf 'export R2_BUCKET=%q\n' "$R2_BUCKET"
+            printf 'export AGE_PUBKEY=%q\n' "$AGE_PUBKEY"
+            printf 'export AGE_KEY=%q\n' "$AGE_KEY"
+            printf 'export ALERT_WEBHOOK_URL=%q\n' "$ALERT_WEBHOOK_URL"
             cat <<'REMOTE_SCRIPT'
           set -euo pipefail
           SETUP=/tmp/bodapp-backup/setup-backup.sh

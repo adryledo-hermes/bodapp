@@ -74,6 +74,33 @@ fi
 # Read a var from the root-owned env file without eval (works via sudo).
 env_get() { $SUDO grep -E "^$1=" "$ENVF" 2>/dev/null | head -1 | cut -d= -f2- || true; }
 
+# --- 2b. persist credentials handed over by the workflow -------------------
+# The infra pipeline exports R2_*/AGE_PUBKEY/ALERT_WEBHOOK_URL (and
+# optionally AGE_KEY) from GitHub secrets; this writes them into the
+# server-owned files ONCE. Runtime (daily timer, restore, prober) reads
+# only these files — it never depends on GitHub. Only non-empty exported
+# values are written, so a manual run leaves the file untouched.
+persist_kv() { # key value → $ENVF (skips empty values; never logs values)
+  local k="$1" v="$2" tmp
+  [ -n "$v" ] || return 0
+  tmp="$(mktemp)"
+  grep -v "^$k=" "$ENVF" > "$tmp" 2>/dev/null || true
+  printf '%s=%s\n' "$k" "$v" >> "$tmp"
+  # Writing through the existing inode keeps the root:600 ownership/mode.
+  $SUDO cp "$tmp" "$ENVF"
+  rm -f "$tmp"
+  log "persisted $k → $ENVF (value not shown)"
+}
+for k in R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET AGE_PUBKEY ALERT_WEBHOOK_URL; do
+  persist_kv "$k" "${!k:-}"
+done
+# The age PRIVATE key goes to its own file — never into backup.env.
+if [ -n "${AGE_KEY:-}" ]; then
+  printf '%s\n' "$AGE_KEY" | $SUDO tee "$KEY_FILE" >/dev/null
+  $SUDO chmod 600 "$KEY_FILE"
+  log "persisted AGE_KEY → $KEY_FILE (value not shown)"
+fi
+
 # --- 3. validate configuration --------------------------------------------
 TODO=0
 for v in R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET AGE_PUBKEY; do
@@ -88,16 +115,25 @@ if [ -n "$PUB" ] && [ "${PUB#age1}" = "$PUB" ]; then
 fi
 if [ "$TODO" = 1 ]; then
   cat >&2 <<'EOM'
-Fill these in (on the server):
-  sudo nano /opt/bodapp-backup/backup.env
-Get them:
-  R2_*            Cloudflare dashboard → R2 → Manage R2 API Tokens →
-                  Create API token → Custom permissions:
-                  Object Read & Write, resources: ONLY the backup bucket.
-                  Account ID: R2 overview page (right sidebar).
-  AGE_PUBKEY      the public key from the backup README (private key stays
-                  in your password manager — never in this file).
-Then re-run:  sudo bash deploy/backup/setup-backup.sh
+Missing values in the backup config. Two ways to provide them:
+
+  A) GitHub, no SSH (recommended): Settings -> Environments -> prod ->
+     add the secrets R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY,
+     R2_BUCKET, AGE_PUBKEY (+ optional AGE_KEY, ALERT_WEBHOOK_URL;
+     catalog: deploy/infra.env.example), then re-run the Infrastructure
+     workflow with "setup_backup" ticked — it persists them here.
+
+  B) On the server:  sudo nano /opt/bodapp-backup/backup.env
+
+Get the R2 values: Cloudflare -> R2 -> Manage R2 API Tokens -> Create API
+token -> Custom permissions: Object Read & Write, resource = the backup
+bucket ONLY. Account ID: R2 overview page (right sidebar).
+AGE_PUBKEY: the age public key (starts with 'age1') — the private key
+stays in your password manager (secret AGE_KEY enables the automated
+weekly test-restore without any SSH).
+
+Then re-run:  Infrastructure workflow → setup_backup (or: sudo bash
+deploy/backup/setup-backup.sh on the server).
 EOM
   exit 1
 fi
