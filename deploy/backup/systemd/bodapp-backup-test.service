@@ -1,0 +1,12 @@
+[Unit]
+Description=Bodapp weekly test-restore into a disposable PostgreSQL
+After=docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+# Restores the newest backup into bodapp-pg-restore (loopback :5433),
+# runs smoke checks, tears it down, uploads test-restore.json to R2.
+ExecStart=/opt/bodapp-backup/restore.sh --test-restore
+Nice=10
+IOSchedulingClass=idle
