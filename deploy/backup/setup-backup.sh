@@ -152,6 +152,12 @@ region = auto
 access_key_id = $AK
 secret_access_key = $SK
 endpoint = https://$ACCT.r2.cloudflarestorage.com
+# rclone tries to CREATE the bucket it writes to ("just in case"); a
+# bucket-scoped "Object Read & Write" token has no CreateBucket right,
+# so that probe 403s with AccessDenied before the upload starts (reads
+# are unaffected). The bucket provably exists — skip the probe. Keeps
+# the token least-privilege instead of escalating to Admin Read & Write.
+no_check_bucket = true
 CONF
 $SUDO chmod 600 "$RCLONE_CONF"
 log "rclone config written ($RCLONE_CONF, token scoped to r2://$BUCKET)"
