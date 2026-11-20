@@ -159,10 +159,32 @@ log "rclone config written ($RCLONE_CONF, token scoped to r2://$BUCKET)"
 if ! RCLONE_CONFIG="$RCLONE_CONF" rclone lsf "bodapp-r2:$BUCKET" --files-only >/dev/null 2>/tmp/r2err; then
   fail "cannot list r2://$BUCKET with the configured token:"
   sed 's/^/    /' /tmp/r2err >&2 || true
-  echo "    Check: bucket exists; token is scoped to THIS bucket; Object Read & Write." >&2
+  echo "    Check: bucket exists; token is scoped to THIS bucket." >&2
   exit 1
 fi
 log "R2 reachability verified (bucket list OK)"
+
+# WRITE probe: a read-only token passes the list gate above but would die
+# at the first real backup with a bare 403 — catch it HERE, with the fix.
+PROBE_NAME=".write-probe-$(date -u +%Y%m%dT%H%M%SZ)"
+printf 'probe\n' > "/tmp/$PROBE_NAME"
+if ! RCLONE_CONFIG="$RCLONE_CONF" rclone copyto "/tmp/$PROBE_NAME" \
+     "bodapp-r2:$BUCKET/$PROBE_NAME" >/dev/null 2>/tmp/r2werr; then
+  fail "token can READ but cannot WRITE r2://$BUCKET (403 on put):"
+  sed 's/^/    /' /tmp/r2werr | head -5 >&2 || true
+  rm -f "/tmp/$PROBE_NAME"
+  cat >&2 <<'EOM'
+    Fix: Cloudflare -> R2 -> Manage R2 API Tokens -> edit this token ->
+    permissions must be "Object Read & Write" (resource: this bucket).
+    If editing is not offered, create a NEW token and also update the
+    GitHub secrets R2_ACCESS_KEY_ID + R2_SECRET_ACCESS_KEY, then re-run.
+    (If you only edited the token, its keys are unchanged — just re-run.)
+EOM
+  exit 1
+fi
+rm -f "/tmp/$PROBE_NAME"
+RCLONE_CONFIG="$RCLONE_CONF" rclone deletefile "bodapp-r2:$BUCKET/$PROBE_NAME" >/dev/null 2>&1 || true
+log "R2 write verified (probe uploaded + removed)"
 
 # --- 5. age private key (only for the automated weekly test-restore) ------
 if [ -f "$KEY_FILE" ] && [ -s "$KEY_FILE" ]; then
