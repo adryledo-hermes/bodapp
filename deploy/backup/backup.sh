@@ -5,7 +5,7 @@
 #   pg_dump -Fc (inside the DB container → version-matched)   →
 #   age encryption (PUBLIC key only ever on this host)         →
 #   rclone upload via the R2 S3 API (bucket-scoped token)      →
-#   retention prune (RETENTION_DAYS, default 30)               →
+#   retention prune (≤ RETENTION_DAYS old AND ≤ MAX_TOTAL_BYTES) →
 #   manifest.json (what the independent staleness prober reads)
 #
 # Runs from systemd timer bodapp-backup.timer (root, daily 03:30)
@@ -29,6 +29,10 @@ ENVF="${BACKUP_ENV:-/opt/bodapp-backup/backup.env}"
 : "${AGE_PUBKEY:?AGE_PUBKEY missing in $ENVF}"
 R2_REMOTE="${R2_REMOTE:-bodapp-r2}"
 RETENTION_DAYS="${RETENTION_DAYS:-30}"
+# Hard cap on the SUM of all dumps kept in R2 (decimal bytes = 10 GB,
+# Cloudflare's free tier). Over the cap → oldest dumps deleted until the
+# remainder is under it; the newest dump is never removed.
+MAX_TOTAL_BYTES="${MAX_TOTAL_BYTES:-10000000000}"
 KEEP_LOCAL="${KEEP_LOCAL:-3}"
 APP_DB_CONTAINER="${APP_DB_CONTAINER:-bodapp-postgres}"
 LOCAL_DIR="${LOCAL_DIR:-/opt/bodapp-backup/local}"
@@ -49,7 +53,7 @@ alert() {
 }
 trap 'alert "FAILED (line $LINENO): $BASH_COMMAND"' ERR
 
-for cmd in docker rclone age; do
+for cmd in docker rclone age python3; do
   command -v "$cmd" >/dev/null \
     || { alert "missing dependency '$cmd' — run: sudo bash deploy/backup/setup-backup.sh"; exit 1; }
 done
@@ -95,12 +99,51 @@ for ((i = KEEP_LOCAL; i < ${#LOCALS[@]}; i++)); do
   rm -f "${LOCALS[$i]}"
 done
 
-# Retention in R2: drop dumps older than RETENTION_DAYS. manifest.json is
-# refreshed every run and is deliberately NOT pruned. Belt-and-braces:
-# configure an R2 lifecycle rule "delete objects older than N+5 days"
-# (README §Retention) so nothing grows unbounded even if this script stops.
+# Retention in R2 — two rules; BOTH only ever touch *.dump.enc:
+#   1. age:  drop dumps older than RETENTION_DAYS (default 30).
+#   2. size: if MORE THAN ONE dump exists and they sum to
+#            >= MAX_TOTAL_BYTES (default 10 GB = R2 free tier), drop the
+#            OLDEST until the rest sum to under the cap. The newest dump
+#            is NEVER deleted (a restore must always be possible) and a
+#            lone dump is never touched.
+# manifest.json / test-restore.json are refreshed every run and are
+# deliberately NOT pruned. Belt-and-braces: configure an R2 lifecycle
+# rule "delete objects older than N+5 days" (README §Retention) so
+# nothing grows unbounded even if this script stops.
 log "pruning R2 objects older than ${RETENTION_DAYS}d"
 rclone delete "$R2_REMOTE:$R2_BUCKET" --min-age "${RETENTION_DAYS}d" --include "*.dump.enc"
+
+log "pruning R2 dumps if they sum to over $(numfmt --to=si "$MAX_TOTAL_BYTES")"
+PRUNE_PY='
+import json, sys
+from datetime import datetime, timezone
+
+cap = int(sys.argv[1])
+dumps = [f for f in json.load(sys.stdin) if f["Name"].endswith(".dump.enc")]
+
+def age_key(f):
+    # Fail SAFE: an unparseable timestamp sorts as NEWEST, so it is the
+    # last thing ever deleted rather than the first.
+    try:
+        when = datetime.fromisoformat(f["ModTime"].replace("Z", "+00:00"))
+        return (0, when, f["Name"])
+    except Exception:
+        return (1, datetime(1970, 1, 1, tzinfo=timezone.utc), f["Name"])
+
+dumps.sort(key=age_key)  # oldest first
+total = sum(f["Size"] for f in dumps)
+while len(dumps) > 1 and total >= cap:
+    victim = dumps.pop(0)
+    total -= victim["Size"]
+    print(victim["Name"])
+'
+PRUNE_VICTIMS="$(rclone lsjson "$R2_REMOTE:$R2_BUCKET" --files-only \
+  | python3 -c "$PRUNE_PY" "$MAX_TOTAL_BYTES")"
+while IFS= read -r victim; do
+  [ -n "$victim" ] || continue
+  log "retention: total over $(numfmt --to=si "$MAX_TOTAL_BYTES") — deleting oldest dump $victim"
+  rclone deletefile "$R2_REMOTE:$R2_BUCKET/$victim"
+done <<< "$PRUNE_VICTIMS"
 
 DUMP_SECS=$((SECONDS - START))
 ENC_SIZE="$(stat -c %s "$TMP/$NAME")"

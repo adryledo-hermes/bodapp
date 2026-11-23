@@ -4,7 +4,7 @@
 # Idempotent: safe to re-run any time (workflow input `setup_backup`,
 # push touching deploy/backup/**, or by hand on the server).
 #
-#   1. installs age + rclone (apt, static-binary fallback)
+#   1. installs age + rclone + python3 (apt, static-binary fallback)
 #   2. installs scripts into /opt/bodapp-backup + backup.env (from the
 #      example; you fill the R2 credentials + age public key ONCE)
 #   3. writes root's rclone config (600) pointing at the R2 endpoint —
@@ -29,6 +29,14 @@ log()  { echo "[setup-backup] $*"; }
 fail() { echo "[setup-backup] TODO: $*" >&2; }
 
 # --- 1. dependencies -------------------------------------------------------
+# python3 is needed by backup.sh's retention size-cap (MAX_TOTAL_BYTES)
+# AND by the rclone static-binary unpack below — Debian ships it, but
+# never assume.
+if ! command -v python3 >/dev/null 2>&1; then
+  log "installing python3 (apt)"
+  $SUDO apt-get update -qq >/dev/null 2>&1 || true
+  $SUDO apt-get install -y -qq python3 >/dev/null 2>&1 || true
+fi
 if ! command -v age >/dev/null 2>&1; then
   log "installing age (apt)"
   $SUDO apt-get update -qq >/dev/null 2>&1 || true
@@ -57,6 +65,7 @@ PY
 fi
 command -v age >/dev/null   || { fail "age could not be installed (apt or static)"; exit 1; }
 command -v rclone >/dev/null || { fail "rclone could not be installed (apt or static)"; exit 1; }
+command -v python3 >/dev/null || { fail "python3 could not be installed (apt-get install python3 — the retention size-cap needs it)"; exit 1; }
 
 # --- 2. install files ------------------------------------------------------
 $SUDO mkdir -p "$INSTALL_DIR" "$(dirname "$KEY_FILE")" "$(dirname "$RCLONE_CONF")"

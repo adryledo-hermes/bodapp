@@ -7,7 +7,7 @@ survives losing the VPS.
 ```
 daily 03:30 (systemd)
   pg_dump -Fc  →  age encrypt (public key)  →  rclone / R2 S3 API
-       →  prune > RETENTION_DAYS  →  manifest.json
+       →  prune (>30d old, or >10 GB total)  →  manifest.json
 weekly Sun 05:00 (systemd, needs the age private key on the VPS)
   newest backup → disposable Postgres (bodapp-pg-restore, 127.0.0.1:5433)
        →  smoke checks  →  teardown  →  test-restore.json → R2
@@ -121,21 +121,32 @@ private key → `setup-backup.sh` → `restore.sh latest --into-prod --yes`.
 ## Retention & free-tier sizing (R2 free: 10 GB storage, 1M Class A +
 10M Class B ops / month)
 
-- Default: **30 daily** backups (`RETENTION_DAYS=30` in `backup.env`),
-  enforced by the script; add a *lifecycle rule* in the bucket settings
-  (delete objects older than `RETENTION_DAYS+5` days) as a belt-and-braces
-  backstop in case the script itself can't run.
+- **Two rules, enforced by every run** (both only ever delete
+  `*.dump.enc`; the manifest files are never pruned):
+  1. *age* — dumps older than `RETENTION_DAYS` (default **30**) are
+     deleted;
+  2. *total size* — if several dumps exist and their sum reaches
+     `MAX_TOTAL_BYTES` (default **10 GB**, decimal — exactly the free
+     tier), the oldest are deleted until the rest sum to *under* the
+     cap. **The newest dump is never deleted**, and a lone dump is
+     never touched.
+- Belt-and-braces: add a *lifecycle rule* in the bucket settings
+  (delete objects older than `RETENTION_DAYS+5` days) as a backstop in
+  case the script itself can't run.
 - Ops usage: a handful per day (~150/month) — irrelevant against 1M/10M.
-- Storage: after the first week check the real size:
+- Storage: capped automatically (rule 2), so you can't outgrow the free
+  tier even if dumps grow — though that would also shorten the *useful*
+  history below 30 days. Check the real size any time:
 
   ```bash
   rclone size bodapp-r2:bodapp-backups
   ```
 
-  Rule of thumb: `30 × encrypted_dump_size < 8 GB` keeps headroom under
-  the 10 GB free tier. Encrypted size ≈ 30–60 % of the raw DB (the
-  `-Fc` custom format compresses). If you approach the budget, lower
-  `RETENTION_DAYS` (e.g. 14) — the knob is in `backup.env`, re-run setup.
+  Encrypted size ≈ 30–60 % of the raw DB (`-Fc` compresses). Keep an
+  eye on `retention: total over …` lines in
+  `journalctl -u bodapp-backup.service`; if they appear regularly,
+  lower `RETENTION_DAYS` yourself (the size cap silently wins over the
+  30-day target) — knobs live in `backup.env`, re-run setup.
 
 ## Alerting
 
