@@ -44,6 +44,14 @@
 # Site: HTTPS frontend for Bodapp
 # ---------------------------------------------------------------------------
 app.yourdomain.com {
+	# --- Request body limit (edge) ------------------------------------------
+	# Reject oversized payloads before they reach the app — a single multi-GB
+	# body would otherwise be buffered in the container. 15MB comfortably
+	# covers photo uploads; adjust if the app ever needs larger files.
+	request_body {
+		max_size 15MB
+	}
+
 	# --- Compression -------------------------------------------------------
 	encode zstd gzip
 
